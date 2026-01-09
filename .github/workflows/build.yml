@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-24.04
 
     # Use the WPILib docker container
-    container: wpilib/roborio-cross-ubuntu:2026-22.04-py314
+    container: wpilib/ubuntu-base:22.04
 
     env:
       JAVA_TOOL_OPTIONS: "-Dfile.encoding=UTF-8"
