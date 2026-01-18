@@ -4,6 +4,7 @@ import static edu.wpi.first.units.Units.Radians;
 
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Distance;
 import java.util.function.Supplier;
 
@@ -15,6 +16,8 @@ public class BallisticShooter {
 
   public Supplier<Angle> pitchSupplier;
   public Supplier<Angle> yawSupplier;
+
+  Supplier<AngularVelocity> yawRateSupplier;
 
   public BallisticRobotState robotState;
 
@@ -39,6 +42,7 @@ public class BallisticShooter {
       Angle pitchRange,
       Supplier<Angle> pitchSupplier,
       Supplier<Angle> yawSupplier,
+      Supplier<AngularVelocity> yawRateSupplier,
       BallisticRobotState robotState) {
 
     this.relativePosition = relativePosition;
@@ -47,13 +51,15 @@ public class BallisticShooter {
     this.yawRange = yawRange;
     this.pitchSupplier = pitchSupplier;
     this.yawSupplier = yawSupplier;
+    this.yawRateSupplier = yawRateSupplier;
+    this.robotState = robotState;
   };
 
   /**
    * 
    * @return The translation or relative offset of the muzzle W.R.T the robot
    */
-  public Translation3d getMuzzlePositionWRTFieldRobot() {
+  public Translation3d getMuzzlePositionWRTRobot() {
     double baseMuzzleRadiusMeters = muzzleRadius.baseUnitMagnitude();
     double pitch = this.pitchSupplier.get().in(Radians); // theta
     double yaw = this.yawSupplier.get().in(Radians) + this.robotState.yawSupplier.get().in(Radians); // phi
@@ -63,5 +69,9 @@ public class BallisticShooter {
         baseMuzzleRadiusMeters * Math.cos(pitch) * Math.sin(yaw),
         baseMuzzleRadiusMeters * Math.sin(pitch));
   };
+
+  public Translation3d getMuzzlePositionWTRField() {
+    return this.robotState.getFieldPosition3d().plus(this.getMuzzlePositionWRTRobot());
+  }
 
 }
