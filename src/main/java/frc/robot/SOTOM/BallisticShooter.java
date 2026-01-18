@@ -9,28 +9,40 @@ import java.util.function.Supplier;
 
 public class BallisticShooter {
   public Translation3d relativePosition;
-  public double maxProjectileSpeed;
-  public Angle[] yawRange;
-  public Angle[] pitchRange;
+  public double maxProjectileVelocity;
+  public Angle yawRange;
+  public Angle pitchRange;
 
   public Supplier<Angle> pitchSupplier;
   public Supplier<Angle> yawSupplier;
 
-  public BallisticRobotState robot;
+  public BallisticRobotState robotState;
 
   public Distance muzzleRadius;
 
+  /**
+   * An abstraction of a ballistic shooter object used for physics calculations
+   * 
+   * @param relativePosition The offset the shooter is W.R.T the robot
+   * @param maxProjectileVelocity The max velocity (magnitude) the projectile is allowed to leave the muzzel at
+   * @param yawRange The max yaw the shooter can rotate in <b>both directions</b>
+   * @param pitchRange The max pitch the shooter can roate in <b>both directions</b>
+   * @param pitchSupplier A function which returns the current pitch of the shooter, <b>NOT W.R.T the field</b>
+   * @param yawSupplier A function which returns the current yaw of the shooter, <b> NOT W.R.T the field</b>
+   * @param robot The respective robotState
+   */
+
   public BallisticShooter(
       Translation3d relativePosition,
-      double maxProjectileSpeed,
-      Angle[] yawRange,
-      Angle[] pitchRange,
+      double maxProjectileVelocity,
+      Angle yawRange,
+      Angle pitchRange,
       Supplier<Angle> pitchSupplier,
       Supplier<Angle> yawSupplier,
-      BallisticRobotState robot) {
+      BallisticRobotState robotState) {
 
     this.relativePosition = relativePosition;
-    this.maxProjectileSpeed = maxProjectileSpeed;
+    this.maxProjectileVelocity = maxProjectileVelocity;
     this.pitchRange = pitchRange;
     this.yawRange = yawRange;
     this.pitchSupplier = pitchSupplier;
@@ -39,13 +51,12 @@ public class BallisticShooter {
 
   /**
    * 
-   * @param relativePosition The position of the ballistic shooter W.R.T the robot, i.e., origin = robot
-   * 
+   * @return The translation or relative offset of the muzzle W.R.T the robot
    */
   public Translation3d getMuzzlePositionWRTFieldRobot() {
     double baseMuzzleRadiusMeters = muzzleRadius.baseUnitMagnitude();
     double pitch = this.pitchSupplier.get().in(Radians); // theta
-    double yaw = this.yawSupplier.get().in(Radians) + this.robot.yawSupplier.get().in(Radians); // phi
+    double yaw = this.yawSupplier.get().in(Radians) + this.robotState.yawSupplier.get().in(Radians); // phi
 
     return new Translation3d(
         baseMuzzleRadiusMeters * Math.cos(pitch) * Math.cos(yaw),
