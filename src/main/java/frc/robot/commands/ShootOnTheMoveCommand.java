@@ -19,7 +19,7 @@ public class ShootOnTheMoveCommand extends Command {
 
   @Override
   public boolean isFinished() {
-
+    return false;
   };
 
   @Override
