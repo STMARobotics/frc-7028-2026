@@ -16,7 +16,7 @@ public class BallisticShooter {
   public Supplier<Angle> pitchSupplier;
   public Supplier<Angle> yawSupplier;
 
-  public 
+  public BallisticRobotState robot;
 
   public Distance muzzleRadius;
 
@@ -27,7 +27,7 @@ public class BallisticShooter {
       Angle[] pitchRange,
       Supplier<Angle> pitchSupplier,
       Supplier<Angle> yawSupplier,
-      BallisticRobot robot) {
+      BallisticRobotState robot) {
 
     this.relativePosition = relativePosition;
     this.maxProjectileSpeed = maxProjectileSpeed;
@@ -37,16 +37,20 @@ public class BallisticShooter {
     this.yawSupplier = yawSupplier;
   };
 
-  public Translation3d getRelativeMuzzlePosition() {
-    double baseMuzzleRadius = muzzleRadius.baseUnitMagnitude();
+  /**
+   * 
+   * @param relativePosition The position of the ballistic shooter W.R.T the robot, i.e., origin = robot
+   * 
+   */
+  public Translation3d getMuzzlePositionWRTFieldRobot() {
+    double baseMuzzleRadiusMeters = muzzleRadius.baseUnitMagnitude();
     double pitch = this.pitchSupplier.get().in(Radians); // theta
-    double yaw = this.yawSupplier.get().in(Radians) + this.; // phi
+    double yaw = this.yawSupplier.get().in(Radians) + this.robot.yawSupplier.get().in(Radians); // phi
 
     return new Translation3d(
-        baseMuzzleRadius * Math.cos(pitch) * Math.sin(yaw),
-        baseMuzzleRadius * Math.sin(pitch) * Math.cos(yaw),
-        baseMuzzleRadius * Math.sin(pitch));
-
+        baseMuzzleRadiusMeters * Math.cos(pitch) * Math.cos(yaw),
+        baseMuzzleRadiusMeters * Math.cos(pitch) * Math.sin(yaw),
+        baseMuzzleRadiusMeters * Math.sin(pitch));
   };
 
 }
