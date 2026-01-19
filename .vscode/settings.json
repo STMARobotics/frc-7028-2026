@@ -92,4 +92,10 @@
   "java.jdt.ls.vmargs": "-XX:+UseParallelGC -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -Dsun.zip.disableMemoryMapping=true -Xmx4G -Xms100m -Xlog:disable",
   "java.saveActions.organizeImports": false,
   "files.trimTrailingWhitespaceInRegexAndStrings": false,
+  "editor.inlineSuggest.edits.renderSideBySide": "never",
+  "editor.inlineSuggest.edits.allowCodeShifting": "never",
+  "editor.inlineSuggest.edits.showLongDistanceHint": false,
+  "editor.inlineSuggest.experimental.emptyResponseInformation": false,
+  "editor.acceptSuggestionOnEnter": "off",
+  "editor.snippetSuggestions": "none",
 }

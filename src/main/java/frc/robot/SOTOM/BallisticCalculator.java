@@ -41,5 +41,8 @@ public class BallisticCalculator {
     double d_y = heightDifferential.baseUnitMagnitude();
     double g = 9.81;
     return Seconds.of((v_y + Math.sqrt(Math.pow(v_y, 2) + 2 * g * d_y)) / g);
-  }
+  };
+
+  public calculateTargetPositionWRTRobotVelocity(
+  )
 }
