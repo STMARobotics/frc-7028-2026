@@ -5,15 +5,23 @@
 package frc.robot;
 
 import com.ctre.phoenix6.HootAutoReplay;
+import com.ctre.phoenix6.SignalLogger;
+import edu.wpi.first.epilogue.Epilogue;
+import edu.wpi.first.epilogue.Logged;
+import edu.wpi.first.epilogue.Logged.Strategy;
 import edu.wpi.first.net.WebServer;
+import edu.wpi.first.wpilibj.DataLogManager;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 
+@Logged(strategy = Strategy.OPT_IN)
 public class Robot extends TimedRobot {
   private Command m_autonomousCommand;
 
+  @Logged
   private final RobotContainer m_robotContainer;
 
   /* log and replay timestamp and joystick data */
@@ -22,6 +30,11 @@ public class Robot extends TimedRobot {
 
   public Robot() {
     m_robotContainer = new RobotContainer();
+
+    SignalLogger.start(); // CTRE logger
+    DataLogManager.start(); // WPILib logger
+    DriverStation.startDataLog(DataLogManager.getLog()); // Record both DS control and joystick data
+    Epilogue.bind(this);
   }
 
   @Override

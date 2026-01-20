@@ -14,6 +14,7 @@ import com.ctre.phoenix6.swerve.SwerveModule.SteerRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.commands.FollowPathCommand;
+import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
@@ -31,6 +32,7 @@ import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.QuestNavSubsystem;
 
+@Logged(strategy = Logged.Strategy.OPT_IN)
 public class RobotContainer {
   /* Setting up bindings for necessary control of the swerve drive platform */
   private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
