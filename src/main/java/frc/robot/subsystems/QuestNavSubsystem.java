@@ -8,6 +8,8 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.networktables.BooleanPublisher;
+import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -20,10 +22,10 @@ public class QuestNavSubsystem extends SubsystemBase {
   private final QuestNav questNav = new QuestNav();
   private final VisionMeasurementConsumer visionMeasurementConsumer;
 
-  private final StructPublisher<Pose3d> questPublisher = NetworkTableInstance.getDefault()
-      .getTable("Quest-Robot")
-      .getStructTopic("Quest Robot Pose", Pose3d.struct)
+  private final NetworkTable questTable = NetworkTableInstance.getDefault().getTable("Quest-Robot");
+  private final StructPublisher<Pose3d> questPublisher = questTable.getStructTopic("Quest Robot Pose", Pose3d.struct)
       .publish();
+  private final BooleanPublisher trackingPublisher = questTable.getBooleanTopic("Quest Tracking").publish();
 
   public QuestNavSubsystem(VisionMeasurementConsumer addVisionMeasurement) {
     this.visionMeasurementConsumer = addVisionMeasurement;
@@ -33,6 +35,7 @@ public class QuestNavSubsystem extends SubsystemBase {
   public void periodic() {
     questNav.commandPeriodic();
 
+    trackingPublisher.set(questNav.isTracking());
     var frames = questNav.getAllUnreadPoseFrames();
     // Iterate backwards through frames to find the most recent valid frame
     for (int i = frames.length - 1; i >= 0; i--) {
