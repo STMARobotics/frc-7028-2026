@@ -4,6 +4,7 @@ import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.Seconds;
 
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Distance;
@@ -37,6 +38,10 @@ public class BallisticCalculator {
     return new Translation2d(-translation.getY(), translation.getX());
   }
 
+  Translation3d convert3D(Translation2d translation, double defaultZ) {
+    return new Translation3d(translation.getX(), translation.getY(), defaultZ);
+  }
+
   public Time calculateBallisticTimeToTarget(
       Distance fieldDistanceToTarget,
       Distance heightDifferential,
@@ -48,7 +53,7 @@ public class BallisticCalculator {
     return Seconds.of((v_y + Math.sqrt(Math.pow(v_y, 2) + 2 * g * d_y)) / g);
   };
 
-  public Translation2d calculateShooterTangentialVelocity(BallisticRobotState robot, BallisticShooter shooter) {
+  public Translation2d calculateMuzzelTangentialVelocity(BallisticRobotState robot, BallisticShooter shooter) {
 
     ChassisSpeeds robotChassisSpeeds = robot.getChasisSpeeds();
 
@@ -59,6 +64,30 @@ public class BallisticCalculator {
         .plus(
             calculatePerpendicular(shooter.getMuzzlePositionWRTShooter().toTranslation2d())
                 .times(robotOmegaRadians + shooterOmegaRadians));
-
   };
+
+  public record SOTOMResult(double speed, Angle yaw, Angle pitch) {
+  };
+
+  public SOTOMResult calculateTarget(
+      Translation2d targetPosition,
+      BallisticRobotState robot,
+      BallisticShooter shooter,
+      Distance targetHeight) {
+    Translation2d shotVelocity = robotState.getFieldVelocity().plus(calculateMuzzelTangentialVelocity(robot, shooter));
+    Translation2d robotPosition = robotState.getFieldPosition();
+
+    Distance distanceToTarget = Meters.of(targetPosition.getDistance(robotPosition));
+    InterpolatedPV targetPV = this.interpolator.apply(distanceToTarget);
+
+    Angle interpolatedPitch = targetPV.angle;
+    Double interpolatedShotVelocity = targetPV.velocity;
+
+    Time timeToTarget = calculateBallisticTimeToTarget(distanceToTarget, targetHeight, targetPV);
+
+    Translation3d probalisticShotPosition = robotState.getFieldPosition3d()
+        .plus(convert3D(robotPosition, interpolatedShotVelocity * Math.sin(interpolatedPitch.baseUnitMagnitude())))
+        .times(timeToTarget.baseUnitMagnitude());
+  }
+
 }
