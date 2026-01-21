@@ -36,6 +36,7 @@ public class BallisticRobotState {
     this.fieldPositionSupplier = fieldPositionSupplier;
     this.yawSupplier = yawSupplier;
     this.BallisticShooters = ballisticShooters;
+
   }
 
   public Translation2d getFieldPosition() {
@@ -49,6 +50,10 @@ public class BallisticRobotState {
 
   public ChassisSpeeds getChasisSpeeds() {
     return this.chassisSpeedsSupplier.get();
+  }
+
+  public Double getOmega() {
+    return this.getChasisSpeeds().omegaRadiansPerSecond;
   }
 
   public Translation2d getFieldVelocity() {
