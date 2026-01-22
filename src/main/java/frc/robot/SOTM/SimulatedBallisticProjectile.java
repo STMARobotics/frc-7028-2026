@@ -1,4 +1,4 @@
-package frc.robot.SOTOM;
+package frc.robot.SOTM;
 
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.units.measure.Mass;

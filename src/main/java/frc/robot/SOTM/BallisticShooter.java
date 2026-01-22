@@ -1,4 +1,4 @@
-package frc.robot.SOTOM;
+package frc.robot.SOTM;
 
 import static edu.wpi.first.units.Units.Radians;
 
