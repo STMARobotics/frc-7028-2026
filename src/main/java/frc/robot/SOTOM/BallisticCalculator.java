@@ -42,7 +42,7 @@ public class BallisticCalculator {
     return new Translation3d(translation.getX(), translation.getY(), defaultZ);
   }
 
-  public Time calculateBallisticTimeToTarget(
+  public Time calculateBallisticTimeToTarget_OLD(
       Distance fieldDistanceToTarget,
       Distance heightDifferential,
       InterpolatedPV shotParameters) {
@@ -52,6 +52,14 @@ public class BallisticCalculator {
     double g = 9.81;
     return Seconds.of((v_y + Math.sqrt(Math.pow(v_y, 2) + 2 * g * d_y)) / g);
   };
+
+  public Time calculateBallisticTimeToTarget(
+    Distance fieldDistanceToTarget,
+    InterpolatedPV shotParameters) {
+      return Seconds.of(fieldDistanceToTarget.div(shotParameters.velocity).magnitude());
+    };
+
+  }
 
   public Translation2d calculateMuzzelTangentialVelocity(BallisticRobotState robot, BallisticShooter shooter) {
 
@@ -86,8 +94,9 @@ public class BallisticCalculator {
     Time timeToTarget = calculateBallisticTimeToTarget(distanceToTarget, targetHeight, targetPV);
 
     Translation3d probalisticShotPosition = robotState.getFieldPosition3d()
-        .plus(convert3D(robotPosition, interpolatedShotVelocity * Math.sin(interpolatedPitch.baseUnitMagnitude())))
+        .plus(convert3D(shotVelocity, interpolatedShotVelocity * Math.sin(interpolatedPitch.baseUnitMagnitude())))
         .times(timeToTarget.baseUnitMagnitude());
+
   }
 
 }
