@@ -22,9 +22,25 @@ public class BallisticCalculator {
   public BallisticRobotState robotState;
   private Function<Double, InterpolatedPV> interpolator;
 
-  BallisticCalculator(BallisticRobotState ballisticRobotState, Function<Double, InterpolatedPV> interpolator) {
+  public Translation2d targetPosition;
+  public Distance targetHeight;
+
+  public Time deltaTimeConvergencThreshold;
+  public int maxConvergenceIterationCycleCount;
+
+  BallisticCalculator(
+      BallisticRobotState ballisticRobotState,
+      Function<Double, InterpolatedPV> interpolator,
+      Translation2d targetPosition,
+      Distance targetHeight,
+      Time deltaTimeConvergenceThreshold,
+      int maxConvergenceIterationCycleCount) {
     this.robotState = ballisticRobotState;
     this.interpolator = interpolator;
+    this.targetPosition = targetPosition;
+    this.targetHeight = targetHeight;
+    this.deltaTimeConvergencThreshold = deltaTimeConvergenceThreshold;
+    this.maxConvergenceIterationCycleCount = maxConvergenceIterationCycleCount;
   };
 
   public Distance calculateFieldDistanceToTarget(
@@ -53,13 +69,9 @@ public class BallisticCalculator {
     return Seconds.of((v_y + Math.sqrt(Math.pow(v_y, 2) + 2 * g * d_y)) / g);
   };
 
-  public Time calculateBallisticTimeToTarget(
-    Distance fieldDistanceToTarget,
-    InterpolatedPV shotParameters) {
-      return Seconds.of(fieldDistanceToTarget.div(shotParameters.velocity).magnitude());
-    };
-
-  }
+  public Time calculateBallisticTimeToTarget(Distance fieldDistanceToTarget, InterpolatedPV shotParameters) {
+    return Seconds.of(fieldDistanceToTarget.div(shotParameters.velocity).magnitude());
+  };
 
   public Translation2d calculateMuzzelTangentialVelocity(BallisticRobotState robot, BallisticShooter shooter) {
 
@@ -76,27 +88,4 @@ public class BallisticCalculator {
 
   public record SOTOMResult(double speed, Angle yaw, Angle pitch) {
   };
-
-  public SOTOMResult calculateTarget(
-      Translation2d targetPosition,
-      BallisticRobotState robot,
-      BallisticShooter shooter,
-      Distance targetHeight) {
-    Translation2d shotVelocity = robotState.getFieldVelocity().plus(calculateMuzzelTangentialVelocity(robot, shooter));
-    Translation2d robotPosition = robotState.getFieldPosition();
-
-    Distance distanceToTarget = Meters.of(targetPosition.getDistance(robotPosition));
-    InterpolatedPV targetPV = this.interpolator.apply(distanceToTarget);
-
-    Angle interpolatedPitch = targetPV.angle;
-    Double interpolatedShotVelocity = targetPV.velocity;
-
-    Time timeToTarget = calculateBallisticTimeToTarget(distanceToTarget, targetHeight, targetPV);
-
-    Translation3d probalisticShotPosition = robotState.getFieldPosition3d()
-        .plus(convert3D(shotVelocity, interpolatedShotVelocity * Math.sin(interpolatedPitch.baseUnitMagnitude())))
-        .times(timeToTarget.baseUnitMagnitude());
-
-  }
-
 }
