@@ -34,6 +34,7 @@ public class BallisticShotState {
     this.exitPosition = this.shooter.getMuzzlePositionWTRField().toTranslation2d();
     this.active = true;
     this.mayProceed = true;
+    this.iterations = 0;
   };
 
   public void step(boolean isInstantiating) {
@@ -46,7 +47,7 @@ public class BallisticShotState {
     this.projectedPosition = this.exitPosition
         .plus(this.exitVelocity.times(this.projectedShotTime.baseUnitMagnitude()));
     if (!isInstantiating)
-      this.iterations = 0;
+      this.iterations++;
     this.mayProceed = this.iterations <= this.calculator.maxConvergenceIterationCycleCount;
     this.deltaTime = this.projectedShotTime.minus(timePrior);
     this.successfullyConverged = (this.deltaTime.abs(Seconds) <= this.calculator.deltaTimeConvergencThreshold
