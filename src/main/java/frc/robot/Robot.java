@@ -5,50 +5,49 @@
 package frc.robot;
 
 import com.ctre.phoenix6.HootAutoReplay;
-import edu.wpi.first.math.util.Units;
+import com.ctre.phoenix6.SignalLogger;
+import edu.wpi.first.epilogue.Epilogue;
+import edu.wpi.first.epilogue.Logged;
+import edu.wpi.first.epilogue.Logged.Strategy;
+import edu.wpi.first.net.WebServer;
+import edu.wpi.first.wpilibj.DataLogManager;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 
+@Logged(strategy = Strategy.OPT_IN)
 public class Robot extends TimedRobot {
   private Command m_autonomousCommand;
 
+  @Logged
   private final RobotContainer m_robotContainer;
 
   /* log and replay timestamp and joystick data */
   private final HootAutoReplay m_timeAndJoystickReplay = new HootAutoReplay().withTimestampReplay()
       .withJoystickReplay();
 
-  private final boolean kUseLimelight = false;
-
   public Robot() {
     m_robotContainer = new RobotContainer();
+
+    SignalLogger.start(); // CTRE logger
+    DataLogManager.start(); // WPILib logger
+    DriverStation.startDataLog(DataLogManager.getLog()); // Record both DS control and joystick data
+    Epilogue.bind(this);
+  }
+
+  @Override
+  public void robotInit() {
+    // Webserver for Elastic layout
+    // See https://frc-elastic.gitbook.io/docs/additional-features-and-references/remote-layout-downloading
+    WebServer.start(5800, Filesystem.getDeployDirectory().getPath());
   }
 
   @Override
   public void robotPeriodic() {
     m_timeAndJoystickReplay.update();
     CommandScheduler.getInstance().run();
-
-    /*
-     * This example of adding Limelight is very simple and may not be sufficient for on-field use.
-     * Users typically need to provide a standard deviation that scales with the distance to target
-     * and changes with number of tags available.
-     *
-     * This example is sufficient to show that vision integration is possible, though exact implementation
-     * of how to use vision should be tuned per-robot and to the team's specification.
-     */
-    if (kUseLimelight) {
-      var driveState = m_robotContainer.drivetrain.getState();
-      double headingDeg = driveState.Pose.getRotation().getDegrees();
-      double omegaRps = Units.radiansToRotations(driveState.Speeds.omegaRadiansPerSecond);
-
-      LimelightHelpers.SetRobotOrientation("limelight", headingDeg, 0, 0, 0, 0, 0);
-      var llMeasurement = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2("limelight");
-      if (llMeasurement != null && llMeasurement.tagCount > 0 && Math.abs(omegaRps) < 2.0) {
-        m_robotContainer.drivetrain.addVisionMeasurement(llMeasurement.pose, llMeasurement.timestampSeconds);
-      }
-    }
   }
 
   @Override

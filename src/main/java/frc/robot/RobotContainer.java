@@ -4,97 +4,139 @@
 
 package frc.robot;
 
-import static edu.wpi.first.units.Units.*;
+import static edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction.kForward;
+import static edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction.kReverse;
+import static frc.robot.Constants.TeleopDriveConstants.MAX_TELEOP_ANGULAR_VELOCITY;
+import static frc.robot.Constants.TeleopDriveConstants.MAX_TELEOP_VELOCITY;
 
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
+import com.ctre.phoenix6.swerve.SwerveModule.SteerRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.commands.FollowPathCommand;
-import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.epilogue.Logged;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
-import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
+import frc.robot.Constants.OdometryContants;
+import frc.robot.Constants.QuestNavConstants;
+import frc.robot.controls.ControlBindings;
+import frc.robot.controls.JoystickControlBindings;
+import frc.robot.controls.XBoxControlBindings;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
+import frc.robot.subsystems.QuestNavSubsystem;
 
+@Logged(strategy = Logged.Strategy.OPT_IN)
 public class RobotContainer {
-  private double MaxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top
-                                                                                      // speed
-  private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second max
-                                                                                    // angular velocity
-
   /* Setting up bindings for necessary control of the swerve drive platform */
-  private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric().withDeadband(MaxSpeed * 0.1)
-      .withRotationalDeadband(MaxAngularRate * 0.1) // Add a 10% deadband
-      .withDriveRequestType(DriveRequestType.OpenLoopVoltage); // Use open-loop control for drive motors
+  private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
+      .withDeadband(MAX_TELEOP_VELOCITY.times(0.05))
+      .withRotationalDeadband(MAX_TELEOP_ANGULAR_VELOCITY.times(0.05))
+      .withDriveRequestType(DriveRequestType.Velocity)
+      .withSteerRequestType(SteerRequestType.MotionMagicExpo);
   private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
-  private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
-  private final SwerveRequest.RobotCentric forwardStraight = new SwerveRequest.RobotCentric()
-      .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
 
-  private final Telemetry logger = new Telemetry(MaxSpeed);
+  private final DrivetrainTelemetry drivetrainTelemetry = new DrivetrainTelemetry();
 
-  private final CommandXboxController joystick = new CommandXboxController(0);
+  // Create the drivetrain subsystem here instead of using TunerConstants.createDrivetrain() to set standard deviations
+  // without editing generated TunerConstants file
+  public final CommandSwerveDrivetrain drivetrain = new CommandSwerveDrivetrain(
+      TunerConstants.DrivetrainConstants,
+      0,
+      OdometryContants.STATE_STD_DEVS,
+      QuestNavConstants.QUESTNAV_STD_DEVS,
+      TunerConstants.FrontLeft,
+      TunerConstants.FrontRight,
+      TunerConstants.BackLeft,
+      TunerConstants.BackRight);
 
-  public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
+  private final QuestNavSubsystem questNavSubsystem = new QuestNavSubsystem(drivetrain::addVisionMeasurement);
 
   /* Path follower */
   private final SendableChooser<Command> autoChooser;
 
+  private final ControlBindings controlBindings;
+
   public RobotContainer() {
-    autoChooser = AutoBuilder.buildAutoChooser("Tests");
+    // Configure control binding scheme
+    if (DriverStation.getJoystickIsXbox(0) || Robot.isSimulation()) {
+      controlBindings = new XBoxControlBindings();
+    } else {
+      controlBindings = new JoystickControlBindings();
+    }
+
+    // Configure and populate the auto command chooser with autos from PathPlanner
+    autoChooser = AutoBuilder.buildAutoChooser();
     SmartDashboard.putData("Auto Mode", autoChooser);
 
     configureBindings();
 
     // Warmup PathPlanner to avoid Java pauses
-    FollowPathCommand.warmupCommand().schedule();
+    CommandScheduler.getInstance().schedule(FollowPathCommand.warmupCommand());
+
+    populateSysIdDashboard();
   }
 
   private void configureBindings() {
-    // Note that X is defined as forward according to WPILib convention,
-    // and Y is defined as to the left according to WPILib convention.
+    // Default drivetrain command for teleop control
     drivetrain.setDefaultCommand(
-        // Drivetrain will execute this command periodically
         drivetrain.applyRequest(
-            () -> drive.withVelocityX(-joystick.getLeftY() * MaxSpeed) // Drive forward with negative Y (forward)
-                .withVelocityY(-joystick.getLeftX() * MaxSpeed) // Drive left with negative X (left)
-                .withRotationalRate(-joystick.getRightX() * MaxAngularRate) // Drive counterclockwise with negative X
-                                                                            // (left)
-        ));
+            () -> drive.withVelocityX(controlBindings.translationX().get())
+                .withVelocityY(controlBindings.translationY().get())
+                .withRotationalRate(controlBindings.omega().get())));
+
+    controlBindings.wheelsToX().ifPresent(trigger -> trigger.whileTrue(drivetrain.applyRequest(() -> brake)));
+    controlBindings.seedFieldCentric().ifPresent(trigger -> trigger.onTrue(Commands.runOnce(() -> {
+      Pose2d robotCurrentPose = drivetrain.getState().Pose;
+      Pose2d robotNewPose = new Pose2d(robotCurrentPose.getTranslation(), drivetrain.getOperatorForwardDirection());
+      questNavSubsystem.setPose(robotNewPose);
+      drivetrain.resetPose(robotNewPose);
+    })));
 
     // Idle while the robot is disabled. This ensures the configured
     // neutral mode is applied to the drive motors while disabled.
-    final var idle = new SwerveRequest.Idle();
+    final SwerveRequest idle = new SwerveRequest.Idle();
     RobotModeTriggers.disabled().whileTrue(drivetrain.applyRequest(() -> idle).ignoringDisable(true));
 
-    joystick.a().whileTrue(drivetrain.applyRequest(() -> brake));
-    joystick.b()
-        .whileTrue(
-            drivetrain.applyRequest(
-                () -> point.withModuleDirection(new Rotation2d(-joystick.getLeftY(), -joystick.getLeftX()))));
-
-    joystick.povUp().whileTrue(drivetrain.applyRequest(() -> forwardStraight.withVelocityX(0.5).withVelocityY(0)));
-    joystick.povDown().whileTrue(drivetrain.applyRequest(() -> forwardStraight.withVelocityX(-0.5).withVelocityY(0)));
-
-    // Run SysId routines when holding back/start and X/Y.
-    // Note that each routine should be run exactly once in a single log.
-    joystick.back().and(joystick.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
-    joystick.back().and(joystick.x()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
-    joystick.start().and(joystick.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
-    joystick.start().and(joystick.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
-
-    // Reset the field-centric heading on left bumper press.
-    joystick.leftBumper().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
-
-    drivetrain.registerTelemetry(logger::telemeterize);
+    drivetrain.registerTelemetry(drivetrainTelemetry::telemeterize);
   }
 
   public Command getAutonomousCommand() {
     /* Run the path selected from the auto chooser */
     return autoChooser.getSelected();
+  }
+
+  /** Populate the SysID dashboard controls with commands for system identification */
+  public void populateSysIdDashboard() {
+    // Drive
+    SmartDashboard.putData("Drive Quasi Fwd", drivetrain.sysIdTranslationQuasiCommand(kForward));
+    SmartDashboard.putData("Drive Quasi Rev", drivetrain.sysIdTranslationQuasiCommand(kReverse));
+    SmartDashboard.putData("Drive Dynam Fwd", drivetrain.sysIdTranslationDynamCommand(kForward));
+    SmartDashboard.putData("Drive Dynam Rev", drivetrain.sysIdTranslationDynamCommand(kReverse));
+
+    // Drive TorqueFOC
+    SmartDashboard.putData("Drive Torque Quasi Fwd", drivetrain.sysIdTranslationQuasiTorqueCommand(kForward));
+    SmartDashboard.putData("Drive Torque Quasi Rev", drivetrain.sysIdTranslationQuasiTorqueCommand(kReverse));
+    SmartDashboard.putData("Drive Torque Dynam Fwd", drivetrain.sysIdTranslationDynamTorqueCommand(kForward));
+    SmartDashboard.putData("Drive Torque Dynam Rev", drivetrain.sysIdTranslationDynamTorqueCommand(kReverse));
+
+    // Steer
+    SmartDashboard.putData("Steer Quasi Fwd", drivetrain.sysIdSteerQuasiCommand(kForward));
+    SmartDashboard.putData("Steer Quasi Rev", drivetrain.sysIdSteerQuasiCommand(kReverse));
+    SmartDashboard.putData("Steer Dynam Fwd", drivetrain.sysIdSteerDynamCommand(kForward));
+    SmartDashboard.putData("Steer Dynam Rev", drivetrain.sysIdSteerDynamCommand(kReverse));
+
+    // Rotation
+    SmartDashboard.putData("Rotate Quasi Fwd", drivetrain.sysIdRotationQuasiCommand(kForward));
+    SmartDashboard.putData("Rotate Quasi Rev", drivetrain.sysIdRotationQuasiCommand(kReverse));
+    SmartDashboard.putData("Rotate Dynam Fwd", drivetrain.sysIdRotationDynamCommand(kForward));
+    SmartDashboard.putData("Rotate Dynam Rev", drivetrain.sysIdRotationDynamCommand(kReverse));
+
   }
 }
