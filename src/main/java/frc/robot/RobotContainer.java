@@ -93,15 +93,15 @@ public class RobotContainer {
 
     controlBindings.wheelsToX().ifPresent(trigger -> trigger.whileTrue(drivetrain.applyRequest(() -> brake)));
     controlBindings.seedFieldCentric().ifPresent(trigger -> trigger.onTrue(Commands.runOnce(() -> {
-      var robotCurrentPose = drivetrain.getState().Pose;
-      var robotNewPose = new Pose2d(robotCurrentPose.getTranslation(), drivetrain.getOperatorForwardDirection());
+      Pose2d robotCurrentPose = drivetrain.getState().Pose;
+      Pose2d robotNewPose = new Pose2d(robotCurrentPose.getTranslation(), drivetrain.getOperatorForwardDirection());
       questNavSubsystem.setPose(robotNewPose);
       drivetrain.resetPose(robotNewPose);
     })));
 
     // Idle while the robot is disabled. This ensures the configured
     // neutral mode is applied to the drive motors while disabled.
-    final var idle = new SwerveRequest.Idle();
+    final SwerveRequest idle = new SwerveRequest.Idle();
     RobotModeTriggers.disabled().whileTrue(drivetrain.applyRequest(() -> idle).ignoringDisable(true));
 
     drivetrain.registerTelemetry(drivetrainTelemetry::telemeterize);

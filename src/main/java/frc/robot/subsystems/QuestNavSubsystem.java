@@ -14,6 +14,7 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.FieldConstants;
+import gg.questnav.questnav.PoseFrame;
 import gg.questnav.questnav.QuestNav;
 
 /** Subsystem for the QuestNav vision system */
@@ -36,13 +37,14 @@ public class QuestNavSubsystem extends SubsystemBase {
     questNav.commandPeriodic();
 
     trackingPublisher.set(questNav.isTracking());
-    var frames = questNav.getAllUnreadPoseFrames();
+
+    PoseFrame[] frames = questNav.getAllUnreadPoseFrames();
     // Iterate backwards through frames to find the most recent valid frame
     for (int i = frames.length - 1; i >= 0; i--) {
-      var frame = frames[i];
+      PoseFrame frame = frames[i];
       if (frame.isTracking()) {
-        var questPose = frame.questPose3d();
-        var robotPose = questPose.transformBy(ROBOT_TO_QUEST.inverse());
+        Pose3d questPose = frame.questPose3d();
+        Pose3d robotPose = questPose.transformBy(ROBOT_TO_QUEST.inverse());
 
         // Make sure the pose is inside the field
         if (FieldConstants.isValidFieldPosition(robotPose.getTranslation())) {
@@ -63,7 +65,7 @@ public class QuestNavSubsystem extends SubsystemBase {
    * @param robotPose robot pose
    */
   public void setPose(Pose3d robotPose) {
-    var questPose = robotPose.transformBy(ROBOT_TO_QUEST);
+    Pose3d questPose = robotPose.transformBy(ROBOT_TO_QUEST);
     questNav.setPose(questPose);
   }
 
