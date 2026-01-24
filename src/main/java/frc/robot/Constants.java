@@ -82,4 +82,33 @@ public class Constants {
     );
   }
 
+  /**
+   * Constants for vision processing
+   */
+  public static class VisionConstants {
+    public static final String[] APRILTAG_CAMERA_NAMES = { "figure", "these" , "out"};
+    // TODO - Set this once the robot is designed
+    public static final Transform3d[] ROBOT_TO_CAMERA_TRANSFORMS = new Transform3d[] {
+        new Transform3d(
+            new Translation3d(inchesToMeters(0), inchesToMeters(0), inchesToMeters(0)),
+            new Rotation3d(0, 0, degreesToRadians(0))),
+        new Transform3d(
+            new Translation3d(inchesToMeters(0), inchesToMeters(0), inchesToMeters(0)),
+            new Rotation3d(0, 0, degreesToRadians(0))),
+        new Transform3d(
+            new Translation3d(inchesToMeters(0), inchesToMeters(0), inchesToMeters(0)),
+            new Rotation3d(0, degreesToRadians(0), degreesToRadians(0))) };
+
+    // The standard deviations of our vision estimated poses, which affect correction rate
+    public static final Matrix<N3, N1> SINGLE_TAG_STD_DEVS = VecBuilder.fill(2, 2, 8);
+    public static final Matrix<N3, N1> MULTI_TAG_STD_DEVS = VecBuilder.fill(0.5, 0.5, 1);
+
+    /**
+     * Minimum target ambiguity. Targets with higher ambiguity will be discarded. Not appliable when
+     * multiple tags are in view in a single camera.
+     */
+    public static final double APRILTAG_AMBIGUITY_THRESHOLD = 0.2;
+    public static final Distance SINGLE_TAG_DISTANCE_THRESHOLD = Meters.of(4.5);
+  }
+
 }
