@@ -1,5 +1,7 @@
 package frc.robot;
 
+import static edu.wpi.first.math.util.Units.degreesToRadians;
+import static edu.wpi.first.math.util.Units.inchesToMeters;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 
@@ -86,7 +88,7 @@ public class Constants {
    * Constants for vision processing
    */
   public static class VisionConstants {
-    public static final String[] APRILTAG_CAMERA_NAMES = { "figure", "these" , "out"};
+    public static final String[] APRILTAG_CAMERA_NAMES = { "figure", "these", "out" };
     // TODO - Set this once the robot is designed
     public static final Transform3d[] ROBOT_TO_CAMERA_TRANSFORMS = new Transform3d[] {
         new Transform3d(
