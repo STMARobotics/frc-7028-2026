@@ -82,4 +82,10 @@ public class Constants {
     );
   }
 
+  public static class TurretConstants {
+    /** Stator current limit in amps */
+    public static final int YAW_STATOR_CURRENT_LIMIT = 40;
+    public static final int YAW_SUPPLY_CURRENT_LIMIT = 30;
+  }
+
 }
