@@ -1,9 +1,14 @@
 package frc.robot;
 
+import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 
 import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.configs.MotionMagicConfigs;
+import com.ctre.phoenix6.configs.SlotConfigs;
+import com.ctre.phoenix6.signals.GravityTypeValue;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Rotation3d;
@@ -12,12 +17,17 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearVelocity;
 import frc.robot.generated.TunerConstants;
 
-public class Constants {
+public final class Constants {
+
+  private Constants() {
+  } // prevent instantiation
 
   public static final String CANIVORE_BUS_NAME = "canivore";
   public static final CANBus CANIVORE_BUS = new CANBus(CANIVORE_BUS_NAME);
@@ -62,7 +72,7 @@ public class Constants {
   /**
    * Constants for odometry state estimation
    */
-  public static class OdometryContants {
+  public static class OdometryConstants {
     // Trust the physics/encoders moderately
     public static final Matrix<N3, N1> STATE_STD_DEVS = VecBuilder.fill(
         0.1, // X: 10cm error per meter (Trust wheels moderately)
@@ -73,7 +83,7 @@ public class Constants {
 
   public static class QuestNavConstants {
     // TODO - Set this once the robot is designed
-    public static Transform3d ROBOT_TO_QUEST = new Transform3d(new Translation3d(), new Rotation3d());
+    public static final Transform3d ROBOT_TO_QUEST = new Transform3d(new Translation3d(), new Rotation3d());
 
     public static Matrix<N3, N1> QUESTNAV_STD_DEVS = VecBuilder.fill(
         0.03, // X: Trust Quest to within 3cm (Trust more than odometry)
@@ -82,10 +92,52 @@ public class Constants {
     );
   }
 
+  /**
+   * Constants for the turret subsystem
+   */
   public static class TurretConstants {
-    /** Stator current limit in amps */
-    public static final int YAW_STATOR_CURRENT_LIMIT = 100;
-    public static final int YAW_SUPPLY_CURRENT_LIMIT = 40;
-  }
+    public static final int YAW_MOTOR_ID = 25;
+    public static final int PITCH_MOTOR_ID = 26;
 
+    public static final Current PITCH_STATOR_CURRENT_LIMIT = Amps.of(40);
+    public static final Current PITCH_SUPPLY_CURRENT_LIMIT = Amps.of(30);
+
+    public static final Current YAW_STATOR_CURRENT_LIMIT = Amps.of(100);
+    public static final Current YAW_SUPPLY_CURRENT_LIMIT = Amps.of(40);
+
+    public static final double YAW_ROTOR_TO_SENSOR_RATIO = 1.0; // placeholder
+    public static final double PITCH_ROTOR_TO_SENSOR_RATIO = 1.0; // placeholder
+
+    public static final Angle YAW_LIMIT_FORWARD = Rotations.of(0.5); // placeholder (~180deg)
+    public static final Angle YAW_LIMIT_REVERSE = Rotations.of(-0.5); // placeholder
+
+    // TODO: Tune PID values
+    public static final SlotConfigs YAW_SLOT_CONFIGS = new SlotConfigs().withKP(0.0)
+        .withKI(0.0)
+        .withKD(0.0)
+        .withKS(0.0)
+        .withKV(0.5)
+        .withKA(0.0);
+
+    public static final MotionMagicConfigs YAW_MOTION_MAGIC_CONFIGS = new MotionMagicConfigs()
+        .withMotionMagicAcceleration(1.0) // placeholder
+        .withMotionMagicCruiseVelocity(1.0); // placeholder
+
+    public static final Angle PITCH_LIMIT_FORWARD = Rotations.of(0.05); // placeholder
+    public static final Angle PITCH_LIMIT_REVERSE = Rotations.of(-0.02); // placeholder
+
+    // TODO: Tune PID values
+    public static final SlotConfigs PITCH_SLOT_CONFIGS = new SlotConfigs().withKP(0.0)
+        .withKI(0.0)
+        .withKD(0.0)
+        .withKS(0.0)
+        .withKV(0.0)
+        .withKA(0.0)
+        .withKG(0.0)
+        .withGravityType(GravityTypeValue.Arm_Cosine);
+
+    public static final MotionMagicConfigs PITCH_MOTION_MAGIC_CONFIGS = new MotionMagicConfigs()
+        .withMotionMagicAcceleration(1.0) // placeholder
+        .withMotionMagicCruiseVelocity(1.0); // placeholder
+  }
 }
