@@ -1,9 +1,11 @@
 package frc.robot;
 
+import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 
 import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.configs.SlotConfigs;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Rotation3d;
@@ -13,6 +15,7 @@ import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearVelocity;
 import frc.robot.generated.TunerConstants;
@@ -82,4 +85,26 @@ public class Constants {
     );
   }
 
+  public static class IntakeConstants {
+    public static final int DEVICE_ID = 0;
+    public static final Current PEAK_FORWARD_CURRENT = Amps.of(0);
+    public static final Current PEAK_REVERSE_CURRENT = PEAK_FORWARD_CURRENT.unaryMinus();
+
+    public static final Current SUPPLY_CURRENT_LIMIT = Amps.of(0);
+
+    public static final SlotConfigs SLOT_CONFIGS = SlotConfigs().withKP(0)
+        .withKI(0.0)
+        .withKD(0.0)
+        .withKS(0.0)
+        .withKV(0.0);
+
+    private static SlotConfigs SlotConfigs() {
+      // TODO Auto-generated method stub
+      throw new UnsupportedOperationException("Unimplemented method 'SlotConfigs'");
+    }
+
+    public static final double SENSOR_TO_MECHANISM_RATIO = 0.0;
+    public static final AngularVelocity INTAKE_VELOCITY = RotationsPerSecond.of(0.0);
+    public static final AngularVelocity REVERSE_VELOCITY = RotationsPerSecond.of(0.0);
+  }
 }
