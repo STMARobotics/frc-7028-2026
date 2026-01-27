@@ -98,6 +98,7 @@ public final class Constants {
   public static class TurretConstants {
     public static final int YAW_MOTOR_ID = 25;
     public static final int PITCH_MOTOR_ID = 26;
+    public static final int PITCH_ENCODER_ID = 30;
 
     public static final Current PITCH_STATOR_CURRENT_LIMIT = Amps.of(40);
     public static final Current PITCH_SUPPLY_CURRENT_LIMIT = Amps.of(30);
@@ -107,6 +108,8 @@ public final class Constants {
 
     public static final double YAW_ROTOR_TO_SENSOR_RATIO = 1.0; // placeholder
     public static final double PITCH_ROTOR_TO_SENSOR_RATIO = 1.0; // placeholder
+
+    public static final Angle PITCH_MAGNETIC_OFFSET = Rotations.of(0.0); // placeholder
 
     public static final Angle YAW_LIMIT_FORWARD = Rotations.of(0.5); // placeholder (~180deg)
     public static final Angle YAW_LIMIT_REVERSE = Rotations.of(-0.5); // placeholder
