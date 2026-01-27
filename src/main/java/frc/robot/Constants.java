@@ -1,5 +1,6 @@
 package frc.robot;
 
+import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 
@@ -13,6 +14,7 @@ import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearVelocity;
 import frc.robot.generated.TunerConstants;
@@ -80,6 +82,13 @@ public class Constants {
           0.03, // Y: Trust Quest to within 3cm
           0.5 // Theta: Trust Quest rotation LESS than Gyro (Trust Pigeon more)
     );
+  }
+
+  public static class SpindexerConstants {
+    public static final int DEVICE_ID_SPINDEXER_MOTOR = 15;
+    public static final Current SPINDEXER_TORQUE_CURRENT_LIMIT = Amps.of(0);
+    public static final Current SPINDEXER_STATOR_CURRENT_LIMIT = Amps.of(0);
+    public static final Current INDEXER_SUPPLY_CURRENT_LIMIT = Amps.of(0);
   }
 
 }
