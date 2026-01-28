@@ -1,0 +1,96 @@
+package frc.robot.subsystems;
+
+import static edu.wpi.first.units.Units.Second;
+import static edu.wpi.first.units.Units.Volts;
+
+import com.ctre.phoenix6.SignalLogger;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.controls.TorqueCurrentFOC;
+import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
+import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.InvertedValue;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
+import frc.robot.Constants;
+
+/**
+ * The is the Subsystem for the Spindexer.
+ */
+public class SpindexerSubsystem extends SubsystemBase {
+
+  private final TalonFX spindexerMotor = new TalonFX(Constants.SpindexerConstants.DEVICE_ID_SPINDEXER_MOTOR);
+  private final VelocityTorqueCurrentFOC spindexerVelocityTorque = new VelocityTorqueCurrentFOC(0.0);
+  private final TorqueCurrentFOC spindexerTorqueControl = new TorqueCurrentFOC(0.0);
+
+  private final SysIdRoutine spindexerSysIdRoutine = new SysIdRoutine(
+      new SysIdRoutine.Config(
+          Volts.of(3.0).per(Second),
+          Volts.of(25),
+          null,
+          state -> SignalLogger.writeString("SysIdSpindexer_State", state.toString())),
+      new SysIdRoutine.Mechanism(
+          amps -> spindexerMotor.setControl(spindexerTorqueControl.withOutput(amps.in(Volts))),
+          null,
+          this));
+
+  /**
+   * Creates a new Subsystem for the Spindexer
+   */
+  public SpindexerSubsystem() {
+    var spinTalonconfig = new TalonFXConfiguration();
+    spinTalonconfig.MotorOutput.withInverted(InvertedValue.Clockwise_Positive);
+    spinTalonconfig.TorqueCurrent
+        .withPeakForwardTorqueCurrent(Constants.SpindexerConstants.SPINDEXER_TORQUE_CURRENT_LIMIT);
+    spinTalonconfig.CurrentLimits.withStatorCurrentLimit(Constants.SpindexerConstants.SPINDEXER_STATOR_CURRENT_LIMIT)
+        .withStatorCurrentLimitEnable(true)
+        .withSupplyCurrentLimit(Constants.SpindexerConstants.INDEXER_SUPPLY_CURRENT_LIMIT)
+        .withSupplyCurrentLimitEnable(true);
+    spindexerMotor.getConfigurator().apply(spinTalonconfig);
+  }
+
+  public Command sysIdSpindexerCommand(Direction direction) {
+    return spindexerSysIdRoutine.dynamic(direction).withName("Spindexer dynam " + direction).finallyDo(this::stop);
+  }
+
+  public Command sysidSpindexerQuasistaticCommand(Direction direction) {
+    return spindexerSysIdRoutine.quasistatic(direction).withName("Spindexer quasi " + direction).finallyDo(this::stop);
+  }
+
+  // Spins the spindexer forward to feed the shooter
+  public void feedShooter() {
+    spindexerVelocityTorque.withVelocity(0.0);
+    spindexerMotor.setControl(spindexerVelocityTorque);
+  }
+
+  // Spins the spindexer backward well intakeing fuel
+  public void intake() {
+    spindexerVelocityTorque.withVelocity(-0.0);
+    spindexerMotor.setControl(spindexerVelocityTorque);
+  }
+
+  // Agitates the spindexer to prevent jams
+  public void agitate() {
+    spindexerVelocityTorque.withVelocity(0.0);
+    spindexerMotor.setControl(spindexerVelocityTorque);
+  }
+
+  // Stops the spindexer
+  public void stop() {
+    spindexerVelocityTorque.withVelocity(0.0);
+    spindexerMotor.setControl(spindexerVelocityTorque);
+  }
+
+  // Uses sensors to determine if the spindexer is empty
+  public boolean isEmpty() {
+    // Placeholder for sensor logic to detect if spindexer is empty
+    throw new UnsupportedOperationException("isEmpty() not implemented yet");
+  }
+
+  // Uses sensors to determine if the spindexer is full
+  public boolean isFull() {
+    // Placeholder for sensor logic to detect if spindexer is full
+    throw new UnsupportedOperationException("isFull() not implemented yet");
+  }
+}
