@@ -36,12 +36,16 @@ import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
 import edu.wpi.first.epilogue.Logged;
-import edu.wpi.first.epilogue.Logged.Strategy;
 import edu.wpi.first.wpilibj.AnalogPotentiometer;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 
-@Logged(strategy = Strategy.OPT_IN)
+/**
+ * Subsystem for controlling the turret's yaw and pitch (hood/shot angle).
+ */
+@Logged
 public class TurretSubsystem extends SubsystemBase {
 
   private final TalonFX yawMotor = new TalonFX(YAW_MOTOR_ID, CANIVORE_BUS_NAME);
@@ -76,6 +80,7 @@ public class TurretSubsystem extends SubsystemBase {
       }, null, this));
 
   public TurretSubsystem() {
+    // Yaw motor configuration
     var yawTalonConfig = new TalonFXConfiguration();
     yawTalonConfig.MotorOutput.withNeutralMode(Brake);
     yawTalonConfig.withSlot0(Slot0Configs.from(YAW_SLOT_CONFIGS));
@@ -90,48 +95,71 @@ public class TurretSubsystem extends SubsystemBase {
         .withReverseSoftLimitThreshold(YAW_LIMIT_REVERSE.in(Rotations));
 
     yawMotor.getConfigurator().apply(yawTalonConfig);
-    yawMotor.getConfigurator().apply(yawTalonConfig);
-    // yawMotor.setControl(new Follower(yawMotor.getDeviceID(), false));
 
+    // Pitch encoder configuration
     var pitchCanCoderConfig = new CANcoderConfiguration();
-    pitchCanCoderConfig.MagnetSensor.MagnetOffset = PITCH_MAGNETIC_OFFSET.in(Rotations);
-    pitchCanCoderConfig.MagnetSensor.SensorDirection = SensorDirectionValue.Clockwise_Positive;
+    pitchCanCoderConfig.MagnetSensor.withMagnetOffset(PITCH_MAGNETIC_OFFSET.in(Rotations))
+        .withSensorDirection(SensorDirectionValue.Clockwise_Positive);
     pitchEncoder.getConfigurator().apply(pitchCanCoderConfig);
 
+    // Pitch motor configuration
     var pitchTalonConfig = new TalonFXConfiguration();
-    pitchTalonConfig.MotorOutput.NeutralMode = Brake;
-    pitchTalonConfig.CurrentLimits.StatorCurrentLimit = PITCH_STATOR_CURRENT_LIMIT.in(Amps);
-    pitchTalonConfig.CurrentLimits.StatorCurrentLimitEnable = true;
-    pitchTalonConfig.CurrentLimits.SupplyCurrentLimit = PITCH_SUPPLY_CURRENT_LIMIT.in(Amps);
-    pitchTalonConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
+    pitchTalonConfig.MotorOutput.withNeutralMode(Brake);
+    pitchTalonConfig.CurrentLimits.withStatorCurrentLimit(PITCH_STATOR_CURRENT_LIMIT.in(Amps))
+        .withStatorCurrentLimitEnable(true)
+        .withSupplyCurrentLimit(PITCH_SUPPLY_CURRENT_LIMIT.in(Amps))
+        .withSupplyCurrentLimitEnable(true);
     pitchTalonConfig.ClosedLoopGeneral.ContinuousWrap = true;
-    pitchTalonConfig.Feedback.RotorToSensorRatio = PITCH_ROTOR_TO_SENSOR_RATIO;
-    pitchTalonConfig.Feedback.FeedbackRemoteSensorID = pitchEncoder.getDeviceID();
-    pitchTalonConfig.Feedback.FeedbackSensorSource = FusedCANcoder;
-    pitchTalonConfig.Slot0 = Slot0Configs.from(PITCH_SLOT_CONFIGS);
-    pitchTalonConfig.MotionMagic = PITCH_MOTION_MAGIC_CONFIGS;
-    pitchTalonConfig.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
-    pitchTalonConfig.SoftwareLimitSwitch.ForwardSoftLimitThreshold = PITCH_LIMIT_FORWARD.in(Rotations);
-    pitchTalonConfig.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
-    pitchTalonConfig.SoftwareLimitSwitch.ReverseSoftLimitThreshold = PITCH_LIMIT_REVERSE.in(Rotations);
+    pitchTalonConfig.Feedback.withRotorToSensorRatio(PITCH_ROTOR_TO_SENSOR_RATIO)
+        .withFeedbackRemoteSensorID(pitchEncoder.getDeviceID())
+        .withFeedbackSensorSource(FusedCANcoder);
+    pitchTalonConfig.withSlot0(Slot0Configs.from(PITCH_SLOT_CONFIGS));
+    pitchTalonConfig.withMotionMagic(PITCH_MOTION_MAGIC_CONFIGS);
+    pitchTalonConfig.SoftwareLimitSwitch.withForwardSoftLimitEnable(true)
+        .withForwardSoftLimitThreshold(PITCH_LIMIT_FORWARD.in(Rotations))
+        .withReverseSoftLimitEnable(true)
+        .withReverseSoftLimitThreshold(PITCH_LIMIT_REVERSE.in(Rotations));
 
     pitchMotor.getConfigurator().apply(pitchTalonConfig);
   }
 
   @Override
   public void periodic() {
+    // Constantly set the turret to the desired angles using motion magic
   }
 
   public void setTurretAngle(double angleDegrees) {
+    // Convert degrees to rotations for yaw control
+    // Sets a variable that motion magic will use to move the turret in periodic()
   }
 
-  public void stopTurret() {
+  public void stop() {
+    // Stop both yaw and pitch motors, set in function just in case periodic() is not called (e-stop)
   }
 
   public double getTurretAngle() {
+    // Return the current yaw angle in degrees
     return 0.0;
   }
 
   public void startAutoTargeting() {
+    // Uses some sort of custom data type that gives it all the info it needs use a math helper class
+    // Updates a variable that motion magic will use in periodic()
+  }
+
+  public Command sysIdYawQuasistaticCommand(Direction direction) {
+    return yawSysIdRoutine.quasistatic(direction).withName("SysId yaw quasi " + direction).finallyDo(this::stop);
+  }
+
+  public Command sysIdYawDynamicCommand(Direction direction) {
+    return yawSysIdRoutine.dynamic(direction).withName("SysId yaw dynamic " + direction).finallyDo(this::stop);
+  }
+
+  public Command sysIdPitchQuasistaticCommand(Direction direction) {
+    return pitchSysIdRoutine.quasistatic(direction).withName("SysId pitch quasi " + direction).finallyDo(this::stop);
+  }
+
+  public Command sysIdPitchDynamicCommand(Direction direction) {
+    return pitchSysIdRoutine.dynamic(direction).withName("SysId pitch dynamic " + direction).finallyDo(this::stop);
   }
 }

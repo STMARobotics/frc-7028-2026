@@ -96,6 +96,7 @@ public final class Constants {
    * Constants for the turret subsystem
    */
   public static class TurretConstants {
+    // TODO: Confirm naming schemes and replace placeholders
     public static final int YAW_MOTOR_ID = 25;
     public static final int PITCH_MOTOR_ID = 26;
     public static final int PITCH_ENCODER_ID = 30;
