@@ -114,6 +114,14 @@ public final class Constants {
 
     public static final Angle YAW_LIMIT_FORWARD = Rotations.of(0.5); // placeholder (~180deg)
     public static final Angle YAW_LIMIT_REVERSE = Rotations.of(-0.5); // placeholder
+    public static final Angle YAW_HOME_ANGLE = Rotations.of(0.0); // placeholder
+
+    public static final Angle PITCH_LIMIT_FORWARD = Rotations.of(0.2); // placeholder
+    public static final Angle PITCH_LIMIT_REVERSE = Rotations.of(-0.1); // placeholder
+    public static final Angle PITCH_HOME_ANGLE = Rotations.of(0.0); // placeholder
+
+    public static final double YAW_POT_LIMIT_FORWARD = 5.0; // placeholder
+    public static final double YAW_POT_LIMIT_REVERSE = 0.0; // placeholder
 
     // TODO: Tune PID values
     public static final SlotConfigs YAW_SLOT_CONFIGS = new SlotConfigs().withKP(0.0)
@@ -126,9 +134,6 @@ public final class Constants {
     public static final MotionMagicConfigs YAW_MOTION_MAGIC_CONFIGS = new MotionMagicConfigs()
         .withMotionMagicAcceleration(1.0) // placeholder
         .withMotionMagicCruiseVelocity(1.0); // placeholder
-
-    public static final Angle PITCH_LIMIT_FORWARD = Rotations.of(0.05); // placeholder
-    public static final Angle PITCH_LIMIT_REVERSE = Rotations.of(-0.02); // placeholder
 
     // TODO: Tune PID values
     public static final SlotConfigs PITCH_SLOT_CONFIGS = new SlotConfigs().withKP(0.0)

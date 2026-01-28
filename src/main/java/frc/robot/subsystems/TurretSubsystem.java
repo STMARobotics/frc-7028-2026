@@ -22,6 +22,8 @@ import static frc.robot.Constants.TurretConstants.YAW_LIMIT_FORWARD;
 import static frc.robot.Constants.TurretConstants.YAW_LIMIT_REVERSE;
 import static frc.robot.Constants.TurretConstants.YAW_MOTION_MAGIC_CONFIGS;
 import static frc.robot.Constants.TurretConstants.YAW_MOTOR_ID;
+import static frc.robot.Constants.TurretConstants.YAW_POT_LIMIT_FORWARD;
+import static frc.robot.Constants.TurretConstants.YAW_POT_LIMIT_REVERSE;
 import static frc.robot.Constants.TurretConstants.YAW_SLOT_CONFIGS;
 import static frc.robot.Constants.TurretConstants.YAW_STATOR_CURRENT_LIMIT;
 import static frc.robot.Constants.TurretConstants.YAW_SUPPLY_CURRENT_LIMIT;
@@ -36,6 +38,7 @@ import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
 import edu.wpi.first.epilogue.Logged;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj.AnalogPotentiometer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -125,23 +128,51 @@ public class TurretSubsystem extends SubsystemBase {
 
   @Override
   public void periodic() {
-    // Constantly set the turret to the desired angles using motion magic
+    yawMotor.setControl(yawControl);
+    pitchMotor.setControl(pitchControl);
   }
 
+  /**
+   * Sets the turret's yaw angle.
+   *
+   * @param angleDegrees The desired turret angle in degrees.
+   *          -180 to 180, where 0 is forward, positive is clockwise looking from above.
+   */
   public void setTurretAngle(double angleDegrees) {
-    // Convert degrees to rotations for yaw control
-    // Sets a variable that motion magic will use to move the turret in periodic()
+    // Sets a variable that motion magic or something will use to move the turret in periodic()
   }
 
+  /**
+   * Stops both yaw and pitch motors, set in function just in case periodic() is not called (e-stop)
+   */
   public void stop() {
-    // Stop both yaw and pitch motors, set in function just in case periodic() is not called (e-stop)
+    yawMotor.setControl(new VoltageOut(0.0).withEnableFOC(true));
+    pitchMotor.setControl(new VoltageOut(0.0).withEnableFOC(true));
   }
 
+  /**
+   * Gets the current turret yaw angle.
+   *
+   * @return The current turret angle in degrees.
+   *         -180 to 180, where 0 is forward, positive is clockwise looking from above.
+   */
   public double getTurretAngle() {
-    // Return the current yaw angle in degrees
-    return 0.0;
+    var potValue = yawPotentiometer.get();
+    double t = (YAW_POT_LIMIT_FORWARD != YAW_POT_LIMIT_REVERSE)
+        ? (potValue - YAW_POT_LIMIT_REVERSE) / (YAW_POT_LIMIT_FORWARD - YAW_POT_LIMIT_REVERSE)
+        : 0.0;
+    t = MathUtil.clamp(t, 0.0, 1.0);
+
+    double minRot = YAW_LIMIT_REVERSE.in(Rotations);
+    double maxRot = YAW_LIMIT_FORWARD.in(Rotations);
+    double rot = MathUtil.interpolate(minRot, maxRot, t);
+
+    return rot * 360.0;
   }
 
+  /**
+   * Starts auto-targeting mode for the turret.
+   */
   public void startAutoTargeting() {
     // Uses some sort of custom data type that gives it all the info it needs use a math helper class
     // Updates a variable that motion magic will use in periodic()
