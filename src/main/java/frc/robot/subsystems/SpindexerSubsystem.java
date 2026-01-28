@@ -15,6 +15,9 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Constants;
 
+/**
+ * The is the Subsystem for the Spindexer.
+ */
 public class SpindexerSubsystem extends SubsystemBase {
 
   private final TalonFX spindexerMotor = new TalonFX(Constants.SpindexerConstants.DEVICE_ID_SPINDEXER_MOTOR);
@@ -32,6 +35,9 @@ public class SpindexerSubsystem extends SubsystemBase {
           null,
           this));
 
+  /**
+   * Creates a new Subsystem for the Spindexer
+   */
   public SpindexerSubsystem() {
     var spinTalonconfig = new TalonFXConfiguration();
     spinTalonconfig.MotorOutput.withInverted(InvertedValue.Clockwise_Positive);
@@ -52,31 +58,37 @@ public class SpindexerSubsystem extends SubsystemBase {
     return spindexerSysIdRoutine.quasistatic(direction).withName("Spindexer quasi " + direction).finallyDo(this::stop);
   }
 
+  // Spins the spindexer forward to feed the shooter
   public void feedShooter() {
     spindexerVelocityTorque.withVelocity(0.0);
     spindexerMotor.setControl(spindexerVelocityTorque);
   }
 
+  // Spins the spindexer backward well intakeing fuel
   public void intake() {
     spindexerVelocityTorque.withVelocity(-0.0);
     spindexerMotor.setControl(spindexerVelocityTorque);
   }
 
+  // Agitates the spindexer to prevent jams
   public void agitate() {
     spindexerVelocityTorque.withVelocity(0.0);
     spindexerMotor.setControl(spindexerVelocityTorque);
   }
 
+  // Stops the spindexer
   public void stop() {
     spindexerVelocityTorque.withVelocity(0.0);
     spindexerMotor.setControl(spindexerVelocityTorque);
   }
 
+  // Uses sensors to determine if the spindexer is empty
   public boolean isEmpty() {
     // Placeholder for sensor logic to detect if spindexer is empty
     throw new UnsupportedOperationException("isEmpty() not implemented yet");
   }
 
+  // Uses sensors to determine if the spindexer is full
   public boolean isFull() {
     // Placeholder for sensor logic to detect if spindexer is full
     throw new UnsupportedOperationException("isFull() not implemented yet");
