@@ -87,16 +87,4 @@ public class SpindexerSubsystem extends SubsystemBase {
   public void stop() {
     spindexerMotor.stopMotor();
   }
-
-  // // Uses sensors to determine if the spindexer is empty
-  // public boolean isEmpty() {
-  // // Placeholder for sensor logic to detect if spindexer is empty
-  // throw new UnsupportedOperationException("isEmpty() not implemented yet");
-  // }
-
-  // // Uses sensors to determine if the spindexer is full
-  // public boolean isFull() {
-  // // Placeholder for sensor logic to detect if spindexer is full
-  // throw new UnsupportedOperationException("isFull() not implemented yet");
-  // }
 }

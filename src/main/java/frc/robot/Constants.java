@@ -95,9 +95,6 @@ public class Constants {
     public static final double SPINDEXER_AGITATE_VELOCITY = 5;
   }
 
-  public static final SlotConfigs SPINDEXER_SLOT_CONFIGS = new SlotConfigs().withKP(10)
-      .withKI(.10)
-      .withKD(0)
-      .withKS(20);
+  public static final SlotConfigs SPINDEXER_SLOT_CONFIGS = new SlotConfigs().withKP(10).withKD(0).withKS(20);
 
 }
