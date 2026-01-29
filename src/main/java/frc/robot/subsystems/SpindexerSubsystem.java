@@ -10,6 +10,7 @@ import com.ctre.phoenix6.controls.TorqueCurrentFOC;
 import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
+import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
@@ -51,6 +52,8 @@ public class SpindexerSubsystem extends SubsystemBase {
         .withStatorCurrentLimitEnable(true)
         .withSupplyCurrentLimit(Constants.SpindexerConstants.SPINDEXER_SUPPLY_CURRENT_LIMIT)
         .withSupplyCurrentLimitEnable(true);
+    spinTalonconfig.MotorOutput.NeutralMode = NeutralModeValue.Coast;
+
     spindexerMotor.getConfigurator().apply(spinTalonconfig);
   }
 
