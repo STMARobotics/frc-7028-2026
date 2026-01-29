@@ -5,6 +5,7 @@ import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 
 import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.configs.SlotConfigs;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Rotation3d;
@@ -86,9 +87,17 @@ public class Constants {
 
   public static class SpindexerConstants {
     public static final int DEVICE_ID_SPINDEXER_MOTOR = 15;
-    public static final Current SPINDEXER_TORQUE_CURRENT_LIMIT = Amps.of(0);
-    public static final Current SPINDEXER_STATOR_CURRENT_LIMIT = Amps.of(0);
-    public static final Current INDEXER_SUPPLY_CURRENT_LIMIT = Amps.of(0);
+    public static final Current SPINDEXER_TORQUE_CURRENT_LIMIT = Amps.of(80);
+    public static final Current SPINDEXER_STATOR_CURRENT_LIMIT = Amps.of(80);
+    public static final Current SPINDEXER_SUPPLY_CURRENT_LIMIT = Amps.of(40);
+    public static final double SPINDEXER_FEED_VELOCITY = 20;
+    public static final double SPINDEXER_INTAKE_VELOCITY = -10;
+    public static final double SPINDEXER_AGITATE_VELOCITY = 5;
   }
+
+  public static final SlotConfigs SPINDEXER_SLOT_CONFIGS = new SlotConfigs().withKP(10)
+      .withKI(.10)
+      .withKD(0)
+      .withKS(20);
 
 }

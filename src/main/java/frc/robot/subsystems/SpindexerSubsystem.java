@@ -4,6 +4,7 @@ import static edu.wpi.first.units.Units.Second;
 import static edu.wpi.first.units.Units.Volts;
 
 import com.ctre.phoenix6.SignalLogger;
+import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.TorqueCurrentFOC;
 import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
@@ -24,6 +25,8 @@ public class SpindexerSubsystem extends SubsystemBase {
   private final VelocityTorqueCurrentFOC spindexerVelocityTorque = new VelocityTorqueCurrentFOC(0.0);
   private final TorqueCurrentFOC spindexerTorqueControl = new TorqueCurrentFOC(0.0);
 
+  // NOTE: the output type is amps, NOT volts (even though it says volts)
+  // https://www.chiefdelphi.com/t/sysid-with-ctre-swerve-characterization/452631/8
   private final SysIdRoutine spindexerSysIdRoutine = new SysIdRoutine(
       new SysIdRoutine.Config(
           Volts.of(3.0).per(Second),
@@ -40,12 +43,13 @@ public class SpindexerSubsystem extends SubsystemBase {
    */
   public SpindexerSubsystem() {
     var spinTalonconfig = new TalonFXConfiguration();
-    spinTalonconfig.MotorOutput.withInverted(InvertedValue.Clockwise_Positive);
+    spinTalonconfig.withSlot0(Slot0Configs.from(Constants.SPINDEXER_SLOT_CONFIGS));
+    spinTalonconfig.MotorOutput.withInverted(InvertedValue.CounterClockwise_Positive);
     spinTalonconfig.TorqueCurrent
         .withPeakForwardTorqueCurrent(Constants.SpindexerConstants.SPINDEXER_TORQUE_CURRENT_LIMIT);
     spinTalonconfig.CurrentLimits.withStatorCurrentLimit(Constants.SpindexerConstants.SPINDEXER_STATOR_CURRENT_LIMIT)
         .withStatorCurrentLimitEnable(true)
-        .withSupplyCurrentLimit(Constants.SpindexerConstants.INDEXER_SUPPLY_CURRENT_LIMIT)
+        .withSupplyCurrentLimit(Constants.SpindexerConstants.SPINDEXER_SUPPLY_CURRENT_LIMIT)
         .withSupplyCurrentLimitEnable(true);
     spindexerMotor.getConfigurator().apply(spinTalonconfig);
   }
@@ -60,37 +64,36 @@ public class SpindexerSubsystem extends SubsystemBase {
 
   // Spins the spindexer forward to feed the shooter
   public void feedShooter() {
-    spindexerVelocityTorque.withVelocity(0.0);
-    spindexerMotor.setControl(spindexerVelocityTorque);
+    spindexerMotor
+        .setControl(spindexerVelocityTorque.withVelocity(Constants.SpindexerConstants.SPINDEXER_FEED_VELOCITY));
   }
 
   // Spins the spindexer backward well intakeing fuel
   public void intake() {
-    spindexerVelocityTorque.withVelocity(-0.0);
-    spindexerMotor.setControl(spindexerVelocityTorque);
+    spindexerMotor
+        .setControl(spindexerVelocityTorque.withVelocity(Constants.SpindexerConstants.SPINDEXER_INTAKE_VELOCITY));
   }
 
   // Agitates the spindexer to prevent jams
   public void agitate() {
-    spindexerVelocityTorque.withVelocity(0.0);
-    spindexerMotor.setControl(spindexerVelocityTorque);
+    spindexerMotor
+        .setControl(spindexerVelocityTorque.withVelocity(Constants.SpindexerConstants.SPINDEXER_AGITATE_VELOCITY));
   }
 
   // Stops the spindexer
   public void stop() {
-    spindexerVelocityTorque.withVelocity(0.0);
-    spindexerMotor.setControl(spindexerVelocityTorque);
+    spindexerMotor.stopMotor();
   }
 
-  // Uses sensors to determine if the spindexer is empty
-  public boolean isEmpty() {
-    // Placeholder for sensor logic to detect if spindexer is empty
-    throw new UnsupportedOperationException("isEmpty() not implemented yet");
-  }
+  // // Uses sensors to determine if the spindexer is empty
+  // public boolean isEmpty() {
+  // // Placeholder for sensor logic to detect if spindexer is empty
+  // throw new UnsupportedOperationException("isEmpty() not implemented yet");
+  // }
 
-  // Uses sensors to determine if the spindexer is full
-  public boolean isFull() {
-    // Placeholder for sensor logic to detect if spindexer is full
-    throw new UnsupportedOperationException("isFull() not implemented yet");
-  }
+  // // Uses sensors to determine if the spindexer is full
+  // public boolean isFull() {
+  // // Placeholder for sensor logic to detect if spindexer is full
+  // throw new UnsupportedOperationException("isFull() not implemented yet");
+  // }
 }
