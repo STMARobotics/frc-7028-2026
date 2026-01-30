@@ -44,7 +44,7 @@ public class SpindexerSubsystem extends SubsystemBase {
    */
   public SpindexerSubsystem() {
     var spinTalonconfig = new TalonFXConfiguration();
-    spinTalonconfig.withSlot0(Slot0Configs.from(Constants.SPINDEXER_SLOT_CONFIGS));
+    spinTalonconfig.withSlot0(Slot0Configs.from(Constants.SpindexerConstants.SPINDEXER_SLOT_CONFIGS));
     spinTalonconfig.MotorOutput.withInverted(InvertedValue.CounterClockwise_Positive);
     spinTalonconfig.TorqueCurrent
         .withPeakForwardTorqueCurrent(Constants.SpindexerConstants.SPINDEXER_TORQUE_CURRENT_LIMIT);
@@ -61,12 +61,12 @@ public class SpindexerSubsystem extends SubsystemBase {
     return spindexerSysIdRoutine.dynamic(direction).withName("Spindexer dynam " + direction).finallyDo(this::stop);
   }
 
-  public Command sysidSpindexerQuasistaticCommand(Direction direction) {
+  public Command sysIdSpindexerQuasistaticCommand(Direction direction) {
     return spindexerSysIdRoutine.quasistatic(direction).withName("Spindexer quasi " + direction).finallyDo(this::stop);
   }
 
   // Spins the spindexer forward to feed the shooter
-  public void feedShooter() {
+  public void feedTransfer() {
     spindexerMotor
         .setControl(spindexerVelocityTorque.withVelocity(Constants.SpindexerConstants.SPINDEXER_FEED_VELOCITY));
   }
