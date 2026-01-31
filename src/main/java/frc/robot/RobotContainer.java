@@ -14,6 +14,7 @@ import com.ctre.phoenix6.swerve.SwerveModule.SteerRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.commands.FollowPathCommand;
+import com.pathplanner.lib.commands.PathPlannerAuto;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -30,7 +31,7 @@ import frc.robot.controls.JoystickControlBindings;
 import frc.robot.controls.XBoxControlBindings;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
-import frc.robot.subsystems.QuestNavSubsystem;
+import frc.robot.subsystems.LocalizationSubsystem;
 
 @Logged(strategy = Logged.Strategy.OPT_IN)
 public class RobotContainer {
@@ -56,7 +57,8 @@ public class RobotContainer {
       TunerConstants.BackLeft,
       TunerConstants.BackRight);
 
-  private final QuestNavSubsystem questNavSubsystem = new QuestNavSubsystem(drivetrain::addVisionMeasurement);
+  private final LocalizationSubsystem localizationSubsystem = new LocalizationSubsystem(
+      drivetrain::addVisionMeasurement);
 
   /* Path follower */
   private final SendableChooser<Command> autoChooser;
@@ -95,7 +97,7 @@ public class RobotContainer {
     controlBindings.seedFieldCentric().ifPresent(trigger -> trigger.onTrue(Commands.runOnce(() -> {
       Pose2d robotCurrentPose = drivetrain.getState().Pose;
       Pose2d robotNewPose = new Pose2d(robotCurrentPose.getTranslation(), drivetrain.getOperatorForwardDirection());
-      questNavSubsystem.setPose(robotNewPose);
+      localizationSubsystem.setQuestNavPose2d(robotNewPose);
       drivetrain.resetPose(robotNewPose);
     })));
 
@@ -107,7 +109,14 @@ public class RobotContainer {
     drivetrain.registerTelemetry(drivetrainTelemetry::telemeterize);
   }
 
+  public Command setStartingPose() {
+    PathPlannerAuto auto = (PathPlannerAuto) autoChooser.getSelected();
+    localizationSubsystem.setLimelightStartingPose(auto.getStartingPose());
+    return Commands.none();
+  }
+
   public Command getAutonomousCommand() {
+    autoChooser.onChange((Command selected) -> this.setStartingPose());
     /* Run the path selected from the auto chooser */
     return autoChooser.getSelected();
   }
