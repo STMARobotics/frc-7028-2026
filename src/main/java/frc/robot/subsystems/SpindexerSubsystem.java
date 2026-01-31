@@ -29,7 +29,7 @@ public class SpindexerSubsystem extends SubsystemBase {
   private final TorqueCurrentFOC spindexerTorqueControl = new TorqueCurrentFOC(0.0);
   private PhotonCamera hopperCam = new PhotonCamera(Constants.SpindexerConstants.HOPPER_CAMERA_NAME);
 
-  enum Direction {
+  enum SpindexerDirection {
     Forward,
     Backward
   }
@@ -65,7 +65,7 @@ public class SpindexerSubsystem extends SubsystemBase {
     spindexerMotor.getConfigurator().apply(spinTalonconfig);
   }
 
-  public Command sysIdSpindexerCommand(Direction direction) {
+  public Command sysIdSpindexerCommand(edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction direction) {
     return spindexerSysIdRoutine.dynamic(direction).withName("Spindexer dynam " + direction).finallyDo(this::stop);
   }
 
@@ -114,8 +114,8 @@ public class SpindexerSubsystem extends SubsystemBase {
     return false;
   }
 
-  private void Spin(Direction direction) {
-    if (direction == Direction.Backward) {
+  private void Spin(SpindexerDirection direction) {
+    if (direction == SpindexerDirection.Backward) {
       spindexerMotor.setControl(
           spindexerVelocityTorque.withVelocity(Constants.SpindexerConstants.SPINDEXER_AGITATE_BACKWARDS_VELOCITY));
     } else {
@@ -128,7 +128,7 @@ public class SpindexerSubsystem extends SubsystemBase {
     private long startTime;
     private final long AGITATE_TIME_MS = 500; // milliseconds
 
-    private Direction direction = Direction.Forward;
+    private SpindexerDirection direction = SpindexerDirection.Forward;
 
     @Override
     public void initialize() {
@@ -144,11 +144,11 @@ public class SpindexerSubsystem extends SubsystemBase {
       if (currentTime - startTime < AGITATE_TIME_MS) {
         return;
       }
-      if (direction == Direction.Forward) {
-        direction = Direction.Backward;
+      if (direction == SpindexerDirection.Forward) {
+        direction = SpindexerDirection.Backward;
         Spin(direction);
       } else {
-        direction = Direction.Forward;
+        direction = SpindexerDirection.Forward;
         Spin(direction);
       }
       startTime = currentTime;
