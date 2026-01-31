@@ -63,7 +63,7 @@ public class TransferSubsystem extends SubsystemBase {
   }
 
   public void unjam() {
-    transferMotor.setControl(transferVelocityTorque.withVelocity(Constants.TransferConstants.UNJAM_VELOCITY));
+    transferMotor.setControl(transferVelocityTorque.withVelocity(Constants.TransferConstants.TRANSFER_UNJAM_VELOCITY));
   }
 
   public void stop() {
