@@ -2,10 +2,12 @@ package frc.robot;
 
 import static edu.wpi.first.math.util.Units.degreesToRadians;
 import static edu.wpi.first.math.util.Units.inchesToMeters;
+import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 
 import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.configs.SlotConfigs;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Rotation3d;
@@ -15,6 +17,7 @@ import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearVelocity;
 import frc.robot.generated.TunerConstants;
@@ -113,4 +116,27 @@ public class Constants {
     public static final Distance SINGLE_TAG_DISTANCE_THRESHOLD = Meters.of(4.5);
   }
 
+}
+  public static class SpindexerConstants {
+    public static final int DEVICE_ID_SPINDEXER_MOTOR = 15;
+    public static final Current SPINDEXER_TORQUE_CURRENT_LIMIT = Amps.of(80);
+    public static final Current SPINDEXER_STATOR_CURRENT_LIMIT = Amps.of(80);
+    public static final Current SPINDEXER_SUPPLY_CURRENT_LIMIT = Amps.of(40);
+    public static final double SPINDEXER_FEED_VELOCITY = 20;
+    public static final double SPINDEXER_INTAKE_VELOCITY = -10;
+    public static final double SPINDEXER_AGITATE_VELOCITY = 5;
+    public static final SlotConfigs SPINDEXER_SLOT_CONFIGS = new SlotConfigs().withKP(10).withKD(0).withKS(20);
+
+  }
+
+  public static class TransferConstants {
+    public static final int DEVICE_ID_TRANSFER_MOTOR = 20;
+    public static final Current TRANSFER_TORQUE_CURRENT_LIMIT = Amps.of(90);
+    public static final Current TRANSFER_STATOR_CURRENT_LIMIT = Amps.of(90);
+    public static final Current TRANSFER_SUPPLY_CURRENT_LIMIT = Amps.of(45);
+    public static final SlotConfigs TRANSFER_SLOT_CONFIGS = new SlotConfigs().withKP(10).withKD(0).withKS(20);
+    public static final double TRANSFER_FEED_VELOCITY = 30;
+    public static final double TRANSFER_UNJAM_VELOCITY = -10;
+
+  }
 }
