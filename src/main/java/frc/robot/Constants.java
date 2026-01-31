@@ -96,5 +96,4 @@ public class Constants {
   }
 
   public static final SlotConfigs SPINDEXER_SLOT_CONFIGS = new SlotConfigs().withKP(10).withKD(0).withKS(20);
-
 }

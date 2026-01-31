@@ -16,15 +16,18 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Constants;
+import org.photonvision.*;
 
 /**
  * The is the Subsystem for the Spindexer.
+ * 
  */
-public class SpindexerSubsystem extends SubsystemBase {
 
+public class SpindexerSubsystem extends SubsystemBase {
   private final TalonFX spindexerMotor = new TalonFX(Constants.SpindexerConstants.DEVICE_ID_SPINDEXER_MOTOR);
   private final VelocityTorqueCurrentFOC spindexerVelocityTorque = new VelocityTorqueCurrentFOC(0.0);
   private final TorqueCurrentFOC spindexerTorqueControl = new TorqueCurrentFOC(0.0);
+  private PhotonCamera hopperCam = new PhotonCamera("Hopper_cam");
 
   // NOTE: the output type is amps, NOT volts (even though it says volts)
   // https://www.chiefdelphi.com/t/sysid-with-ctre-swerve-characterization/452631/8
@@ -86,5 +89,9 @@ public class SpindexerSubsystem extends SubsystemBase {
   // Stops the spindexer
   public void stop() {
     spindexerMotor.stopMotor();
+  }
+
+  public boolean isEmpty() {
+    return !hopperCam.getLatestResult().hasTargets();
   }
 }
