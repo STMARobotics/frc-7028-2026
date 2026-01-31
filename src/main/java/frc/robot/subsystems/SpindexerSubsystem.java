@@ -94,4 +94,19 @@ public class SpindexerSubsystem extends SubsystemBase {
   public boolean isEmpty() {
     return !hopperCam.getLatestResult().hasTargets();
   }
+
+  public boolean isFull() {
+    if (isEmpty()) {
+      return false;
+    }
+    double accumulatedArea = 0;
+    for (var target : hopperCam.getLatestResult().getTargets()) {
+      accumulatedArea += target.getArea();
+      if (accumulatedArea >= Constants.SpindexerConstants.HOPPER_FULL_THRESHOLD) {
+        return true;
+      }
+    }
+
+    return false;
+  }
 }
