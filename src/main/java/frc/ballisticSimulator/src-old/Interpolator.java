@@ -1,21 +1,10 @@
-package SOTM;
+package frc.ballisticSimulator;
 
-import static java.lang.Math.sqrt;
-import static java.lang.Math.pow;
-import static java.lang.Math.signum;
-import static java.lang.Math.abs;
-import static java.lang.Math.atan2;
-import static java.lang.Math.toRadians;
 import static java.lang.Math.floor;
-import static java.lang.Math.sin;
-import static java.lang.Math.cos;
-import static java.lang.Math.tan;
+import static java.lang.Math.signum;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.function.Function;
 
 public abstract class Interpolator {
@@ -64,10 +53,9 @@ public abstract class Interpolator {
     this.pitchIncrement = pitchIncrement;
   };
 
-
   private class solutionSpace<Result> {
     public int size;
-    
+
     private double min;
     private double max;
     private double delta;
@@ -78,15 +66,21 @@ public abstract class Interpolator {
     private Function<Record, Record> solve;
     private Function<Result, Double> score;
 
-    private record Solution<T> (T result, double score) { }
+    private record Solution<T>(T result, double score) {
+    }
 
     public class SolutionComparator implements Comparator<Solution> {
       public int compare(Interpolator.solutionSpace.Solution solutionA, Interpolator.solutionSpace.Solution solutionB) {
         return signum(solutionA.score() - solutionB.score());
       }
     }
-    
-    public solutionSpace(double delta, double min, double max, Function<Double, Result> solutionSolver, Function<Result, Double> scoreSolution) {
+
+    public solutionSpace(
+        double delta,
+        double min,
+        double max,
+        Function<Double, Result> solutionSolver,
+        Function<Result, Double> scoreSolution) {
       this.size = (int) floor((max - min) / delta);
       this.min = min;
       this.max = max;
@@ -120,10 +114,8 @@ public abstract class Interpolator {
         double ty = this.targetY;
         double tz = this.targetZ;
 
-        // distance from robot on field 
+        // distance from robot on field
         double rxy = Math.sqrt(Math.pow(px - tx, 2) + Math.pow(py - ty, 2));
-
-        
 
       }
     }

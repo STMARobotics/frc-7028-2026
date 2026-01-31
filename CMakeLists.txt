@@ -10,8 +10,7 @@ find_package(Eigen3 REQUIRED)
 add_executable(ballisticSimulator
         SOTM/src/main.cpp
         SOTM/src/main.h
-        SOTM/src/Simulator.cpp
-        SOTM/src/Simulator.h
+        SOTM/src/BallisticSimulator.h
         SOTM/src/BallisticEnvironmentProfile.h
         SOTM/src/BallisticProjectileState.h
         SOTM/src/BallisticSimulatorResolutionProfile.h
