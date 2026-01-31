@@ -94,10 +94,22 @@ public class Constants {
     public static final double SPINDEXER_INTAKE_VELOCITY = -10;
     public static final double SPINDEXER_AGITATE_FORWORDS_VELOCITY = 5;
     public static final double SPINDEXER_AGITATE_BACKWARDS_VELOCITY = -5;
+    public static final SlotConfigs SPINDEXER_SLOT_CONFIGS = new SlotConfigs().withKP(10).withKD(0).withKS(20);
 
     public static final double HOPPER_FULL_THRESHOLD = 85.0; // percent
     public static final String HOPPER_CAMERA_NAME = "HopperCam";
+
   }
 
-  public static final SlotConfigs SPINDEXER_SLOT_CONFIGS = new SlotConfigs().withKP(10).withKD(0).withKS(20);
+  public static class TransferConstants {
+    public static final int DEVICE_ID_TRANSFER_MOTOR = 20;
+    public static final Current TRANSFER_TORQUE_CURRENT_LIMIT = Amps.of(90);
+    public static final Current TRANSFER_STATOR_CURRENT_LIMIT = Amps.of(90);
+    public static final Current TRANSFER_SUPPLY_CURRENT_LIMIT = Amps.of(45);
+    public static final SlotConfigs TRANSFER_SLOT_CONFIGS = new SlotConfigs().withKP(10).withKD(0).withKS(20);
+    public static final double TRANSFER_FEED_VELOCITY = 30;
+    public static final double TRANSFER_UNJAM_VELOCITY = -10;
+
+  }
+
 }

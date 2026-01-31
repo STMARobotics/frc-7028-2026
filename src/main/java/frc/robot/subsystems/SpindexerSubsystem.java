@@ -54,7 +54,7 @@ public class SpindexerSubsystem extends SubsystemBase {
    */
   public SpindexerSubsystem() {
     var spinTalonconfig = new TalonFXConfiguration();
-    spinTalonconfig.withSlot0(Slot0Configs.from(Constants.SPINDEXER_SLOT_CONFIGS));
+    spinTalonconfig.withSlot0(Slot0Configs.from(Constants.SpindexerConstants.SPINDEXER_SLOT_CONFIGS));
     spinTalonconfig.MotorOutput.withInverted(InvertedValue.CounterClockwise_Positive);
     spinTalonconfig.TorqueCurrent
         .withPeakForwardTorqueCurrent(Constants.SpindexerConstants.SPINDEXER_TORQUE_CURRENT_LIMIT);
