@@ -2,9 +2,11 @@ package frc.robot;
 
 import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 
 import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.SlotConfigs;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
@@ -14,6 +16,9 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.units.AngleUnit;
+import edu.wpi.first.units.AngularVelocityUnit;
+import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Distance;
@@ -106,5 +111,16 @@ public class Constants {
     public static final double SENSOR_TO_MECHANISM_RATIO = 0.0;
     public static final AngularVelocity INTAKE_VELOCITY = RotationsPerSecond.of(0.0);
     public static final AngularVelocity REVERSE_VELOCITY = RotationsPerSecond.of(0.0);
+    public static final MotionMagicConfigs DEPLOY_MOTION_MAGIC_CONFIGS = new MotionMagicConfigs();
+
+    public static final Measure<AngleUnit> DEPLOY_POSITION_DEPLOYED = Rotations.of(0.0);
+    public static final Measure<AngleUnit> DEPLOY_POSITIONS_RETRACTED = Rotations.of(0.0);
+    public static final Measure<AngleUnit> DEPLOY_TOLERANCE = Rotations.of(0.0);
+
+    public static final double ROLLER_SENSOR_TO_MECHANISM_RATIO = 0;
+    public static final Measure<AngularVelocityUnit> ROLLER_INTAKE_VELOCITY = RotationsPerSecond.of(0.0);
+    public static final Measure<AngularVelocityUnit> ROLLER_REVERSE_VELOCITY = RotationsPerSecond.of(0.0);
+
+    public static final double DEPLOY_SENSOR_TO_MECHANISM_RATIO = (0 / 0) * 0.0 * 0.0;
   }
 }
