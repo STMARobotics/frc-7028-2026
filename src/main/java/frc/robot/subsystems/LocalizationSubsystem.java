@@ -35,11 +35,6 @@ public class LocalizationSubsystem extends SubsystemBase {
   private final BooleanPublisher trackingPublisher = questTable.getBooleanTopic("Quest Tracking").publish();
   private Pose2d startingPose = new Pose2d();
 
-  private final NetworkTable limelightTable = NetworkTableInstance.getDefault().getTable("Limelight-Robot");
-  private final StructPublisher<Pose2d> limelightPublisher = limelightTable
-      .getStructTopic("Quest Robot Pose", Pose2d.struct)
-      .publish();
-
   public LocalizationSubsystem(VisionMeasurementConsumer addVisionMeasurement) {
     this.visionMeasurementConsumer = addVisionMeasurement;
   }
@@ -80,7 +75,6 @@ public class LocalizationSubsystem extends SubsystemBase {
         } else {
           visionMeasurementConsumer.addVisionMeasurement(poses[i].pose, poses[i].timestampSeconds, MULTI_TAG_STD_DEVS);
         }
-        limelightPublisher.accept(poses[i].pose);
       }
     }
 
