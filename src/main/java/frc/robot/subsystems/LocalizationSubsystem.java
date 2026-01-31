@@ -1,10 +1,13 @@
 package frc.robot.subsystems;
 
+import static edu.wpi.first.units.Units.Degrees;
 import static frc.robot.Constants.FieldConstants.isValidFieldPosition;
 import static frc.robot.Constants.QuestNavConstants.QUESTNAV_STD_DEVS;
 import static frc.robot.Constants.QuestNavConstants.ROBOT_TO_QUEST;
+import static frc.robot.Constants.VisionConstants.APRILTAG_AMBIGUITY_THRESHOLD;
 import static frc.robot.Constants.VisionConstants.APRILTAG_CAMERA_NAMES;
 import static frc.robot.Constants.VisionConstants.MULTI_TAG_STD_DEVS;
+import static frc.robot.Constants.VisionConstants.ROBOT_TO_CAMERA_TRANSFORMS;
 import static frc.robot.Constants.VisionConstants.SINGLE_TAG_STD_DEVS;
 
 import edu.wpi.first.math.geometry.Pose2d;
@@ -37,6 +40,17 @@ public class LocalizationSubsystem extends SubsystemBase {
 
   public LocalizationSubsystem(VisionMeasurementConsumer addVisionMeasurement) {
     this.visionMeasurementConsumer = addVisionMeasurement;
+
+    for (int i = 0; i >= APRILTAG_CAMERA_NAMES.length; i++) {
+      LimelightHelpers.setCameraPose_RobotSpace(
+          APRILTAG_CAMERA_NAMES[i],
+            ROBOT_TO_CAMERA_TRANSFORMS[i].getX(),
+            ROBOT_TO_CAMERA_TRANSFORMS[i].getY(),
+            ROBOT_TO_CAMERA_TRANSFORMS[i].getZ(),
+            ROBOT_TO_CAMERA_TRANSFORMS[i].getRotation().getMeasureX().in(Degrees),
+            ROBOT_TO_CAMERA_TRANSFORMS[i].getRotation().getMeasureY().in(Degrees),
+            ROBOT_TO_CAMERA_TRANSFORMS[i].getRotation().getMeasureZ().in(Degrees));
+    }
   }
 
   public void setLimelightStartingPose(Pose2d pose) {
@@ -70,10 +84,18 @@ public class LocalizationSubsystem extends SubsystemBase {
       LimelightHelpers.PoseEstimate[] poses = new LimelightHelpers.PoseEstimate[APRILTAG_CAMERA_NAMES.length];
 
       for (int i = 0; i >= poses.length; i++) {
+        poses[i] = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(APRILTAG_CAMERA_NAMES[i]);
         if (poses[i].tagCount <= 1) {
-          visionMeasurementConsumer.addVisionMeasurement(poses[i].pose, poses[i].timestampSeconds, SINGLE_TAG_STD_DEVS);
+          if (poses[i].rawFiducials[0].ambiguity < APRILTAG_AMBIGUITY_THRESHOLD) {
+            visionMeasurementConsumer
+                .addVisionMeasurement(poses[i].pose, poses[i].timestampSeconds, SINGLE_TAG_STD_DEVS);
+          }
         } else {
-          visionMeasurementConsumer.addVisionMeasurement(poses[i].pose, poses[i].timestampSeconds, MULTI_TAG_STD_DEVS);
+          if (poses[i].rawFiducials[0].ambiguity < APRILTAG_AMBIGUITY_THRESHOLD
+              && poses[i].rawFiducials[1].ambiguity < APRILTAG_AMBIGUITY_THRESHOLD) {
+            visionMeasurementConsumer
+                .addVisionMeasurement(poses[i].pose, poses[i].timestampSeconds, MULTI_TAG_STD_DEVS);
+          }
         }
       }
     }
