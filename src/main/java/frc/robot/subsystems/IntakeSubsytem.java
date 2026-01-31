@@ -116,6 +116,7 @@ public class IntakeSubsytem extends SubsystemBase {
   public void intake() {
     runRollers(INTAKE_VELOCITY);
   }
+
   // This is have the rollers reverse for the intake
   public void reverse() {
     runRollers(REVERSE_VELOCITY);
@@ -125,7 +126,7 @@ public class IntakeSubsytem extends SubsystemBase {
   public void stop() {
     rollerMotor.stopMotor();
   }
-  
+
   public void runRollers(AngularVelocity velocity) {
     rollerMotor.setControl(rollerControl.withVelocity(velocity.in(RotationsPerSecond)));
   }
@@ -135,10 +136,9 @@ public class IntakeSubsytem extends SubsystemBase {
     return deployControl.getPositionMeasure().isNear(DEPLOY_POSITION_DEPLOYED, DEPLOY_TOLERANCE);
   }
 
-  //Rettacts the inatake bask to its resting positioin.
+  // Rettacts the inatake bask to its resting positioin.
   public boolean IntakeRetacted() {
     return deployControl.getPositionMeasure().isNear(DEPLOY_POSITION_DEPLOYED, DEPLOY_TOLERANCE);
   }
 
-  
-  }
+}
