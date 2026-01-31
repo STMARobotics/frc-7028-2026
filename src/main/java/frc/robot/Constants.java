@@ -116,7 +116,6 @@ public class Constants {
     public static final Distance SINGLE_TAG_DISTANCE_THRESHOLD = Meters.of(4.5);
   }
 
-}
   public static class SpindexerConstants {
     public static final int DEVICE_ID_SPINDEXER_MOTOR = 15;
     public static final Current SPINDEXER_TORQUE_CURRENT_LIMIT = Amps.of(80);
@@ -137,6 +136,6 @@ public class Constants {
     public static final SlotConfigs TRANSFER_SLOT_CONFIGS = new SlotConfigs().withKP(10).withKD(0).withKS(20);
     public static final double TRANSFER_FEED_VELOCITY = 30;
     public static final double TRANSFER_UNJAM_VELOCITY = -10;
-
   }
+
 }
