@@ -124,4 +124,26 @@ public class Constants {
     public static final double DEPLOY_SENSOR_TO_MECHANISM_RATIO = (0 / 0) * 0.0 * 0.0;
   }
 
+  public static class SpindexerConstants {
+    public static final int DEVICE_ID_SPINDEXER_MOTOR = 15;
+    public static final Current SPINDEXER_TORQUE_CURRENT_LIMIT = Amps.of(80);
+    public static final Current SPINDEXER_STATOR_CURRENT_LIMIT = Amps.of(80);
+    public static final Current SPINDEXER_SUPPLY_CURRENT_LIMIT = Amps.of(40);
+    public static final double SPINDEXER_FEED_VELOCITY = 20;
+    public static final double SPINDEXER_INTAKE_VELOCITY = -10;
+    public static final double SPINDEXER_AGITATE_VELOCITY = 5;
+    public static final SlotConfigs SPINDEXER_SLOT_CONFIGS = new SlotConfigs().withKP(10).withKD(0).withKS(20);
+
+  }
+
+  public static class TransferConstants {
+    public static final int DEVICE_ID_TRANSFER_MOTOR = 20;
+    public static final Current TRANSFER_TORQUE_CURRENT_LIMIT = Amps.of(90);
+    public static final Current TRANSFER_STATOR_CURRENT_LIMIT = Amps.of(90);
+    public static final Current TRANSFER_SUPPLY_CURRENT_LIMIT = Amps.of(45);
+    public static final SlotConfigs TRANSFER_SLOT_CONFIGS = new SlotConfigs().withKP(10).withKD(0).withKS(20);
+    public static final double TRANSFER_FEED_VELOCITY = 30;
+    public static final double TRANSFER_UNJAM_VELOCITY = -10;
+
+  }
 }
