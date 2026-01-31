@@ -47,7 +47,7 @@ public class BallisticCalculator {
       Translation2d target,
       BallisticRobotState robot,
       BallisticShooter shooter) {
-    return Meters.of(target.getDistance(shooter.getMuzzlePositionWTRField().toTranslation2d()));
+    return Meters.of(this.targetPosition.getDistance(shooter.getMuzzlePositionWTRField().toTranslation2d()));
   };
 
   Translation2d calculatePerpendicular(Translation2d translation) {

@@ -1,0 +1,10 @@
+//
+// Created by math-rad on 1/30/26.
+//
+
+#ifndef BALLISTICSIMULATOR_SIMULATOR_H
+#define BALLISTICSIMULATOR_SIMULATOR_H
+
+
+
+#endif //BALLISTICSIMULATOR_SIMULATOR_H
