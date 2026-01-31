@@ -11,7 +11,9 @@ import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
@@ -87,7 +89,7 @@ public class SpindexerSubsystem extends SubsystemBase {
 
   // Spins the spindexer to unjam fuel
   public Command agitate() {
-    return new AgitateCommand();
+    return new AgitateCommand(this);
   }
 
   // Stops the spindexer
@@ -125,14 +127,18 @@ public class SpindexerSubsystem extends SubsystemBase {
   }
 
   private class AgitateCommand extends Command {
-    private long startTime;
-    private final long AGITATE_TIME_MS = 500; // milliseconds
+    private double startTime;
+    private final double AGITATE_TIME_SECONDS = .5; // milliseconds
 
     private SpindexerDirection direction = SpindexerDirection.Forward;
 
+    private AgitateCommand(Subsystem subsystem) {
+      addRequirements(subsystem);
+    }
+
     @Override
     public void initialize() {
-      startTime = System.currentTimeMillis();
+      startTime = Timer.getFPGATimestamp();
 
       spindexerMotor.setControl(
           spindexerVelocityTorque.withVelocity(Constants.SpindexerConstants.SPINDEXER_AGITATE_FORWORDS_VELOCITY));
@@ -140,8 +146,8 @@ public class SpindexerSubsystem extends SubsystemBase {
 
     @Override
     public void execute() {
-      long currentTime = System.currentTimeMillis();
-      if (currentTime - startTime < AGITATE_TIME_MS) {
+      double currentTime = Timer.getFPGATimestamp();
+      if (currentTime - startTime < AGITATE_TIME_SECONDS) {
         return;
       }
       if (direction == SpindexerDirection.Forward) {
