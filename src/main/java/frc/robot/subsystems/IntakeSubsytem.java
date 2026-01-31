@@ -112,20 +112,32 @@ public class IntakeSubsytem extends SubsystemBase {
     return rollerSysIdRoutine.quasistatic(direction).withName("SysId intake dynam " + direction).finallyDo(this::stop);
   }
 
+  // This is running the intake rollers
   public void intake() {
     runRollers(INTAKE_VELOCITY);
   }
-
+  // This is have the rollers reverse for the intake
   public void reverse() {
     runRollers(REVERSE_VELOCITY);
   }
 
+  // Stops the intake
   public void stop() {
     rollerMotor.stopMotor();
   }
-
+  
   public void runRollers(AngularVelocity velocity) {
     rollerMotor.setControl(rollerControl.withVelocity(velocity.in(RotationsPerSecond)));
+  }
+
+  // Has the intake extend to a certain angle
+  public boolean IntakeDeployed() {
+    return deployControl.getPositionMeasure().isNear(DEPLOY_POSITION_DEPLOYED, DEPLOY_TOLERANCE);
+  }
+
+  //Rettacts the inatake bask to its resting positioin.
+  public boolean IntakeRetacted() {
+    return deployControl.getPositionMeasure().isNear(DEPLOY_POSITION_DEPLOYED, DEPLOY_TOLERANCE);
   }
 
   
