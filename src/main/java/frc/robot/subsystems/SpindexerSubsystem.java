@@ -29,6 +29,11 @@ public class SpindexerSubsystem extends SubsystemBase {
   private final TorqueCurrentFOC spindexerTorqueControl = new TorqueCurrentFOC(0.0);
   private PhotonCamera hopperCam = new PhotonCamera(Constants.SpindexerConstants.HOPPER_CAMERA_NAME);
 
+  enum Direction {
+    Forward,
+    Backward
+  }
+
   // NOTE: the output type is amps, NOT volts (even though it says volts)
   // https://www.chiefdelphi.com/t/sysid-with-ctre-swerve-characterization/452631/8
   private final SysIdRoutine spindexerSysIdRoutine = new SysIdRoutine(
@@ -80,10 +85,9 @@ public class SpindexerSubsystem extends SubsystemBase {
         .setControl(spindexerVelocityTorque.withVelocity(Constants.SpindexerConstants.SPINDEXER_INTAKE_VELOCITY));
   }
 
-  // Agitates the spindexer to prevent jams
-  public void agitate() {
-    spindexerMotor
-        .setControl(spindexerVelocityTorque.withVelocity(Constants.SpindexerConstants.SPINDEXER_AGITATE_VELOCITY));
+  // Spins the spindexer to unjam fuel
+  public Command agitate() {
+    return new AgitateCommand();
   }
 
   // Stops the spindexer
@@ -108,5 +112,52 @@ public class SpindexerSubsystem extends SubsystemBase {
     }
 
     return false;
+  }
+
+  private void Spin(Direction direction) {
+    if (direction == Direction.Backward) {
+      spindexerMotor.setControl(
+          spindexerVelocityTorque.withVelocity(Constants.SpindexerConstants.SPINDEXER_AGITATE_BACKWARDS_VELOCITY));
+    } else {
+      spindexerMotor.setControl(
+          spindexerVelocityTorque.withVelocity(Constants.SpindexerConstants.SPINDEXER_AGITATE_FORWORDS_VELOCITY));
+    }
+  }
+
+  private class AgitateCommand extends Command {
+    private long startTime;
+    private final long AGITATE_TIME_MS = 500; // milliseconds
+
+    private Direction direction = Direction.Forward;
+
+    @Override
+    public void initialize() {
+      startTime = System.currentTimeMillis();
+
+      spindexerMotor.setControl(
+          spindexerVelocityTorque.withVelocity(Constants.SpindexerConstants.SPINDEXER_AGITATE_FORWORDS_VELOCITY));
+    }
+
+    @Override
+    public void execute() {
+      long currentTime = System.currentTimeMillis();
+      if (currentTime - startTime < AGITATE_TIME_MS) {
+        return;
+      }
+      if (direction == Direction.Forward) {
+        direction = Direction.Backward;
+        Spin(direction);
+      } else {
+        direction = Direction.Forward;
+        Spin(direction);
+      }
+      startTime = currentTime;
+    }
+
+    @Override
+    public void end(boolean interrupted) {
+      stop();
+      spindexerMotor.stopMotor();
+    }
   }
 }

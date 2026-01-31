@@ -92,7 +92,9 @@ public class Constants {
     public static final Current SPINDEXER_SUPPLY_CURRENT_LIMIT = Amps.of(40);
     public static final double SPINDEXER_FEED_VELOCITY = 20;
     public static final double SPINDEXER_INTAKE_VELOCITY = -10;
-    public static final double SPINDEXER_AGITATE_VELOCITY = 5;
+    public static final double SPINDEXER_AGITATE_FORWORDS_VELOCITY = 5;
+    public static final double SPINDEXER_AGITATE_BACKWARDS_VELOCITY = -5;
+
     public static final double HOPPER_FULL_THRESHOLD = 85.0; // percent
     public static final String HOPPER_CAMERA_NAME = "HopperCam";
   }
