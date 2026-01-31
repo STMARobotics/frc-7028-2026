@@ -29,6 +29,7 @@ import static frc.robot.Constants.TurretConstants.YAW_STATOR_CURRENT_LIMIT;
 import static frc.robot.Constants.TurretConstants.YAW_SUPPLY_CURRENT_LIMIT;
 
 import com.ctre.phoenix6.SignalLogger;
+import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
@@ -39,6 +40,9 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.MutAngle;
 import edu.wpi.first.wpilibj.AnalogPotentiometer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -49,18 +53,28 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
  * Subsystem for controlling the turret's yaw and pitch (hood/shot angle).
  */
 @Logged
-public class TurretSubsystem extends SubsystemBase {
-
+public class ShooterSubsystem extends SubsystemBase {
   private final TalonFX yawMotor = new TalonFX(YAW_MOTOR_ID, CANIVORE_BUS_NAME);
-  private final AnalogPotentiometer yawPotentiometer = new AnalogPotentiometer(0, 3600, 0);
+  private final AnalogPotentiometer yawPotentiometer = new AnalogPotentiometer(0, 360.0, 0);
 
   private final TalonFX pitchMotor = new TalonFX(PITCH_MOTOR_ID, CANIVORE_BUS_NAME);
   private final CANcoder pitchEncoder = new CANcoder(PITCH_ENCODER_ID, CANIVORE_BUS_NAME);
 
-  private final MotionMagicVoltage yawControl = new MotionMagicVoltage(0.0).withEnableFOC(true);
-  private final MotionMagicVoltage pitchControl = new MotionMagicVoltage(0.0).withEnableFOC(true);
+  private final MotionMagicVoltage yawControl = new MotionMagicVoltage(0.0);
+  private final MotionMagicVoltage pitchControl = new MotionMagicVoltage(0.0);
   private final VoltageOut sysIdYawControl = new VoltageOut(0.0).withEnableFOC(true);
   private final VoltageOut sysIdPitchControl = new VoltageOut(0.0).withEnableFOC(true);
+
+  // TODO: Do StatusSignal and use refreshing and latency factor instead of just raw cancoder data
+  // TODO: Fuse motor with cancoder
+
+  private final StatusSignal<Angle> yawPosition;
+  private final StatusSignal<AngularVelocity> yawVelocity;
+  private final StatusSignal<Angle> pitchPosition;
+  private final StatusSignal<AngularVelocity> pitchVelocity;
+
+  // Reusable object to reduce memory pressure from reallocation
+  private final MutAngle yawAngle = Rotations.mutable(0);
 
   private final SysIdRoutine yawSysIdRoutine = new SysIdRoutine(
       new SysIdRoutine.Config(
@@ -82,10 +96,11 @@ public class TurretSubsystem extends SubsystemBase {
         pitchMotor.setControl(sysIdPitchControl.withOutput(voltage.in(Volts)));
       }, null, this));
 
-  public TurretSubsystem() {
+  public ShooterSubsystem() {
     // Yaw motor configuration
     var yawTalonConfig = new TalonFXConfiguration();
     yawTalonConfig.MotorOutput.withNeutralMode(Brake);
+    yawTalonConfig.ClosedLoopGeneral.ContinuousWrap = true;
     yawTalonConfig.withSlot0(Slot0Configs.from(YAW_SLOT_CONFIGS));
     yawTalonConfig.CurrentLimits.withSupplyCurrentLimit(YAW_SUPPLY_CURRENT_LIMIT)
         .withSupplyCurrentLimitEnable(true)
@@ -98,6 +113,8 @@ public class TurretSubsystem extends SubsystemBase {
         .withReverseSoftLimitThreshold(YAW_LIMIT_REVERSE.in(Rotations));
 
     yawMotor.getConfigurator().apply(yawTalonConfig);
+    yawPosition = yawMotor.getPosition();
+    yawVelocity = yawMotor.getVelocity();
 
     // Pitch encoder configuration
     var pitchCanCoderConfig = new CANcoderConfiguration();
@@ -124,6 +141,8 @@ public class TurretSubsystem extends SubsystemBase {
         .withReverseSoftLimitThreshold(PITCH_LIMIT_REVERSE.in(Rotations));
 
     pitchMotor.getConfigurator().apply(pitchTalonConfig);
+    pitchPosition = pitchMotor.getPosition();
+    pitchVelocity = pitchMotor.getVelocity();
   }
 
   @Override
@@ -138,8 +157,17 @@ public class TurretSubsystem extends SubsystemBase {
    * @param angleDegrees The desired turret angle in degrees.
    *          -180 to 180, where 0 is forward, positive is clockwise looking from above.
    */
-  public void setTurretAngle(double angleDegrees) {
-    // Sets a variable that motion magic or something will use to move the turret in periodic()
+  public void moveToYawPosition(Angle yawDegrees) {
+    yawMotor.setControl(yawControl.withPosition(normalizeYaw(yawDegrees)));
+  }
+
+  /**
+   * Sets the turret's (hood's) pitch angle.
+   *
+   * @param angleDegrees The desired pitch angle in degrees.
+   */
+  public void setPitchAngle(Angle pitchDegrees) {
+    pitchMotor.setControl(pitchControl.withPosition(pitchDegrees.in(Rotations)));
   }
 
   /**
@@ -151,33 +179,50 @@ public class TurretSubsystem extends SubsystemBase {
   }
 
   /**
+   * Starts auto-targeting mode for the turret.
+   */
+  public void startAutoTargeting() {
+    // Uses some sort of helper class that returns a custom datatype that we can do something like:
+    // LookupValues lookupValues = helperName.getLookupValues(...);
+    // setTurretAngle(lookupValues.getDesiredYawAngle());
+    // setPitchAngle(lookupValues.getDesiredPitchAngle());
+  }
+
+  /**
    * Gets the current turret yaw angle.
    *
    * @return The current turret angle in degrees.
    *         -180 to 180, where 0 is forward, positive is clockwise looking from above.
    */
-  public double getTurretAngle() {
-    var potValue = yawPotentiometer.get();
-    double t = (YAW_POT_LIMIT_FORWARD != YAW_POT_LIMIT_REVERSE)
-        ? (potValue - YAW_POT_LIMIT_REVERSE) / (YAW_POT_LIMIT_FORWARD - YAW_POT_LIMIT_REVERSE)
-        : 0.0;
-    t = MathUtil.clamp(t, 0.0, 1.0);
-
-    double minRot = YAW_LIMIT_REVERSE.in(Rotations);
-    double maxRot = YAW_LIMIT_FORWARD.in(Rotations);
-    double rot = MathUtil.interpolate(minRot, maxRot, t);
-
-    return rot * 360.0;
+  @Logged(name = "Turret Yaw Angle")
+  public Angle getYawAngle() {
+    double potPosition = yawPotentiometer.get(); // .get() returns position 0-1
+    // I cant remember if we need to do this or not
+    return Rotations
+        .of(MathUtil.interpolate(YAW_LIMIT_REVERSE.in(Rotations), YAW_LIMIT_FORWARD.in(Rotations), potPosition));
   }
 
   /**
-   * Starts auto-targeting mode for the turret.
+   * Gets the current pitch angle.
+   *
+   * @return The current pitch angle in degrees.
    */
-  public void startAutoTargeting() {
-    // Uses some sort of custom data type that gives it all the info it needs use a math helper class
-    // Updates a variable that motion magic will use in periodic()
+  @Logged(name = "Turret Pitch Angle")
+  public StatusSignal<Angle> getPitchAngle() {
+    return pitchEncoder.getPosition();
   }
 
+  /**
+   * Normalizes the yaw angle to be within the -180 to 180 degree range.
+   *
+   * @param angle The angle to normalize.
+   * @return The normalized angle.
+   */
+  private Angle normalizeYaw(Angle angle) {
+    // I dont remember
+  }
+
+  // SysId Commands (keep at bottom)
   public Command sysIdYawQuasistaticCommand(Direction direction) {
     return yawSysIdRoutine.quasistatic(direction).withName("SysId yaw quasi " + direction).finallyDo(this::stop);
   }
