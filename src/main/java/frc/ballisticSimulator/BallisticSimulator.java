@@ -119,20 +119,20 @@ class BallisticSimulator {
     Translation3d dErrordPitch = simulateBall(ballCondition, steppedPitchParameters).minus(errorPrior);
     Translation3d dErrordSpeed = simulateBall(ballCondition, steppedSpeedParameters).minus(errorPrior);
 
-    double dYdx = dErrordYaw.getX() / deltaAngleRadians;
-    double dYdy = dErrordYaw.getY() / deltaAngleRadians;
-    double dYdz = dErrordYaw.getZ() / deltaAngleRadians;
+    double dxdY = dErrordYaw.getX() / deltaAngleRadians;
+    double dydY = dErrordYaw.getY() / deltaAngleRadians;
+    double dzdY = dErrordYaw.getZ() / deltaAngleRadians;
 
-    double dPdx = dErrordPitch.getX() / deltaAngleRadians;
-    double dPdy = dErrordPitch.getY() / deltaAngleRadians;
-    double dPdz = dErrordPitch.getZ() / deltaAngleRadians;
+    double dxdP = dErrordPitch.getX() / deltaAngleRadians;
+    double dydP = dErrordPitch.getY() / deltaAngleRadians;
+    double dzdP = dErrordPitch.getZ() / deltaAngleRadians;
 
-    double dSdx = dErrordSpeed.getX() / deltaSpeed;
-    double dSdy = dErrordSpeed.getY() / deltaSpeed;
-    double dSdz = dErrordSpeed.getZ() / deltaSpeed;
+    double dxdS = dErrordSpeed.getX() / deltaSpeed;
+    double dydS = dErrordSpeed.getY() / deltaSpeed;
+    double dzdS = dErrordSpeed.getZ() / deltaSpeed;
 
     Matrix<N3, N3> Jacobian = MatBuilder
-        .fill(N3.instance, N3.instance, dYdx, dYdy, dYdz, dPdx, dPdy, dPdz, dSdx, dSdy, dSdz);
+        .fill(N3.instance, N3.instance, dxdY, dydY, dzdY, dxdP, dydP, dzdP, dxdS, dydS, dzdS);
 
     Matrix<N3, N1> e = MatBuilder
         .fill(N3.instance, N1.instance, errorPrior.getX(), errorPrior.getY(), errorPrior.getZ());
