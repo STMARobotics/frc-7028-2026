@@ -91,11 +91,13 @@ public class Constants {
   }
 
   public static class IntakeConstants {
-    public static final int DEVICE_ID = 0;
-    public static final Current PEAK_FORWARD_CURRENT = Amps.of(0);
-    public static final Current PEAK_REVERSE_CURRENT = PEAK_FORWARD_CURRENT.unaryMinus();
+    public static final int DEVICE_ID_POSITION = 10;
+    public static final int DEVICE_ID_ROLLER = 11;
+    public static final int DEVICE_ID_CANCODER = 10;
+    public static final Current PEAK_DEPLOYMENT_CURRENT = Amps.of(80);
+    public static final Current PEAK_RETRACTED_CURRENT = PEAK_DEPLOYMENT_CURRENT.unaryMinus();
 
-    public static final Current SUPPLY_CURRENT_LIMIT = Amps.of(0);
+    public static final Current SUPPLY_CURRENT_LIMIT = Amps.of(40);
 
     public static final SlotConfigs SLOT_CONFIGS = SlotConfigs().withKP(0)
         .withKI(0.0)
@@ -103,25 +105,20 @@ public class Constants {
         .withKS(0.0)
         .withKV(0.0);
 
-    private static SlotConfigs SlotConfigs() {
-      // TODO Auto-generated method stub
-      throw new UnsupportedOperationException("Unimplemented method 'SlotConfigs'");
-    }
-
-    public static final double SENSOR_TO_MECHANISM_RATIO = 0.0;
+    public static final double SENSOR_TO_MECHANISM_RATIO = 1.0;
     public static final AngularVelocity INTAKE_VELOCITY = RotationsPerSecond.of(0.0);
     public static final AngularVelocity REVERSE_VELOCITY = RotationsPerSecond.of(0.0);
     public static final MotionMagicConfigs DEPLOY_MOTION_MAGIC_CONFIGS = new MotionMagicConfigs();
 
-    public static final Measure<AngleUnit> DEPLOY_POSITION_DEPLOYED = Rotations.of(0.0);
-    public static final Measure<AngleUnit> DEPLOY_POSITIONS_RETRACTED = Rotations.of(0.0);
-    public static final Measure<AngleUnit> DEPLOY_TOLERANCE = Rotations.of(0.0);
+    public static final Measure<AngleUnit> DEPLOY_POSITION_DEPLOYED = Rotations.of(1.0);
+    public static final Measure<AngleUnit> DEPLOY_POSITIONS_RETRACTED = Rotations.of(1.0);
+    public static final Measure<AngleUnit> DEPLOY_TOLERANCE = Rotations.of(1.0);
 
-    public static final double ROLLER_SENSOR_TO_MECHANISM_RATIO = 0;
+    public static final double ROLLER_ROTOR_TO_SENSOR_RATIO = 1;
     public static final Measure<AngularVelocityUnit> ROLLER_INTAKE_VELOCITY = RotationsPerSecond.of(0.0);
     public static final Measure<AngularVelocityUnit> ROLLER_REVERSE_VELOCITY = RotationsPerSecond.of(0.0);
 
-    public static final double DEPLOY_SENSOR_TO_MECHANISM_RATIO = (0 / 0) * 0.0 * 0.0;
+    public static final double DEPLOY_ROTOR_TO_SENSOR_RATIO = 1d;
   }
 
   public static class SpindexerConstants {
@@ -145,5 +142,10 @@ public class Constants {
     public static final double TRANSFER_FEED_VELOCITY = 30;
     public static final double TRANSFER_UNJAM_VELOCITY = -10;
 
+  }
+
+  public static SlotConfigs SlotConfigs() {
+    // TODO Auto-generated method stub
+    throw new UnsupportedOperationException("Unimplemented method 'SlotConfigs'");
   }
 }
