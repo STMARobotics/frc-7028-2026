@@ -76,6 +76,7 @@ public class RobotContainer {
     // Configure and populate the auto command chooser with autos from PathPlanner
     autoChooser = AutoBuilder.buildAutoChooser();
     SmartDashboard.putData("Auto Mode", autoChooser);
+    autoChooser.onChange(selected -> this.setStartingPose(selected));
 
     configureBindings();
 
@@ -109,14 +110,15 @@ public class RobotContainer {
     drivetrain.registerTelemetry(drivetrainTelemetry::telemeterize);
   }
 
-  public Command setStartingPose() {
-    PathPlannerAuto auto = (PathPlannerAuto) autoChooser.getSelected();
-    localizationSubsystem.setLimelightStartingPose(auto.getStartingPose());
-    return Commands.none();
+  public void setStartingPose(Command auto) {
+    if (auto instanceof PathPlannerAuto ppAuto) {
+      localizationSubsystem.setLimelightStartingPose(ppAuto.getStartingPose());
+    } else {
+      // TODO Not a pathplanner auto, now what?
+    }
   }
 
   public Command getAutonomousCommand() {
-    autoChooser.onChange((Command selected) -> this.setStartingPose());
     /* Run the path selected from the auto chooser */
     return autoChooser.getSelected();
   }

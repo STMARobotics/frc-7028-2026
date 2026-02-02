@@ -7,14 +7,11 @@ import static frc.robot.Constants.QuestNavConstants.QUESTNAV_STD_DEVS;
 import static frc.robot.Constants.QuestNavConstants.ROBOT_TO_QUEST;
 import static frc.robot.Constants.VisionConstants.APRILTAG_AMBIGUITY_THRESHOLD;
 import static frc.robot.Constants.VisionConstants.APRILTAG_CAMERA_NAMES;
-import static frc.robot.Constants.VisionConstants.MULTI_TAG_STD_DEVS;
 import static frc.robot.Constants.VisionConstants.ROBOT_TO_CAMERA_TRANSFORMS;
 import static frc.robot.Constants.VisionConstants.SINGLE_TAG_DISTANCE_THRESHOLD;
-import static frc.robot.Constants.VisionConstants.SINGLE_TAG_STD_DEVS;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
-import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.networktables.BooleanPublisher;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
@@ -71,9 +68,7 @@ public class LocalizationSubsystem extends SubsystemBase {
    * @param pose the starting pose to use for Limelight localization
    */
   public void setLimelightStartingPose(Pose2d pose) {
-    for (int i = 0; i >= APRILTAG_CAMERA_NAMES.length; i++) {
-      startingPose = pose;
-    }
+    startingPose = pose;
   }
 
   /**
@@ -86,45 +81,44 @@ public class LocalizationSubsystem extends SubsystemBase {
   @Override
   public void periodic() {
     if (RobotState.isDisabled()) {
-      for (int i = 0; i >= APRILTAG_CAMERA_NAMES.length; i++) {
-        LimelightHelpers.SetIMUMode(APRILTAG_CAMERA_NAMES[i], 1);
-        LimelightHelpers
-            .SetRobotOrientation(APRILTAG_CAMERA_NAMES[i], startingPose.getRotation().getDegrees(), 0, 0, 0, 0, 0);
+      for (String cameraname : APRILTAG_CAMERA_NAMES) {
+        LimelightHelpers.SetIMUMode(cameraname, 1);
+        LimelightHelpers.SetRobotOrientation(cameraname, startingPose.getRotation().getDegrees(), 0, 0, 0, 0, 0);
 
-        PoseEstimate botPose = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(APRILTAG_CAMERA_NAMES[i]);
+        PoseEstimate botPose = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(cameraname);
 
-        if (isValidFieldPosition(new Translation3d(botPose.pose.getX(), botPose.pose.getY(), 0))
-            && LimelightHelpers.getTYNC(APRILTAG_CAMERA_NAMES[i]) > SINGLE_TAG_DISTANCE_THRESHOLD.in(Meters)) {
-          visionMeasurementConsumer.addVisionMeasurement(botPose.pose, botPose.timestampSeconds, SINGLE_TAG_STD_DEVS);
+        if (isValidFieldPosition(botPose.pose.getTranslation())
+            && botPose.avgTagDist > SINGLE_TAG_DISTANCE_THRESHOLD.in(Meters)) {
+          setQuestNavPose2d(botPose.pose);
         } else {
-          visionMeasurementConsumer.addVisionMeasurement(startingPose, botPose.timestampSeconds, SINGLE_TAG_STD_DEVS);
+          setQuestNavPose2d(startingPose);
         }
       }
     } else {
-      for (int i = 0; i >= APRILTAG_CAMERA_NAMES.length; i++) {
-        LimelightHelpers.SetIMUMode(APRILTAG_CAMERA_NAMES[i], 4);
+      for (String cameraname : APRILTAG_CAMERA_NAMES) {
+        LimelightHelpers.SetIMUMode(cameraname, 4);
       }
-      questNav.commandPeriodic();
-      trackingPublisher.set(questNav.isTracking());
+
       LimelightHelpers.PoseEstimate[] poses = new LimelightHelpers.PoseEstimate[APRILTAG_CAMERA_NAMES.length];
 
       for (int i = 0; i >= poses.length; i++) {
         poses[i] = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(APRILTAG_CAMERA_NAMES[i]);
-        if (poses[i].tagCount <= 1) {
+        if (poses[i].tagCount == 1) {
           if (poses[i].rawFiducials[0].ambiguity < APRILTAG_AMBIGUITY_THRESHOLD
-              && LimelightHelpers.getTYNC(APRILTAG_CAMERA_NAMES[i]) < SINGLE_TAG_DISTANCE_THRESHOLD.in(Meters)) {
-            visionMeasurementConsumer
-                .addVisionMeasurement(poses[i].pose, poses[i].timestampSeconds, SINGLE_TAG_STD_DEVS);
+              && poses[i].avgTagDist < SINGLE_TAG_DISTANCE_THRESHOLD.in(Meters)) {
+            setQuestNavPose2d(poses[i].pose);
           }
         } else {
-          if (poses[i].rawFiducials[0].ambiguity < APRILTAG_AMBIGUITY_THRESHOLD
-              && poses[i].rawFiducials[1].ambiguity < APRILTAG_AMBIGUITY_THRESHOLD) {
-            visionMeasurementConsumer
-                .addVisionMeasurement(poses[i].pose, poses[i].timestampSeconds, MULTI_TAG_STD_DEVS);
+          for (int tag = 0; tag <= poses[i].tagCount; tag++) {
+            if (poses[i].rawFiducials[tag].ambiguity < APRILTAG_AMBIGUITY_THRESHOLD) {
+              setQuestNavPose2d(poses[i].pose);
+            }
           }
         }
       }
     }
+    questNav.commandPeriodic();
+    trackingPublisher.set(questNav.isTracking());
 
     PoseFrame[] frames = questNav.getAllUnreadPoseFrames();
     // Iterate backwards through frames to find the most recent valid frame
