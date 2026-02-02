@@ -2,32 +2,36 @@ package frc.robot.subsystems;
 
 import static com.ctre.phoenix6.signals.FeedbackSensorSourceValue.FusedCANcoder;
 import static com.ctre.phoenix6.signals.NeutralModeValue.Brake;
+import static com.ctre.phoenix6.signals.NeutralModeValue.Coast;
 import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.Second;
 import static edu.wpi.first.units.Units.Seconds;
 import static edu.wpi.first.units.Units.Volts;
 import static frc.robot.Constants.CANIVORE_BUS_NAME;
-import static frc.robot.Constants.TurretConstants.PITCH_ENCODER_ID;
-import static frc.robot.Constants.TurretConstants.PITCH_LIMIT_FORWARD;
-import static frc.robot.Constants.TurretConstants.PITCH_LIMIT_REVERSE;
-import static frc.robot.Constants.TurretConstants.PITCH_MAGNETIC_OFFSET;
-import static frc.robot.Constants.TurretConstants.PITCH_MOTION_MAGIC_CONFIGS;
-import static frc.robot.Constants.TurretConstants.PITCH_MOTOR_ID;
-import static frc.robot.Constants.TurretConstants.PITCH_ROTOR_TO_SENSOR_RATIO;
-import static frc.robot.Constants.TurretConstants.PITCH_SLOT_CONFIGS;
-import static frc.robot.Constants.TurretConstants.PITCH_STATOR_CURRENT_LIMIT;
-import static frc.robot.Constants.TurretConstants.PITCH_SUPPLY_CURRENT_LIMIT;
-import static frc.robot.Constants.TurretConstants.YAW_LIMIT_FORWARD;
-import static frc.robot.Constants.TurretConstants.YAW_LIMIT_REVERSE;
-import static frc.robot.Constants.TurretConstants.YAW_MOTION_MAGIC_CONFIGS;
-import static frc.robot.Constants.TurretConstants.YAW_MOTOR_ID;
-import static frc.robot.Constants.TurretConstants.YAW_POT_LIMIT_FORWARD;
-import static frc.robot.Constants.TurretConstants.YAW_POT_LIMIT_REVERSE;
-import static frc.robot.Constants.TurretConstants.YAW_SLOT_CONFIGS;
-import static frc.robot.Constants.TurretConstants.YAW_STATOR_CURRENT_LIMIT;
-import static frc.robot.Constants.TurretConstants.YAW_SUPPLY_CURRENT_LIMIT;
+import static frc.robot.Constants.ShooterConstants.FLYWHEEL_MOTOR_ID;
+import static frc.robot.Constants.ShooterConstants.FLYWHEEL_SLOT_CONFIGS;
+import static frc.robot.Constants.ShooterConstants.FLYWHEEL_STATOR_CURRENT_LIMIT;
+import static frc.robot.Constants.ShooterConstants.FLYWHEEL_SUPPLY_CURRENT_LIMIT;
+import static frc.robot.Constants.ShooterConstants.PITCH_ENCODER_ID;
+import static frc.robot.Constants.ShooterConstants.PITCH_LIMIT_FORWARD;
+import static frc.robot.Constants.ShooterConstants.PITCH_LIMIT_REVERSE;
+import static frc.robot.Constants.ShooterConstants.PITCH_MAGNETIC_OFFSET;
+import static frc.robot.Constants.ShooterConstants.PITCH_MOTION_MAGIC_CONFIGS;
+import static frc.robot.Constants.ShooterConstants.PITCH_MOTOR_ID;
+import static frc.robot.Constants.ShooterConstants.PITCH_ROTOR_TO_SENSOR_RATIO;
+import static frc.robot.Constants.ShooterConstants.PITCH_SLOT_CONFIGS;
+import static frc.robot.Constants.ShooterConstants.PITCH_STATOR_CURRENT_LIMIT;
+import static frc.robot.Constants.ShooterConstants.PITCH_SUPPLY_CURRENT_LIMIT;
+import static frc.robot.Constants.ShooterConstants.YAW_LIMIT_FORWARD;
+import static frc.robot.Constants.ShooterConstants.YAW_LIMIT_REVERSE;
+import static frc.robot.Constants.ShooterConstants.YAW_MOTION_MAGIC_CONFIGS;
+import static frc.robot.Constants.ShooterConstants.YAW_MOTOR_ID;
+import static frc.robot.Constants.ShooterConstants.YAW_SLOT_CONFIGS;
+import static frc.robot.Constants.ShooterConstants.YAW_STATOR_CURRENT_LIMIT;
+import static frc.robot.Constants.ShooterConstants.YAW_SUPPLY_CURRENT_LIMIT;
 
+import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
@@ -40,6 +44,8 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.units.AngleUnit;
+import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.MutAngle;
@@ -60,18 +66,23 @@ public class ShooterSubsystem extends SubsystemBase {
   private final TalonFX pitchMotor = new TalonFX(PITCH_MOTOR_ID, CANIVORE_BUS_NAME);
   private final CANcoder pitchEncoder = new CANcoder(PITCH_ENCODER_ID, CANIVORE_BUS_NAME);
 
+  private final TalonFX flywheelMotor = new TalonFX(FLYWHEEL_MOTOR_ID, CANIVORE_BUS_NAME);
+
   private final MotionMagicVoltage yawControl = new MotionMagicVoltage(0.0);
   private final MotionMagicVoltage pitchControl = new MotionMagicVoltage(0.0);
+  private final MotionMagicVoltage flywheelControl = new MotionMagicVoltage(0.0);
   private final VoltageOut sysIdYawControl = new VoltageOut(0.0).withEnableFOC(true);
   private final VoltageOut sysIdPitchControl = new VoltageOut(0.0).withEnableFOC(true);
+  private final VoltageOut sysIdFlywheelControl = new VoltageOut(0.0).withEnableFOC(true);
 
-  // TODO: Do StatusSignal and use refreshing and latency factor instead of just raw cancoder data
   // TODO: Fuse motor with cancoder
 
-  private final StatusSignal<Angle> yawPosition;
-  private final StatusSignal<AngularVelocity> yawVelocity;
-  private final StatusSignal<Angle> pitchPosition;
-  private final StatusSignal<AngularVelocity> pitchVelocity;
+  // How do we get from a potentiometer to a StatusSignal inside of a constructor
+  // private final StatusSignal<Angle> yawPosition;
+  private final StatusSignal<AngularVelocity> yawVelocity = yawMotor.getVelocity();
+  private final StatusSignal<Angle> pitchPosition = pitchEncoder.getPosition();
+  private final StatusSignal<AngularVelocity> pitchVelocity = pitchEncoder.getVelocity();
+  private final StatusSignal<AngularVelocity> flywheelVelocity = flywheelMotor.getVelocity();
 
   // Reusable object to reduce memory pressure from reallocation
   private final MutAngle yawAngle = Rotations.mutable(0);
@@ -96,6 +107,16 @@ public class ShooterSubsystem extends SubsystemBase {
         pitchMotor.setControl(sysIdPitchControl.withOutput(voltage.in(Volts)));
       }, null, this));
 
+  private final SysIdRoutine flywheelSysIdRoutine = new SysIdRoutine(
+      new SysIdRoutine.Config(
+          Volts.per(Second).of(.25),
+          Volts.of(1),
+          Seconds.of(10),
+          state -> SignalLogger.writeString("Flywheel Motor SysId", state.toString())),
+      new SysIdRoutine.Mechanism((voltage) -> {
+        flywheelMotor.setControl(sysIdFlywheelControl.withOutput(voltage.in(Volts)));
+      }, null, this));
+
   public ShooterSubsystem() {
     // Yaw motor configuration
     var yawTalonConfig = new TalonFXConfiguration();
@@ -113,8 +134,6 @@ public class ShooterSubsystem extends SubsystemBase {
         .withReverseSoftLimitThreshold(YAW_LIMIT_REVERSE.in(Rotations));
 
     yawMotor.getConfigurator().apply(yawTalonConfig);
-    yawPosition = yawMotor.getPosition();
-    yawVelocity = yawMotor.getVelocity();
 
     // Pitch encoder configuration
     var pitchCanCoderConfig = new CANcoderConfiguration();
@@ -141,8 +160,18 @@ public class ShooterSubsystem extends SubsystemBase {
         .withReverseSoftLimitThreshold(PITCH_LIMIT_REVERSE.in(Rotations));
 
     pitchMotor.getConfigurator().apply(pitchTalonConfig);
-    pitchPosition = pitchMotor.getPosition();
-    pitchVelocity = pitchMotor.getVelocity();
+
+    // Flywheel motor configuration
+    var flywheelTalonConfig = new TalonFXConfiguration();
+    flywheelTalonConfig.MotorOutput.withNeutralMode(Coast);
+    flywheelTalonConfig.CurrentLimits.withStatorCurrentLimit(FLYWHEEL_STATOR_CURRENT_LIMIT.in(Amps))
+        .withStatorCurrentLimitEnable(true)
+        .withSupplyCurrentLimit(FLYWHEEL_SUPPLY_CURRENT_LIMIT.in(Amps))
+        .withSupplyCurrentLimitEnable(true);
+    flywheelTalonConfig.ClosedLoopGeneral.ContinuousWrap = false;
+    flywheelTalonConfig.withSlot0(Slot0Configs.from(FLYWHEEL_SLOT_CONFIGS));
+
+    flywheelMotor.getConfigurator().apply(flywheelTalonConfig);
   }
 
   @Override
@@ -157,7 +186,7 @@ public class ShooterSubsystem extends SubsystemBase {
    * @param angleDegrees The desired turret angle in degrees.
    *          -180 to 180, where 0 is forward, positive is clockwise looking from above.
    */
-  public void moveToYawPosition(Angle yawDegrees) {
+  public void setYawAngle(Angle yawDegrees) {
     yawMotor.setControl(yawControl.withPosition(normalizeYaw(yawDegrees)));
   }
 
@@ -166,16 +195,30 @@ public class ShooterSubsystem extends SubsystemBase {
    *
    * @param angleDegrees The desired pitch angle in degrees.
    */
-  public void setPitchAngle(Angle pitchDegrees) {
-    pitchMotor.setControl(pitchControl.withPosition(pitchDegrees.in(Rotations)));
+  public void setPitchAngle(Angle pitchAngle) {
+    pitchMotor.setControl(pitchControl.withPosition(pitchAngle.in(Rotations)));
   }
 
-  /**
-   * Stops both yaw and pitch motors, set in function just in case periodic() is not called (e-stop)
-   */
-  public void stop() {
+  public void setFlywheelRPM(double rpm) {
+
+  }
+
+  public void stopYaw() {
     yawMotor.setControl(new VoltageOut(0.0).withEnableFOC(true));
+  }
+
+  public void stopPitch() {
     pitchMotor.setControl(new VoltageOut(0.0).withEnableFOC(true));
+  }
+
+  public void stopFlywheel() {
+    flywheelMotor.setControl(new VoltageOut(0.0).withEnableFOC(true));
+  }
+
+  public void stopAll() {
+    stopYaw();
+    stopPitch();
+    stopFlywheel();
   }
 
   /**
@@ -197,7 +240,6 @@ public class ShooterSubsystem extends SubsystemBase {
   @Logged(name = "Turret Yaw Angle")
   public Angle getYawAngle() {
     double potPosition = yawPotentiometer.get(); // .get() returns position 0-1
-    // I cant remember if we need to do this or not
     return Rotations
         .of(MathUtil.interpolate(YAW_LIMIT_REVERSE.in(Rotations), YAW_LIMIT_FORWARD.in(Rotations), potPosition));
   }
@@ -208,8 +250,9 @@ public class ShooterSubsystem extends SubsystemBase {
    * @return The current pitch angle in degrees.
    */
   @Logged(name = "Turret Pitch Angle")
-  public StatusSignal<Angle> getPitchAngle() {
-    return pitchEncoder.getPosition();
+  private Measure<AngleUnit> getPitchAngle() {
+    BaseStatusSignal.refreshAll(pitchPosition);
+    return BaseStatusSignal.getLatencyCompensatedValue(pitchPosition, pitchVelocity);
   }
 
   /**
@@ -224,18 +267,32 @@ public class ShooterSubsystem extends SubsystemBase {
 
   // SysId Commands (keep at bottom)
   public Command sysIdYawQuasistaticCommand(Direction direction) {
-    return yawSysIdRoutine.quasistatic(direction).withName("SysId yaw quasi " + direction).finallyDo(this::stop);
+    return yawSysIdRoutine.quasistatic(direction).withName("SysId yaw quasi " + direction).finallyDo(this::stopYaw);
   }
 
   public Command sysIdYawDynamicCommand(Direction direction) {
-    return yawSysIdRoutine.dynamic(direction).withName("SysId yaw dynamic " + direction).finallyDo(this::stop);
+    return yawSysIdRoutine.dynamic(direction).withName("SysId yaw dynamic " + direction).finallyDo(this::stopYaw);
   }
 
   public Command sysIdPitchQuasistaticCommand(Direction direction) {
-    return pitchSysIdRoutine.quasistatic(direction).withName("SysId pitch quasi " + direction).finallyDo(this::stop);
+    return pitchSysIdRoutine.quasistatic(direction)
+        .withName("SysId pitch quasi " + direction)
+        .finallyDo(this::stopPitch);
   }
 
   public Command sysIdPitchDynamicCommand(Direction direction) {
-    return pitchSysIdRoutine.dynamic(direction).withName("SysId pitch dynamic " + direction).finallyDo(this::stop);
+    return pitchSysIdRoutine.dynamic(direction).withName("SysId pitch dynamic " + direction).finallyDo(this::stopPitch);
+  }
+
+  public Command sysIdFlywheelQuasistaticCommand(Direction direction) {
+    return flywheelSysIdRoutine.quasistatic(direction)
+        .withName("SysId flywheel quasi " + direction)
+        .finallyDo(this::stopFlywheel);
+  }
+
+  public Command sysIdFlywheelDynamicCommand(Direction direction) {
+    return flywheelSysIdRoutine.dynamic(direction)
+        .withName("SysId flywheel dynamic " + direction)
+        .finallyDo(this::stopFlywheel);
   }
 }
