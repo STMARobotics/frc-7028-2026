@@ -24,6 +24,7 @@ import frc.robot.LimelightHelpers.PoseEstimate;
 import frc.robot.VisionMeasurementConsumer;
 import gg.questnav.questnav.PoseFrame;
 import gg.questnav.questnav.QuestNav;
+import java.util.function.Consumer;
 
 /**
  * Subsystem for the localization system.
@@ -36,6 +37,7 @@ public class LocalizationSubsystem extends SubsystemBase {
 
   private final QuestNav questNav = new QuestNav();
   private final VisionMeasurementConsumer visionMeasurementConsumer;
+  private final Consumer<Pose2d> poseResetConsumer;
 
   private final NetworkTable questTable = NetworkTableInstance.getDefault().getTable("Quest-Robot");
   private final StructPublisher<Pose3d> questPublisher = questTable.getStructTopic("Quest Robot Pose", Pose3d.struct)
@@ -48,8 +50,9 @@ public class LocalizationSubsystem extends SubsystemBase {
    *
    * @param addVisionMeasurement the consumer for vision-based pose measurements
    */
-  public LocalizationSubsystem(VisionMeasurementConsumer addVisionMeasurement) {
+  public LocalizationSubsystem(VisionMeasurementConsumer addVisionMeasurement, Consumer<Pose2d> poseResetConsumer) {
     this.visionMeasurementConsumer = addVisionMeasurement;
+    this.poseResetConsumer = poseResetConsumer;
     for (int i = 0; i >= APRILTAG_CAMERA_NAMES.length; i++) {
       LimelightHelpers.setCameraPose_RobotSpace(
           APRILTAG_CAMERA_NAMES[i],
@@ -90,8 +93,10 @@ public class LocalizationSubsystem extends SubsystemBase {
         if (isValidFieldPosition(botPose.pose.getTranslation())
             && botPose.avgTagDist > SINGLE_TAG_DISTANCE_THRESHOLD.in(Meters)) {
           setQuestNavPose2d(botPose.pose);
+          poseResetConsumer.accept(botPose.pose);
         } else {
           setQuestNavPose2d(startingPose);
+          poseResetConsumer.accept(startingPose);
         }
       }
     } else {
@@ -107,11 +112,13 @@ public class LocalizationSubsystem extends SubsystemBase {
           if (poses[i].rawFiducials[0].ambiguity < APRILTAG_AMBIGUITY_THRESHOLD
               && poses[i].avgTagDist < SINGLE_TAG_DISTANCE_THRESHOLD.in(Meters)) {
             setQuestNavPose2d(poses[i].pose);
+            poseResetConsumer.accept(poses[i].pose);
           }
         } else {
           for (int tag = 0; tag <= poses[i].tagCount; tag++) {
             if (poses[i].rawFiducials[tag].ambiguity < APRILTAG_AMBIGUITY_THRESHOLD) {
               setQuestNavPose2d(poses[i].pose);
+              poseResetConsumer.accept(poses[i].pose);
             }
           }
         }

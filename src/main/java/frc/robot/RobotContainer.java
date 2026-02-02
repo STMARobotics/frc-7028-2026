@@ -17,6 +17,8 @@ import com.pathplanner.lib.commands.FollowPathCommand;
 import com.pathplanner.lib.commands.PathPlannerAuto;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -58,7 +60,8 @@ public class RobotContainer {
       TunerConstants.BackRight);
 
   private final LocalizationSubsystem localizationSubsystem = new LocalizationSubsystem(
-      drivetrain::addVisionMeasurement);
+      drivetrain::addVisionMeasurement,
+      drivetrain::resetPose);
 
   /* Path follower */
   private final SendableChooser<Command> autoChooser;
@@ -114,7 +117,7 @@ public class RobotContainer {
     if (auto instanceof PathPlannerAuto ppAuto) {
       localizationSubsystem.setLimelightStartingPose(ppAuto.getStartingPose());
     } else {
-      // TODO Not a pathplanner auto, now what?
+      localizationSubsystem.setLimelightStartingPose(new Pose2d(new Translation2d(), new Rotation2d(0)));
     }
   }
 
