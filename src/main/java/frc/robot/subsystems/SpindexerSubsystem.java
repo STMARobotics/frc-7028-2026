@@ -11,9 +11,7 @@ import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
@@ -29,7 +27,7 @@ public class SpindexerSubsystem extends SubsystemBase {
   private final TalonFX spindexerMotor = new TalonFX(Constants.SpindexerConstants.DEVICE_ID_SPINDEXER_MOTOR);
   private final VelocityTorqueCurrentFOC spindexerVelocityTorque = new VelocityTorqueCurrentFOC(0.0);
   private final TorqueCurrentFOC spindexerTorqueControl = new TorqueCurrentFOC(0.0);
-  private PhotonCamera hopperCam = new PhotonCamera(Constants.SpindexerConstants.HOPPER_CAMERA_NAME);
+  private final PhotonCamera hopperCam = new PhotonCamera(Constants.SpindexerConstants.HOPPER_CAMERA_NAME);
 
   enum SpindexerDirection {
     Forward,
@@ -87,9 +85,13 @@ public class SpindexerSubsystem extends SubsystemBase {
         .setControl(spindexerVelocityTorque.withVelocity(Constants.SpindexerConstants.SPINDEXER_INTAKE_VELOCITY));
   }
 
-  // Spins the spindexer to unjam fuel
+  // Agitates the spindexer back and forth to prevent jams
   public Command agitate() {
-    return new AgitateCommand(this);
+    return run(() -> this.spin(SpindexerDirection.Forward)).withTimeout(0.5)
+        .andThen(run(() -> this.spin(SpindexerDirection.Backward)).withTimeout(0.5))
+        .repeatedly()
+        .finallyDo(this::stop);
+    // return new AgitateCommand(this);
   }
 
   // Stops the spindexer
@@ -98,7 +100,7 @@ public class SpindexerSubsystem extends SubsystemBase {
   }
 
   public boolean isEmpty() {
-    return !hopperCam.getLatestResult().hasTargets();
+    return hopperCam.getAllUnreadResults().isEmpty();
   }
 
   public boolean isFull() {
@@ -106,64 +108,23 @@ public class SpindexerSubsystem extends SubsystemBase {
       return false;
     }
     double accumulatedArea = 0;
-    for (var target : hopperCam.getLatestResult().getTargets()) {
-      accumulatedArea += target.getArea();
-      if (accumulatedArea >= Constants.SpindexerConstants.HOPPER_FULL_THRESHOLD) {
-        return true;
-      }
+    for (var target : hopperCam.getAllUnreadResults()) {
+      var targetArea = target.getTargets().get(0).getArea();
+      accumulatedArea += targetArea;
+
+      return (accumulatedArea >= Constants.SpindexerConstants.HOPPER_FULL_THRESHOLD);
     }
 
     return false;
   }
 
-  private void Spin(SpindexerDirection direction) {
+  private void spin(SpindexerDirection direction) {
     if (direction == SpindexerDirection.Backward) {
       spindexerMotor.setControl(
           spindexerVelocityTorque.withVelocity(Constants.SpindexerConstants.SPINDEXER_AGITATE_BACKWARDS_VELOCITY));
     } else {
       spindexerMotor.setControl(
-          spindexerVelocityTorque.withVelocity(Constants.SpindexerConstants.SPINDEXER_AGITATE_FORWORDS_VELOCITY));
-    }
-  }
-
-  private class AgitateCommand extends Command {
-    private double startTime;
-    private final double AGITATE_TIME_SECONDS = .5; // milliseconds
-
-    private SpindexerDirection direction = SpindexerDirection.Forward;
-
-    private AgitateCommand(Subsystem subsystem) {
-      addRequirements(subsystem);
-    }
-
-    @Override
-    public void initialize() {
-      startTime = Timer.getFPGATimestamp();
-
-      spindexerMotor.setControl(
-          spindexerVelocityTorque.withVelocity(Constants.SpindexerConstants.SPINDEXER_AGITATE_FORWORDS_VELOCITY));
-    }
-
-    @Override
-    public void execute() {
-      double currentTime = Timer.getFPGATimestamp();
-      if (currentTime - startTime < AGITATE_TIME_SECONDS) {
-        return;
-      }
-      if (direction == SpindexerDirection.Forward) {
-        direction = SpindexerDirection.Backward;
-        Spin(direction);
-      } else {
-        direction = SpindexerDirection.Forward;
-        Spin(direction);
-      }
-      startTime = currentTime;
-    }
-
-    @Override
-    public void end(boolean interrupted) {
-      stop();
-      spindexerMotor.stopMotor();
+          spindexerVelocityTorque.withVelocity(Constants.SpindexerConstants.SPINDEXER_AGITATE_FORWARDS_VELOCITY));
     }
   }
 }
