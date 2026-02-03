@@ -128,7 +128,7 @@ public final class Constants {
 
     public static final double FLYWHEEL_GEAR_RATIO = 1.0; // placeholder
     public static final Distance FLYWHEEL_WHEEL_RADIUS = Inches.of(0.05); // placeholder
-    public static final double FLYWHEEL_MAX_RPM = 5700.0; // placeholder
+    public static final double FLYWHEEL_MAX_RPS = 1.0; // placeholder
 
     // TODO: Tune PID values
     public static final SlotConfigs YAW_SLOT_CONFIGS = new SlotConfigs().withKP(0.0)
