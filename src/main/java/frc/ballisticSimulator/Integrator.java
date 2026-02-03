@@ -1,3 +1,8 @@
+/*
+ * file: Integrator.java
+ * date: 2/2/2026
+ * description: A high precision simulator for solving dv/dt = f(v) employing RK45
+ */
 package frc.ballisticSimulator;
 
 import edu.wpi.first.math.geometry.Translation3d;
