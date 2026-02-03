@@ -11,12 +11,16 @@ import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Constants;
+import java.util.List;
 import org.photonvision.*;
+import org.photonvision.targeting.PhotonPipelineResult;
+import org.photonvision.targeting.PhotonTrackedTarget;
 
 /**
  * The is the Subsystem for the Spindexer.
@@ -28,6 +32,8 @@ public class SpindexerSubsystem extends SubsystemBase {
   private final VelocityTorqueCurrentFOC spindexerVelocityTorque = new VelocityTorqueCurrentFOC(0.0);
   private final TorqueCurrentFOC spindexerTorqueControl = new TorqueCurrentFOC(0.0);
   private final PhotonCamera hopperCam = new PhotonCamera(Constants.SpindexerConstants.HOPPER_CAMERA_NAME);
+  private PhotonPipelineResult photonPipelineResult = new PhotonPipelineResult();
+  private static final double PIPELINE_RESULT_TTL = 0.25;
 
   private enum SpindexerDirection {
     Forward,
@@ -99,7 +105,7 @@ public class SpindexerSubsystem extends SubsystemBase {
   }
 
   public boolean isEmpty() {
-    return hopperCam.getAllUnreadResults().removeIf(result -> result.getTargets().isEmpty());
+    return getLatestTarget().isEmpty();
   }
 
   public boolean isFull() {
@@ -107,7 +113,7 @@ public class SpindexerSubsystem extends SubsystemBase {
       return false;
     }
     double accumulatedArea = 0;
-    for (var target : hopperCam.getLatestResult().getTargets()) {
+    for (var target : getLatestTarget()) {
       accumulatedArea += target.getArea();
       if (accumulatedArea >= Constants.SpindexerConstants.HOPPER_FULL_THRESHOLD) {
         return true;
@@ -125,5 +131,19 @@ public class SpindexerSubsystem extends SubsystemBase {
       spindexerMotor.setControl(
           spindexerVelocityTorque.withVelocity(Constants.SpindexerConstants.SPINDEXER_AGITATE_FORWARDS_VELOCITY));
     }
+  }
+
+  private List<PhotonTrackedTarget> getLatestTarget() {
+    for (PhotonPipelineResult temp : hopperCam.getAllUnreadResults()) {
+      photonPipelineResult = temp;
+    }
+    double currentTime = Timer.getFPGATimestamp();
+    double resultTime = photonPipelineResult.getTimestampSeconds();
+
+    if (currentTime - resultTime >= PIPELINE_RESULT_TTL) {
+      photonPipelineResult = new PhotonPipelineResult();
+    }
+
+    return photonPipelineResult.targets;
   }
 }
