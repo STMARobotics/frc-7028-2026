@@ -5,7 +5,6 @@ import static edu.wpi.first.units.Units.Meters;
 import static frc.robot.Constants.FieldConstants.isValidFieldPosition;
 import static frc.robot.Constants.QuestNavConstants.QUESTNAV_STD_DEVS;
 import static frc.robot.Constants.QuestNavConstants.ROBOT_TO_QUEST;
-import static frc.robot.Constants.VisionConstants.APRILTAG_AMBIGUITY_THRESHOLD;
 import static frc.robot.Constants.VisionConstants.APRILTAG_CAMERA_NAMES;
 import static frc.robot.Constants.VisionConstants.ROBOT_TO_CAMERA_TRANSFORMS;
 import static frc.robot.Constants.VisionConstants.SINGLE_TAG_DISTANCE_THRESHOLD;
@@ -66,11 +65,11 @@ public class LocalizationSubsystem extends SubsystemBase {
   }
 
   /**
-   * Sets the starting pose for the Limelight vision system.
+   * gets the starting pose for the Limelight vision system.
    *
    * @param pose the starting pose to use for Limelight localization
    */
-  public void setLimelightStartingPose(Pose2d pose) {
+  public void getLimelightStartingPose(Pose2d pose) {
     startingPose = pose;
   }
 
@@ -84,68 +83,81 @@ public class LocalizationSubsystem extends SubsystemBase {
   @Override
   public void periodic() {
     if (RobotState.isDisabled()) {
+      // When the robot is disabled, set IMU and robot orientation for each AprilTag camera
       for (String cameraname : APRILTAG_CAMERA_NAMES) {
         LimelightHelpers.SetIMUMode(cameraname, 1);
         LimelightHelpers.SetRobotOrientation(cameraname, startingPose.getRotation().getDegrees(), 0, 0, 0, 0, 0);
 
+        // Get the current pose estimate from the Limelight camera
         PoseEstimate botPose = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(cameraname);
 
-        if (isValidFieldPosition(botPose.pose.getTranslation())
-            && botPose.avgTagDist > SINGLE_TAG_DISTANCE_THRESHOLD.in(Meters)) {
-          setQuestNavPose2d(botPose.pose);
-          poseResetConsumer.accept(botPose.pose);
+        // Check if the estimated pose is within the valid field boundaries
+        if (isValidFieldPosition(botPose.pose.getTranslation())) {
+          // If only one tag is detected
+          if (botPose.tagCount == 1) {
+            // If the tag is close enough, use the estimated pose
+            if (botPose.avgTagDist < SINGLE_TAG_DISTANCE_THRESHOLD.in(Meters)) {
+              setQuestNavPose2d(botPose.pose);
+              poseResetConsumer.accept(botPose.pose);
+            } else {
+              // If the tag is too far, fall back to the starting pose
+              setQuestNavPose2d(startingPose);
+              poseResetConsumer.accept(startingPose);
+            }
+          } else if (botPose.tagCount > 1) {
+            // If multiple tags are detected, use the estimated pose
+            setQuestNavPose2d(botPose.pose);
+            poseResetConsumer.accept(botPose.pose);
+          }
         } else {
+          // If the pose is not valid, fall back to the starting pose
           setQuestNavPose2d(startingPose);
           poseResetConsumer.accept(startingPose);
         }
       }
     } else {
+      // When the robot is enabled, set IMU mode for each AprilTag camera
       for (String cameraname : APRILTAG_CAMERA_NAMES) {
         LimelightHelpers.SetIMUMode(cameraname, 4);
-      }
 
-      LimelightHelpers.PoseEstimate[] poses = new LimelightHelpers.PoseEstimate[APRILTAG_CAMERA_NAMES.length];
-
-      for (int i = 0; i >= poses.length; i++) {
-        poses[i] = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(APRILTAG_CAMERA_NAMES[i]);
-        if (poses[i].tagCount == 1) {
-          if (poses[i].rawFiducials[0].ambiguity < APRILTAG_AMBIGUITY_THRESHOLD
-              && poses[i].avgTagDist < SINGLE_TAG_DISTANCE_THRESHOLD.in(Meters)) {
-            setQuestNavPose2d(poses[i].pose);
-            poseResetConsumer.accept(poses[i].pose);
+        // Get the current pose estimate from the Limelight camera
+        PoseEstimate pose = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(cameraname);
+        // If only one tag is detected and it's close enough, use the estimated pose
+        if (pose.tagCount == 1) {
+          if (pose.avgTagDist < SINGLE_TAG_DISTANCE_THRESHOLD.in(Meters)) {
+            setQuestNavPose2d(pose.pose);
+            poseResetConsumer.accept(pose.pose);
+          }
+        } else if (pose.tagCount > 1) {
+          for (int tag = 0; tag <= pose.tagCount; tag++) {
+            setQuestNavPose2d(pose.pose);
+            poseResetConsumer.accept(pose.pose);
           }
         } else {
-          for (int tag = 0; tag <= poses[i].tagCount; tag++) {
-            if (poses[i].rawFiducials[tag].ambiguity < APRILTAG_AMBIGUITY_THRESHOLD) {
-              setQuestNavPose2d(poses[i].pose);
-              poseResetConsumer.accept(poses[i].pose);
-            }
+          // No valid pose from this camera
+        }
+      PoseFrame[] frames = questNav.getAllUnreadPoseFrames();
+      // Iterate backwards through frames to find the most recent valid frame
+      for (int i = frames.length - 1; i >= 0; i--) {
+        PoseFrame frame = frames[i];
+        if (frame.isTracking()) {
+          Pose3d questPose = frame.questPose3d();
+          Pose3d robotPose = questPose.transformBy(ROBOT_TO_QUEST.inverse());
+
+          // Make sure the pose is inside the field
+          if (FieldConstants.isValidFieldPosition(robotPose.getTranslation())) {
+            // Add the measurement
+            visionMeasurementConsumer
+                .addVisionMeasurement(robotPose.toPose2d(), frame.dataTimestamp(), QUESTNAV_STD_DEVS);
+            // Publish for debugging
+            questPublisher.accept(robotPose);
+            break; // Found the most recent valid frame, exit loop
           }
         }
       }
     }
     questNav.commandPeriodic();
     trackingPublisher.set(questNav.isTracking());
-
-    PoseFrame[] frames = questNav.getAllUnreadPoseFrames();
-    // Iterate backwards through frames to find the most recent valid frame
-    for (int i = frames.length - 1; i >= 0; i--) {
-      PoseFrame frame = frames[i];
-      if (frame.isTracking()) {
-        Pose3d questPose = frame.questPose3d();
-        Pose3d robotPose = questPose.transformBy(ROBOT_TO_QUEST.inverse());
-
-        // Make sure the pose is inside the field
-        if (FieldConstants.isValidFieldPosition(robotPose.getTranslation())) {
-          // Add the measurement
-          visionMeasurementConsumer
-              .addVisionMeasurement(robotPose.toPose2d(), frame.dataTimestamp(), QUESTNAV_STD_DEVS);
-          // Publish for debugging
-          questPublisher.accept(robotPose);
-          break; // Found the most recent valid frame, exit loop
-        }
-      }
-    }
   }
 
   /**

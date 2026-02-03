@@ -79,7 +79,7 @@ public class RobotContainer {
     // Configure and populate the auto command chooser with autos from PathPlanner
     autoChooser = AutoBuilder.buildAutoChooser();
     SmartDashboard.putData("Auto Mode", autoChooser);
-    autoChooser.onChange(selected -> this.setStartingPose(selected));
+    autoChooser.onChange(this::setStartingPose);
 
     configureBindings();
 
@@ -115,9 +115,9 @@ public class RobotContainer {
 
   public void setStartingPose(Command auto) {
     if (auto instanceof PathPlannerAuto ppAuto) {
-      localizationSubsystem.setLimelightStartingPose(ppAuto.getStartingPose());
+      localizationSubsystem.getLimelightStartingPose(ppAuto.getStartingPose());
     } else {
-      localizationSubsystem.setLimelightStartingPose(new Pose2d(new Translation2d(), new Rotation2d(0)));
+      localizationSubsystem.getLimelightStartingPose(new Pose2d(new Translation2d(), new Rotation2d(0)));
     }
   }
 
