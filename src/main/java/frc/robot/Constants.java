@@ -100,9 +100,11 @@ public final class Constants {
   public static class ShooterConstants {
     // TODO: Confirm naming schemes and replace placeholders
     public static final int YAW_MOTOR_ID = 25;
+    public static final int YAW_ENCODER_ID = 29;
     public static final int PITCH_MOTOR_ID = 26;
-    public static final int PITCH_ENCODER_ID = 30;
-    public static final int FLYWHEEL_MOTOR_ID = -1;
+    public static final int PITCH_ENCODER_ID = 25;
+    public static final int RIGHT_FLYWHEEL_MOTOR_ID = 27;
+    public static final int LEFT_FLYWHEEL_MOTOR_ID = 28;
 
     public static final Current YAW_STATOR_CURRENT_LIMIT = Amps.of(100);
     public static final Current YAW_SUPPLY_CURRENT_LIMIT = Amps.of(40);
