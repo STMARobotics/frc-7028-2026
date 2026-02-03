@@ -29,7 +29,7 @@ public class SpindexerSubsystem extends SubsystemBase {
   private final TorqueCurrentFOC spindexerTorqueControl = new TorqueCurrentFOC(0.0);
   private final PhotonCamera hopperCam = new PhotonCamera(Constants.SpindexerConstants.HOPPER_CAMERA_NAME);
 
-  enum SpindexerDirection {
+  private enum SpindexerDirection {
     Forward,
     Backward
   }
@@ -91,7 +91,6 @@ public class SpindexerSubsystem extends SubsystemBase {
         .andThen(run(() -> this.spin(SpindexerDirection.Backward)).withTimeout(0.5))
         .repeatedly()
         .finallyDo(this::stop);
-    // return new AgitateCommand(this);
   }
 
   // Stops the spindexer
@@ -100,7 +99,7 @@ public class SpindexerSubsystem extends SubsystemBase {
   }
 
   public boolean isEmpty() {
-    return hopperCam.getAllUnreadResults().isEmpty();
+    return hopperCam.getAllUnreadResults().removeIf(result -> result.getTargets().isEmpty());
   }
 
   public boolean isFull() {
@@ -108,11 +107,11 @@ public class SpindexerSubsystem extends SubsystemBase {
       return false;
     }
     double accumulatedArea = 0;
-    for (var target : hopperCam.getAllUnreadResults()) {
-      var targetArea = target.getTargets().get(0).getArea();
-      accumulatedArea += targetArea;
-
-      return (accumulatedArea >= Constants.SpindexerConstants.HOPPER_FULL_THRESHOLD);
+    for (var target : hopperCam.getLatestResult().getTargets()) {
+      accumulatedArea += target.getArea();
+      if (accumulatedArea >= Constants.SpindexerConstants.HOPPER_FULL_THRESHOLD) {
+        return true;
+      }
     }
 
     return false;
