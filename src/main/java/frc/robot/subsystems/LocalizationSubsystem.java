@@ -136,22 +136,23 @@ public class LocalizationSubsystem extends SubsystemBase {
         } else {
           // No valid pose from this camera
         }
-      PoseFrame[] frames = questNav.getAllUnreadPoseFrames();
-      // Iterate backwards through frames to find the most recent valid frame
-      for (int i = frames.length - 1; i >= 0; i--) {
-        PoseFrame frame = frames[i];
-        if (frame.isTracking()) {
-          Pose3d questPose = frame.questPose3d();
-          Pose3d robotPose = questPose.transformBy(ROBOT_TO_QUEST.inverse());
+        PoseFrame[] frames = questNav.getAllUnreadPoseFrames();
+        // Iterate backwards through frames to find the most recent valid frame
+        for (int i = frames.length - 1; i >= 0; i--) {
+          PoseFrame frame = frames[i];
+          if (frame.isTracking()) {
+            Pose3d questPose = frame.questPose3d();
+            Pose3d robotPose = questPose.transformBy(ROBOT_TO_QUEST.inverse());
 
-          // Make sure the pose is inside the field
-          if (FieldConstants.isValidFieldPosition(robotPose.getTranslation())) {
-            // Add the measurement
-            visionMeasurementConsumer
-                .addVisionMeasurement(robotPose.toPose2d(), frame.dataTimestamp(), QUESTNAV_STD_DEVS);
-            // Publish for debugging
-            questPublisher.accept(robotPose);
-            break; // Found the most recent valid frame, exit loop
+            // Make sure the pose is inside the field
+            if (FieldConstants.isValidFieldPosition(robotPose.getTranslation())) {
+              // Add the measurement
+              visionMeasurementConsumer
+                  .addVisionMeasurement(robotPose.toPose2d(), frame.dataTimestamp(), QUESTNAV_STD_DEVS);
+              // Publish for debugging
+              questPublisher.accept(robotPose);
+              break; // Found the most recent valid frame, exit loop
+            }
           }
         }
       }
