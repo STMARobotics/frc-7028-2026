@@ -1,5 +1,6 @@
 /*
  * file: Integrator.java
+ * author: math-rad(github), math.rad elsewhere
  * date: 2/2/2026
  * description: A high precision simulator for solving dv/dt = f(v) employing RK45
  */
@@ -30,6 +31,7 @@ import java.util.function.Supplier;
 
 // spotless:off
 // https://en.wikipedia.org/wiki/Runge%E2%80%93Kutta%E2%80%93Fehlberg_method
+// https://math.okstate.edu/people/yqwang/teaching/math4513_fall11/Notes/rungekutta.pdf 
 // We ignore time here these forces are not in terms of time, just velocity
 public class Integrator {
   // K Coefficients 
