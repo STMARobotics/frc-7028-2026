@@ -116,8 +116,6 @@ public class LocalizationSubsystem extends SubsystemBase {
         LimelightHelpers.SetIMUMode(cameraname, 1);
         LimelightHelpers.SetRobotOrientation(cameraname, startingPose.getRotation().getDegrees(), 0, 0, 0, 0, 0);
 
-        // Get the current pose estimate from the Limelight camera
-
         // Check if the estimated pose is within the valid field boundaries
         if (isValidFieldPosition(currentPose.pose.getTranslation())) {
           // If only one tag is detected
