@@ -32,8 +32,9 @@ public class SpindexerSubsystem extends SubsystemBase {
   private final VelocityTorqueCurrentFOC spindexerVelocityTorque = new VelocityTorqueCurrentFOC(0.0);
   private final TorqueCurrentFOC spindexerTorqueControl = new TorqueCurrentFOC(0.0);
   private final PhotonCamera hopperCam = new PhotonCamera(Constants.SpindexerConstants.HOPPER_CAMERA_NAME);
-  private PhotonPipelineResult photonPipelineResult = new PhotonPipelineResult();
   private static final double PIPELINE_RESULT_TTL = 0.25;
+  private static final PhotonPipelineResult EMPTY_PHOTON_PIPELINE_RESULT = new PhotonPipelineResult();
+  private PhotonPipelineResult photonPipelineResult = EMPTY_PHOTON_PIPELINE_RESULT;
 
   private enum SpindexerDirection {
     Forward,
@@ -71,11 +72,11 @@ public class SpindexerSubsystem extends SubsystemBase {
     spindexerMotor.getConfigurator().apply(spinTalonconfig);
   }
 
-  public Command sysIdSpindexerCommand(edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction direction) {
+  public Command sysIdSpindexerCommand(Direction direction) {
     return spindexerSysIdRoutine.dynamic(direction).withName("Spindexer dynam " + direction).finallyDo(this::stop);
   }
 
-  public Command sysidSpindexerQuasistaticCommand(Direction direction) {
+  public Command sysIdSpindexerQuasistaticCommand(Direction direction) {
     return spindexerSysIdRoutine.quasistatic(direction).withName("Spindexer quasi " + direction).finallyDo(this::stop);
   }
 
@@ -134,14 +135,20 @@ public class SpindexerSubsystem extends SubsystemBase {
   }
 
   private List<PhotonTrackedTarget> getLatestTarget() {
-    for (PhotonPipelineResult temp : hopperCam.getAllUnreadResults()) {
-      photonPipelineResult = temp;
+    List<PhotonPipelineResult> photonResults = hopperCam.getAllUnreadResults();
+
+    // If there are results this will grab the last item on the list
+    if (photonResults.size() >= 1) {
+      photonPipelineResult = photonResults.get(photonResults.size() - 1);
     }
+
     double currentTime = Timer.getFPGATimestamp();
     double resultTime = photonPipelineResult.getTimestampSeconds();
 
+    // since the results are cached, the value is checked against the Time To Live (TTL) to
+    // ensure that the value isn't to old
     if (currentTime - resultTime >= PIPELINE_RESULT_TTL) {
-      photonPipelineResult = new PhotonPipelineResult();
+      photonPipelineResult = EMPTY_PHOTON_PIPELINE_RESULT;
     }
 
     return photonPipelineResult.targets;
