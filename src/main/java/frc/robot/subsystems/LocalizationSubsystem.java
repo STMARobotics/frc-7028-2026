@@ -6,15 +6,21 @@ import static frc.robot.Constants.FieldConstants.isValidFieldPosition;
 import static frc.robot.Constants.QuestNavConstants.QUESTNAV_STD_DEVS;
 import static frc.robot.Constants.QuestNavConstants.ROBOT_TO_QUEST;
 import static frc.robot.Constants.VisionConstants.APRILTAG_CAMERA_NAMES;
+import static frc.robot.Constants.VisionConstants.MULTI_TAG_STD_DEVS;
 import static frc.robot.Constants.VisionConstants.ROBOT_TO_CAMERA_TRANSFORMS;
 import static frc.robot.Constants.VisionConstants.SINGLE_TAG_DISTANCE_THRESHOLD;
+import static frc.robot.Constants.VisionConstants.SINGLE_TAG_STD_DEVS;
 
+import com.ctre.phoenix6.BaseStatusSignal;
+import com.ctre.phoenix6.StatusSignal;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.networktables.BooleanPublisher;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructPublisher;
+import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj.RobotState;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.FieldConstants;
@@ -43,16 +49,24 @@ public class LocalizationSubsystem extends SubsystemBase {
       .publish();
   private final BooleanPublisher trackingPublisher = questTable.getBooleanTopic("Quest Tracking").publish();
   private Pose2d startingPose = new Pose2d();
+  private final StatusSignal<Angle> yaw;
+  private final StatusSignal<AngularVelocity> yawVelocity;
 
   /**
    * Constructs a new LocalizationSubsystem.
    *
    * @param addVisionMeasurement the consumer for vision-based pose measurements
    */
-  public LocalizationSubsystem(VisionMeasurementConsumer addVisionMeasurement, Consumer<Pose2d> poseResetConsumer) {
+  public LocalizationSubsystem(
+      VisionMeasurementConsumer addVisionMeasurement,
+      Consumer<Pose2d> poseResetConsumer,
+      StatusSignal<Angle> yaw,
+      StatusSignal<AngularVelocity> yawVelocity) {
     this.visionMeasurementConsumer = addVisionMeasurement;
     this.poseResetConsumer = poseResetConsumer;
-    for (int i = 0; i >= APRILTAG_CAMERA_NAMES.length; i++) {
+    this.yaw = yaw;
+    this.yawVelocity = yawVelocity;
+    for (int i = 0; i <= APRILTAG_CAMERA_NAMES.length; i++) {
       LimelightHelpers.setCameraPose_RobotSpace(
           APRILTAG_CAMERA_NAMES[i],
             ROBOT_TO_CAMERA_TRANSFORMS[i].getX(),
@@ -65,11 +79,12 @@ public class LocalizationSubsystem extends SubsystemBase {
   }
 
   /**
-   * gets the starting pose for the Limelight vision system.
-   *
-   * @param pose the starting pose to use for Limelight localization
+   * Sets the starting pose for the robot at the beginning of a match.
+   * <p>
+   * This pose is used to initialize robot orientation and serves as a fallback
+   * for translation if vision-based localization is unavailable.
    */
-  public void getLimelightStartingPose(Pose2d pose) {
+  public void setInitialPose(Pose2d pose) {
     startingPose = pose;
   }
 
@@ -82,6 +97,8 @@ public class LocalizationSubsystem extends SubsystemBase {
    */
   @Override
   public void periodic() {
+    BaseStatusSignal.refreshAll(yaw, yawVelocity);
+    Angle compensatedYaw = BaseStatusSignal.getLatencyCompensatedValue(yaw, yawVelocity);
     if (RobotState.isDisabled()) {
       // When the robot is disabled, set IMU and robot orientation for each AprilTag camera
       for (String cameraname : APRILTAG_CAMERA_NAMES) {
@@ -118,6 +135,7 @@ public class LocalizationSubsystem extends SubsystemBase {
     } else {
       // When the robot is enabled, set IMU mode for each AprilTag camera
       for (String cameraname : APRILTAG_CAMERA_NAMES) {
+        LimelightHelpers.SetRobotOrientation(cameraname, compensatedYaw.in(Degrees), 0, 0, 0, 0, 0);
         LimelightHelpers.SetIMUMode(cameraname, 4);
 
         // Get the current pose estimate from the Limelight camera
@@ -126,15 +144,11 @@ public class LocalizationSubsystem extends SubsystemBase {
         if (pose.tagCount == 1) {
           if (pose.avgTagDist < SINGLE_TAG_DISTANCE_THRESHOLD.in(Meters)) {
             setQuestNavPose2d(pose.pose);
-            poseResetConsumer.accept(pose.pose);
-          }
-        } else if (pose.tagCount > 1) {
-          for (int tag = 0; tag <= pose.tagCount; tag++) {
-            setQuestNavPose2d(pose.pose);
-            poseResetConsumer.accept(pose.pose);
+            visionMeasurementConsumer.addVisionMeasurement(pose.pose, pose.timestampSeconds, SINGLE_TAG_STD_DEVS);
           }
         } else {
-          // No valid pose from this camera
+          setQuestNavPose2d(pose.pose);
+          visionMeasurementConsumer.addVisionMeasurement(pose.pose, pose.timestampSeconds, MULTI_TAG_STD_DEVS);
         }
         PoseFrame[] frames = questNav.getAllUnreadPoseFrames();
         // Iterate backwards through frames to find the most recent valid frame

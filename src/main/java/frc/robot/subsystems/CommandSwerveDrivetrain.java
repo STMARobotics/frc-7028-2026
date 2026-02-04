@@ -1,9 +1,12 @@
 package frc.robot.subsystems;
 
 import static edu.wpi.first.units.Units.*;
+import static frc.robot.Constants.OdometryContants.DEVICE_ID_PIGEON;
 
 import com.ctre.phoenix6.SignalLogger;
+import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.Utils;
+import com.ctre.phoenix6.hardware.Pigeon2;
 import com.ctre.phoenix6.swerve.SwerveDrivetrainConstants;
 import com.ctre.phoenix6.swerve.SwerveModuleConstants;
 import com.ctre.phoenix6.swerve.SwerveRequest;
@@ -17,6 +20,8 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Notifier;
@@ -56,6 +61,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
   private final SwerveRequest.SysIdSwerveSteerGains m_steerCharacterization = new SwerveRequest.SysIdSwerveSteerGains();
   private final SwerveRequest.SysIdSwerveRotation m_rotationCharacterization = new SwerveRequest.SysIdSwerveRotation();
   private final SysIdSwerveTranslationTorque m_translationCharacterizationTorque = new SysIdSwerveTranslationTorque();
+  private final Pigeon2 pigeon = new Pigeon2(DEVICE_ID_PIGEON);
 
   /*
    * SysId routine for characterizing translation with Voltage output mode. This is used to find PID gains for the drive
@@ -389,4 +395,13 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
   public Optional<Pose2d> samplePoseAt(double timestampSeconds) {
     return super.samplePoseAt(Utils.fpgaToCurrentTime(timestampSeconds));
   }
+
+  public StatusSignal<Angle> getYaw() {
+    return pigeon.getYaw();
+  }
+
+  public StatusSignal<AngularVelocity> getYawVelocity() {
+    return pigeon.getAngularVelocityZWorld();
+  }
+
 }

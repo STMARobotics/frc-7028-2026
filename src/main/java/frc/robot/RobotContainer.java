@@ -61,7 +61,9 @@ public class RobotContainer {
 
   private final LocalizationSubsystem localizationSubsystem = new LocalizationSubsystem(
       drivetrain::addVisionMeasurement,
-      drivetrain::resetPose);
+      drivetrain::resetPose,
+      drivetrain.getYaw(),
+      drivetrain.getYawVelocity());
 
   /* Path follower */
   private final SendableChooser<Command> autoChooser;
@@ -115,9 +117,9 @@ public class RobotContainer {
 
   public void setStartingPose(Command auto) {
     if (auto instanceof PathPlannerAuto ppAuto) {
-      localizationSubsystem.getLimelightStartingPose(ppAuto.getStartingPose());
+      localizationSubsystem.setInitialPose(ppAuto.getStartingPose());
     } else {
-      localizationSubsystem.getLimelightStartingPose(new Pose2d(new Translation2d(), new Rotation2d(0)));
+      localizationSubsystem.setInitialPose(new Pose2d(new Translation2d(), new Rotation2d(0)));
     }
   }
 

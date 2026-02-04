@@ -68,6 +68,7 @@ public class Constants {
    * Constants for odometry state estimation
    */
   public static class OdometryContants {
+    public static final int DEVICE_ID_PIGEON = 1;
     // Trust the physics/encoders moderately
     public static final Matrix<N3, N1> STATE_STD_DEVS = VecBuilder.fill(
         0.1, // X: 10cm error per meter (Trust wheels moderately)
