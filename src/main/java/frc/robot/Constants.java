@@ -107,4 +107,16 @@ public class Constants {
     public static final double TRANSFER_UNJAM_VELOCITY = -10;
 
   }
+
+  /**
+   * Constants for the LEDs
+   */
+  public static class LEDConstants {
+    public static final int DEVICE_ID_LEDS = 9;
+
+    public static final int LED_STRIP_LENGTH = 49;
+
+    public static final int TOTAL_LEDS = 2 * LED_STRIP_LENGTH;
+  }
+
 }
