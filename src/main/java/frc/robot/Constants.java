@@ -106,8 +106,7 @@ public class Constants {
             new Rotation3d(0, degreesToRadians(0), degreesToRadians(0))) };
 
     // The standard deviations of our vision estimated poses, which affect correction rate
-    public static final Matrix<N3, N1> SINGLE_TAG_STD_DEVS = VecBuilder.fill(2, 2, 99999999);
-    public static final Matrix<N3, N1> MULTI_TAG_STD_DEVS = VecBuilder.fill(0.5, 0.5, 99999999);
+    public static final Matrix<N3, N1> APRILTAG_STD_DEVS = VecBuilder.fill(2, 2, 99999999);
 
     public static final Distance SINGLE_TAG_DISTANCE_THRESHOLD = Meters.of(4.5);
   }
