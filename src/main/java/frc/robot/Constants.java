@@ -7,7 +7,6 @@ import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 
 import com.ctre.phoenix6.CANBus;
-import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.SlotConfigs;
 import com.ctre.phoenix6.signals.GravityTypeValue;
@@ -98,13 +97,17 @@ public final class Constants {
    * Constants for the turret subsystem
    */
   public static class ShooterConstants {
-    // TODO: Confirm naming schemes and replace placeholders
+    // TODO: Replace placeholder values and confirm ID assignments
     public static final int YAW_MOTOR_ID = 25;
     public static final int YAW_ENCODER_ID = 29;
     public static final int PITCH_MOTOR_ID = 26;
-    public static final int PITCH_ENCODER_ID = 25;
+    public static final int PITCH_ENCODER_ID = 30;
     public static final int RIGHT_FLYWHEEL_MOTOR_ID = 27;
     public static final int LEFT_FLYWHEEL_MOTOR_ID = 28;
+
+    public static final int YAW_STATUS_UPDATE_RATE_HZ = 100;
+    public static final int PITCH_STATUS_UPDATE_RATE_HZ = 100;
+    public static final int FLYWHEEL_STATUS_UPDATE_RATE_HZ = 50;
 
     public static final Current YAW_STATOR_CURRENT_LIMIT = Amps.of(100);
     public static final Current YAW_SUPPLY_CURRENT_LIMIT = Amps.of(40);
@@ -116,21 +119,22 @@ public final class Constants {
     public static final double YAW_ROTOR_TO_SENSOR_RATIO = 1.0; // placeholder
     public static final double PITCH_ROTOR_TO_SENSOR_RATIO = 1.0; // placeholder
 
+    public static final Angle YAW_MAGNETIC_OFFSET = Rotations.of(0.0); // placeholder
     public static final Angle PITCH_MAGNETIC_OFFSET = Rotations.of(0.0); // placeholder
 
-    public static final Angle YAW_LIMIT_FORWARD = Rotations.of(0.5); // placeholder (~180deg)
-    public static final Angle YAW_LIMIT_REVERSE = Rotations.of(-0.5); // placeholder
-    public static final Angle PITCH_LIMIT_FORWARD = Rotations.of(0.2); // placeholder
-    public static final Angle PITCH_LIMIT_REVERSE = Rotations.of(-0.1); // placeholder
+    public static final Angle YAW_SOFT_LIMIT_FORWARD = Rotations.of(0.5); // placeholder (~180deg)
+    public static final Angle YAW_SOFT_LIMIT_REVERSE = Rotations.of(-0.5); // placeholder
+    public static final double YAW_SOFT_LIMIT_FORWARD_ROT = YAW_SOFT_LIMIT_FORWARD.in(Rotations);
+    public static final double YAW_SOFT_LIMIT_REVERSE_ROT = YAW_SOFT_LIMIT_REVERSE.in(Rotations);
     public static final Angle YAW_HOME_ANGLE = Rotations.of(0.0); // placeholder
+    public static final Angle PITCH_SOFT_LIMIT_FORWARD = Rotations.of(0.2); // placeholder
+    public static final Angle PITCH_SOFT_LIMIT_REVERSE = Rotations.of(-0.1); // placeholder
     public static final Angle PITCH_HOME_ANGLE = Rotations.of(0.0); // placeholder
 
-    public static final double YAW_POT_LIMIT_FORWARD = 5.0; // placeholder
-    public static final double YAW_POT_LIMIT_REVERSE = 0.0; // placeholder
-
     public static final double FLYWHEEL_GEAR_RATIO = 1.0; // placeholder
-    public static final Distance FLYWHEEL_WHEEL_RADIUS = Inches.of(0.05); // placeholder
-    public static final double FLYWHEEL_MAX_RPS = 1.0; // placeholder
+    public static final Distance FLYWHEEL_WHEEL_RADIUS = Inches.of(99); // placeholder
+    public static final AngularVelocity FLYWHEEL_MAX_RPS = RotationsPerSecond.of(1.0); // placeholder
+    public static final AngularVelocity FLYWHEEL_IDLE_RPS = RotationsPerSecond.of(0.2); // placeholder
 
     // TODO: Tune PID values
     public static final SlotConfigs YAW_SLOT_CONFIGS = new SlotConfigs().withKP(0.0)
@@ -164,9 +168,5 @@ public final class Constants {
         .withKS(0.0)
         .withKV(0.0)
         .withKA(0.0);
-
-    public static final MotionMagicConfigs FLYWHEEL_MOTION_MAGIC_CONFIGS = new MotionMagicConfigs()
-        .withMotionMagicAcceleration(1.0) // placeholder
-        .withMotionMagicCruiseVelocity(1.0); // placeholder
   }
 }
