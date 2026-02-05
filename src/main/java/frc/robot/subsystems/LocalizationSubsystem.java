@@ -4,9 +4,10 @@ import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.DegreesPerSecond;
 import static edu.wpi.first.units.Units.Meters;
 import static frc.robot.Constants.FieldConstants.isValidFieldPosition;
-import static frc.robot.Constants.QuestNavConstants.QUESTNAV_STD_DEVS;
+import static frc.robot.Constants.QuestNavConstants.BASE_QUESTNAV_STD_DEVS;
 import static frc.robot.Constants.QuestNavConstants.ROBOT_TO_QUEST;
 import static frc.robot.Constants.VisionConstants.APRILTAG_CAMERA_NAMES;
+import static frc.robot.Constants.VisionConstants.APRILTAG_STD_DEVS;
 import static frc.robot.Constants.VisionConstants.ROBOT_TO_CAMERA_TRANSFORMS;
 import static frc.robot.Constants.VisionConstants.SINGLE_TAG_DISTANCE_THRESHOLD;
 
@@ -52,8 +53,8 @@ public class LocalizationSubsystem extends SubsystemBase {
   private final BooleanPublisher trackingPublisher = questTable.getBooleanTopic("Quest Tracking").publish();
   private final Supplier<Angle> yaw;
   private final Supplier<AngularVelocity> robotAngularVelocitySupplier;
-  private Pose2d startingPose = new Pose2d();
   private Matrix<N3, N1> standardDeviations = VecBuilder.fill(0.1, 0.1, Integer.MAX_VALUE);
+  private Pose2d startingPose = new Pose2d();
   private PoseEstimate currentPose = new PoseEstimate();
   private int questNavFaultCounter = 0;
 
@@ -106,16 +107,15 @@ public class LocalizationSubsystem extends SubsystemBase {
     trackingPublisher.set(questNav.isTracking());
 
     for (String cameraname : APRILTAG_CAMERA_NAMES) {
-      double baseXY = (questNavFaultCounter > 50) ? BAS_TAG_STDDEV : BASE_QUESTNAV_ACTIVE_STDDEV;
-    if (currentPose.tagCount  < 2) {
-    baseXY = // TODO scale down for single tag
-    }
-      
+      Matrix<N3, N1> standardDeviations = (questNavFaultCounter > 50) ? APRILTAG_STD_DEVS : BASE_QUESTNAV_STD_DEVS;
+      if (currentPose.tagCount < 2) {
+        // TODO scale down for single tag
+      }
+
       currentPose = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(cameraname);
-      double adjustedXDeviation = (0.01 * currentPose.pose.getX());
-      standardDeviations.set(0, 0, adjustedXDeviation);
-      double adjustedYDeviation = (0.01 * currentPose.pose.getY());
-      standardDeviations.set(2, 0, adjustedYDeviation);
+      double adjustedXYDeviation = standardDeviations.get(0, 0) + (0.01 * currentPose.avgTagDist);
+      standardDeviations.set(0, 0, adjustedXYDeviation);
+      standardDeviations.set(1, 0, adjustedXYDeviation);
       if (RobotState.isDisabled()) {
         // When the robot is disabled, set IMU and robot orientation for each AprilTag camera
         LimelightHelpers.SetIMUMode(cameraname, 1);
@@ -161,7 +161,7 @@ public class LocalizationSubsystem extends SubsystemBase {
           if (FieldConstants.isValidFieldPosition(robotPose.getTranslation())) {
             // Add the measurement
             visionMeasurementConsumer
-                .addVisionMeasurement(robotPose.toPose2d(), frame.dataTimestamp(), QUESTNAV_STD_DEVS);
+                .addVisionMeasurement(robotPose.toPose2d(), frame.dataTimestamp(), standardDeviations);
             // Publish for debugging
             questPublisher.accept(robotPose);
             break; // Found the most recent valid frame, exit loop

@@ -53,7 +53,7 @@ public class RobotContainer {
       TunerConstants.DrivetrainConstants,
       0,
       OdometryContants.STATE_STD_DEVS,
-      QuestNavConstants.QUESTNAV_STD_DEVS,
+      QuestNavConstants.BASE_QUESTNAV_STD_DEVS,
       TunerConstants.FrontLeft,
       TunerConstants.FrontRight,
       TunerConstants.BackLeft,
