@@ -39,13 +39,16 @@ class BallisticSimulator {
     this.resolution = resolutionProfile;
     this.projectileState = new BallisticProjectileState(integratorResolution, (Integrator.forceInput input) -> {
       Translation3d acceleration = Translation3d.kZero;
+
+      acceleration = acceleration.plus(new Translation3d(0, 0, this.environmentProfile.gravitationalAcceleration));
+
       Translation3d velocityUnitDirection = input.velocity().div(1 / input.velocity().getNorm());
-      double drag = (0.5) * this.environmentProfile.ballisticProjectileDragCoefficient
+      Translation3d drag =  (-0.5) * this.environmentProfile.ballisticProjectileDragCoefficient
           * this.environmentProfile.airDensity * input.velocity().getSquaredNorm();
 
-      Translation3d axis = input.spin().getAxis().times(input.spin().getAngle())
+      Translation3d axis = new Translation3d(input.spin().getAxis().times(input.spin().getAngle()));
 
-      Translation3d liftAcceleration = Translation3d.cross(input.spin().getAxis(), velocityUnitDirection);
+      Translation3d dragForce = axis.times()
 
       return acceleration;
     });

@@ -56,7 +56,6 @@ def includeDesktopSupport = true
 dependencies {
     annotationProcessor wpi.java.deps.wpilibAnnotations()
     implementation wpi.java.deps.wpilib()
-    implementation("com.googlecode.efficient-java-matrix-library:ejml:0.25")
     implementation wpi.java.vendor.java()
 
     roborioDebug wpi.java.deps.wpilibJniDebug(wpi.platforms.roborio)
