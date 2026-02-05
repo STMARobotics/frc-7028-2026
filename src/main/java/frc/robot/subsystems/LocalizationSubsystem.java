@@ -122,8 +122,10 @@ public class LocalizationSubsystem extends SubsystemBase {
         LimelightHelpers.SetRobotOrientation(cameraname, startingPose.getRotation().getDegrees(), 0, 0, 0, 0, 0);
 
         Pose2d poseToUse = startingPose;
-        if (isValidFieldPosition(currentPose.pose.getTranslation()) && (currentPose.tagCount > 1
-            || (currentPose.tagCount == 1 && currentPose.avgTagDist < SINGLE_TAG_DISTANCE_THRESHOLD.in(Meters)))) {
+        if (isValidFieldPosition(currentPose.pose.getTranslation())
+            && (currentPose.tagCount > 1
+                || (currentPose.tagCount == 1 && currentPose.avgTagDist < SINGLE_TAG_DISTANCE_THRESHOLD.in(Meters)))
+            && (currentPose.pose.getTranslation().getDistance(startingPose.getTranslation()) < 3.0)) {
           // The pose is valid, use it
           poseToUse = currentPose.pose;
         }
