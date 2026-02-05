@@ -123,13 +123,10 @@ public class Constants {
     public static final double SPINDEXER_AGITATE_FORWARDS_VELOCITY = 5;
     public static final double SPINDEXER_AGITATE_BACKWARDS_VELOCITY = -5;
     public static final SlotConfigs SPINDEXER_SLOT_CONFIGS = new SlotConfigs().withKP(10).withKD(0).withKS(20);
-<<<<<<< HEAD
-=======
 
     public static final double HOPPER_FULL_THRESHOLD = 85.0; // percent
     public static final String HOPPER_CAMERA_NAME = "HopperCam";
 
->>>>>>> main
   }
 
   public static class TransferConstants {
