@@ -62,8 +62,7 @@ public class RobotContainer {
   private final LocalizationSubsystem localizationSubsystem = new LocalizationSubsystem(
       drivetrain::addVisionMeasurement,
       drivetrain::resetPose,
-      drivetrain.getYaw(),
-      drivetrain.getYawVelocity(),
+      drivetrain::getYaw,
       drivetrain::getDrivetrainAngularVelocity);
 
   /* Path follower */

@@ -3,6 +3,7 @@ package frc.robot.subsystems;
 import static edu.wpi.first.units.Units.*;
 import static frc.robot.Constants.OdometryContants.DEVICE_ID_PIGEON;
 
+import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.Utils;
@@ -62,6 +63,8 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
   private final SwerveRequest.SysIdSwerveRotation m_rotationCharacterization = new SwerveRequest.SysIdSwerveRotation();
   private final SysIdSwerveTranslationTorque m_translationCharacterizationTorque = new SysIdSwerveTranslationTorque();
   private final Pigeon2 pigeon = new Pigeon2(DEVICE_ID_PIGEON);
+  private final StatusSignal<Angle> yaw = pigeon.getYaw();
+  private final StatusSignal<AngularVelocity> yawVelocity = pigeon.getAngularVelocityZWorld();
 
   /*
    * SysId routine for characterizing translation with Voltage output mode. This is used to find PID gains for the drive
@@ -396,12 +399,9 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     return super.samplePoseAt(Utils.fpgaToCurrentTime(timestampSeconds));
   }
 
-  public StatusSignal<Angle> getYaw() {
-    return pigeon.getYaw();
-  }
-
-  public StatusSignal<AngularVelocity> getYawVelocity() {
-    return pigeon.getAngularVelocityZWorld();
+  public Angle getYaw() {
+    BaseStatusSignal.refreshAll(yaw);
+    return BaseStatusSignal.getLatencyCompensatedValue(yaw, yawVelocity);
   }
 
   public AngularVelocity getDrivetrainAngularVelocity() {
