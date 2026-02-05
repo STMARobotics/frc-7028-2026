@@ -1,55 +1,30 @@
 package frc.ballisticSimulator;
 
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation3d;
-import edu.wpi.first.units.measure.AngularVelocity;
-import frc.ballisticSimulator.BallisticSimulator.RawBallisticLaunchConditions;
+import frc.ballisticSimulator.Integrator.forceInput;
+import java.util.function.Function;
 
-class BallisticProjectileState {
+class BallisticProjectileState extends VectorState {
+
   BallisticSimulator simulator;
-  Translation3d position;
-  Translation3d velocity;
-  Translation3d acceleration;
-  AngularVelocity angularVelocity;
   BoundryState boundryState;
   CollisionStatus collisionStatus;
-  double timeElapsed;
   Translation3d error;
+  Integrator ballisticIntegrator;
 
-  public void launch(
-      Translation3d position,
-      Translation3d velocity,
-      Translation3d acceleration,
-      AngularVelocity angularVelocity) {
+  public BallisticProjectileState(
+      IntegratorResolution integratorResolution,
+      Function<forceInput, Translation3d> forceFunction) {
+    super(integratorResolution, forceFunction);
+  }
+
+  public void launch(Translation3d position, Translation3d velocity, Rotation3d spin) {
     this.position = position;
     this.velocity = velocity;
-    this.acceleration = acceleration;
-    this.angularVelocity = angularVelocity;
+    this.spin = spin;
 
-    this.timeElapsed = 0;
-  }
-
-  public void launch(RawBallisticLaunchConditions startingConditions) {
-    this.launch(
-        startingConditions.position(),
-          startingConditions.velocity(),
-          Translation3d.kZero,
-          startingConditions.angularVelocity());
-  }
-
-  public void stepVelocity() {
-
-  }
-
-  public void stepSpin() {
-
-  }
-
-  public void stepPosition() {
-
-  }
-
-  public void stepOrientation() {
-
+    this.integrator.reset();
   }
 
   public enum BoundryState {
@@ -117,16 +92,6 @@ class BallisticProjectileState {
 
   public boolean testPosition() {
     return this.testOutOfBounds() || this.testRejectedBoundries() || this.testObstacles() || !this.testTarget();
-  }
-
-  public void step() {
-    stepVelocity();
-    stepSpin();
-
-    stepPosition();
-    stepOrientation();
-
-    this.timeElapsed += this.simulator.resolution.deltaTime;
   }
 
 }

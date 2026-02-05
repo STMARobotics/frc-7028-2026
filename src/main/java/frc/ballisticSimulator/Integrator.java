@@ -6,11 +6,12 @@
  */
 package frc.ballisticSimulator;
 
-import edu.wpi.first.math.geometry.Translation3d;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
+import static java.lang.Math.abs;
+import static java.lang.Math.pow;
 
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Translation3d;
+import java.util.function.Function;
 // A way to solve a curve defined by F(t, v)
 // da/dt = f(v)
 
@@ -25,121 +26,108 @@ import java.util.function.Supplier;
 
 // if we increment velocity by a function of velocity, like drag, then it requires us to know the velocity prior to calculate a new velocity
 // This requires us to simulate the velocity to know position, and for something sensitive like drag, we need a GOOD simulation. 
-// Eulers method is "first order" way to solve this differential equation, it is decent, but it does behave well with sensitive or rapidly changing functions
+// Eulers method is "first order" way to solve this differential equation, it is decent, but it does not behave great with sensitive or rapidly changing functions
 
-// We use RK45 to accurate simulate the position, and it also dynamically modulates your time steps to ensure precision when the second derivative(f'') is large, that is to say f is very sensitive, and to increase it when smaller steps are not needed.
+// We use RK45 to accurate simulate the position, and it also dynamically modulates your time steps to ensure precision if f is very sensitive, and to increase it when smaller steps are not needed.
 
-// spotless:off
 // https://en.wikipedia.org/wiki/Runge%E2%80%93Kutta%E2%80%93Fehlberg_method
 // https://math.okstate.edu/people/yqwang/teaching/math4513_fall11/Notes/rungekutta.pdf 
 // We ignore time here these forces are not in terms of time, just velocity
 public class Integrator {
-  // K Coefficients 
+  VectorState vectorState;
+  IntegratorResolution integratorResolution;
+  Function<forceInput, Translation3d> forceFunction;
 
-// spotless:on
-  double dt;
   double epsilon;
+  int maxIterations;
 
-  private record VectorState(Translation3d Velocity) {
-  };
+  public record forceInput(Translation3d position, Translation3d velocity, Rotation3d spin) {
+    public forceInput accelerate(Translation3d acceleration, double impulseDuration) {
+      return new forceInput(this.position, this.velocity.plus(acceleration.times(impulseDuration)), spin);
+    }
 
-  Function<Translation3d, Translation3d> accelerationFunction;
-  Supplier<VectorState> VectorStateSupplier;
-  Consumer<VectorState> VectorStateUpdater;
-
-  private Translation3d f(Translation3d vel) {
-    return this.accelerationFunction.apply(vel);
-  }
-
-  public Integrator(
-      double dt,
-      Function<Translation3d, Translation3d> accelerationFunction,
-      Supplier<VectorState> vectorStatSupplier,
-      Consumer<VectorState> VectorStateUpdater,
-      double epsilon) {
-    this.dt = dt;
-    this.epsilon = epsilon;
-    this.accelerationFunction = accelerationFunction;
-    this.VectorStateSupplier = vectorStatSupplier;
-    this.VectorStateUpdater = VectorStateUpdater;
-
+    static forceInput from(VectorState state) {
+      return new forceInput(state.position, state.velocity, state.spin);
+    };
   };
 
   private static final double[][] C = {
-      { 1 / 4 },
-      { 3 / 32, 9 / 32 },
-      { 1932 / 2197, -7200 / 2197, 7296 / 2197 },
-      { 439 / 216, -8, 3680 / 513, -845 / 4104 },
-      { -8 / 27, 2, -3544 / 2565, 1859 / 4104, -11 / 40 } };
+      { 1 / 4d },
+      { 3 / 32d, 9 / 32d },
+      { 1932 / 2197d, -7200 / 2197d, 7296 / 2197d },
+      { 439 / 216d, -8, 3680 / 513d, -845 / 4104d },
+      { -8 / 27d, 2, -3544 / 2565d, 1859 / 4104d, -11 / 40d } };
 
   // K Weights
   private static final double[][] W = {
-      { 25 / 216, 0, 1408 / 2565, 2197 / 4104, -1 / 5 },
-      { 16 / 135, 0, 6656 / 12825, 28561 / 56430, 9 / 50, 2 / 55 } };
+      { 25 / 216d, 0, 1408 / 2565d, 2197 / 4104d, -1 / 5 },
+      { 16 / 135d, 0, 6656 / 12825d, 28561 / 56430d, 9 / 50d, 2 / 55d } };
+
+  public Integrator(
+      VectorState vectorState,
+      IntegratorResolution integratorResolution,
+      Function<forceInput, Translation3d> forceFunction) {
+    this.vectorState = vectorState;
+    this.integratorResolution = integratorResolution;
+    this.forceFunction = forceFunction;
+  }
+
+  public void reset() {
+    this.vectorState.dt = this.integratorResolution.dtInitial();
+  }
+
+  private Translation3d f(forceInput input) {
+    return this.forceFunction.apply(input);
+  }
 
   public void step() {
-    VectorState initialVectorState = VectorStateSupplier.get();
-    var v = initialVectorState.Velocity();
+    forceInput i = forceInput.from(this.vectorState);
+    double dt = this.vectorState.dt;
+    double err = Double.POSITIVE_INFINITY;
 
-    double C11 = C[1 - 1][1 - 1] * dt;
+    int iterations = 0;
 
-    double C21 = C[2 - 1][1 - 1] * dt;
-    double C22 = C[2 - 1][2 - 1] * dt;
+    // sample each acceleration iteratively, with pre-determined future step scalars for each order
 
-    double C31 = C[3 - 1][1 - 1] * dt;
-    double C32 = C[3 - 1][2 - 1] * dt;
-    double C33 = C[3 - 1][3 - 1] * dt;
+    while (err > this.epsilon || iterations <= maxIterations) {
+      Translation3d a1 = f(i).times(dt);
+      Translation3d a2 = f(i.accelerate(a1, dt * C[0][0])).times(dt);
+      Translation3d a3 = f(i.accelerate(a1, dt * C[1][0]).accelerate(a2, dt * C[1][1])).times(dt);
+      Translation3d a4 = f(i.accelerate(a1, dt * C[2][0]).accelerate(a2, dt * C[2][1]).accelerate(a3, dt * C[2][2]))
+          .times(dt);
+      Translation3d a5 = f(
+          i.accelerate(a1, dt * C[3][0])
+              .accelerate(a2, dt * C[3][1])
+              .accelerate(a3, dt * C[3][2])
+              .accelerate(a4, dt * C[3][3]))
+          .times(dt);
+      Translation3d a6 = f(
+          i.accelerate(a1, dt * C[4][0])
+              .accelerate(a2, dt * C[4][1])
+              .accelerate(a3, dt * C[4][2])
+              .accelerate(a4, dt * C[4][3])
+              .accelerate(a5, dt * C[4][4]))
+          .times(dt);
 
-    double C41 = C[4 - 1][1 - 1] * dt;
-    double C42 = C[4 - 1][2 - 1] * dt;
-    double C43 = C[4 - 1][3 - 1] * dt;
-    double C44 = C[4 - 1][4 - 1] * dt;
+      Translation3d V1 = i.velocity.plus(a1.times(W[0][0]))
+          .plus(a2.times(W[0][1]))
+          .plus(a3.times(W[0][2]))
+          .plus(a4.times(W[0][3]))
+          .plus(a5.times(W[0][4]));
 
-    double C51 = C[5 - 1][1 - 1] * dt;
-    double C52 = C[5 - 1][2 - 1] * dt;
-    double C53 = C[5 - 1][3 - 1] * dt;
-    double C54 = C[5 - 1][4 - 1] * dt;
-    double C55 = C[5 - 1][5 - 1] * dt;
+      Translation3d V2 = i.velocity.plus(a1.times(W[1][0]))
+          .plus(a2.times(W[1][1]))
+          .plus(a3.times(W[1][2]))
+          .plus(a4.times(W[1][3]))
+          .plus(a5.times(W[1][4]))
+          .plus(a6.times(W[1][5]));
 
-    var a1 = f(v).times(dt);
-    var a2 = f(v.plus(a1.times(C11))).times(dt);
-    var a3 = f(v.plus(a1.times(C21)).plus(a2.times(C22))).times(dt);
-    var a4 = f(v.plus(a1.times(C31)).plus(a2.times(C32)).plus(a3.times(C33))).times(dt);
-    var a5 = f(v.plus(a1.times(C41)).plus(a2.times(C42)).plus(a3.times(C43)).plus(a4.times(C44))).times(dt);
-    var a6 = f(v.plus(a1.times(C51)).plus(a2.times(C52)).plus(a3.times(C53)).plus(a4.times(C54)).plus(a5.times(C55)))
-        .times(dt);
-
-    var W11 = W[1 - 1][1 - 1];
-    var W12 = W[1 - 1][2 - 1];
-    var W13 = W[1 - 1][3 - 1];
-    var W14 = W[1 - 1][4 - 1];
-    var W15 = W[1 - 1][5 - 1];
-
-    var W21 = W[2 - 1][1 - 1];
-    var W22 = W[2 - 1][2 - 1];
-    var W23 = W[2 - 1][3 - 1];
-    var W24 = W[2 - 1][4 - 1];
-    var W25 = W[2 - 1][5 - 1];
-    var W26 = W[2 - 1][6 - 1];
-
-    var A1 = f(v).plus(a1.times(W11)).plus(a2.times(W12)).plus(a3.times(W13)).plus(a4.times(W14)).plus(a5.times(W15));
-    var A2 = f(v).plus(a1.times(W21))
-        .plus(a2.times(W22))
-        .plus(a3.times(W23))
-        .plus(a4.times(W24))
-        .plus(a5.times(W25))
-        .plus(a6.times(W26));
-
-    var ERR = (1 / dt) * (Math.abs(A1.minus(A2).getNorm()));
-
-    var delta = Math.pow(0.84 * (this.epsilon / ERR), 0.25);
-
-    this.dt = delta * dt;
-
-    if (ERR < epsilon) {
-      this.step();
-    } else {
-      this.VectorStateUpdater.accept(new VectorState(v.plus(A2)));
+      err = (1 / dt) * abs(V2.getDistance(V1));
+      this.vectorState.velocity = V2;
+      iterations++;
     }
+
+    this.vectorState.dt = 0.84 * pow((epsilon / err), 0.25);
+    this.vectorState.stepPosition();
   }
 }

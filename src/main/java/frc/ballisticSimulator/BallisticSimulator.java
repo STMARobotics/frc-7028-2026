@@ -6,19 +6,17 @@ import static java.lang.Math.sin;
 
 import edu.wpi.first.math.MatBuilder;
 import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.units.measure.Angle;
-import edu.wpi.first.units.measure.AngularVelocity;
 import java.util.HashMap;
 
 class BallisticSimulator {
   BallisticEnvironmentProfile environmentProfile;
   BallisticSimulatorResolutionProfile resolution;
   BallisticProjectileState projectileState;
-
-  Translation3d gravityAccelerationVector;
 
   public record BallisticCondition(double px, double py, double vx, double vy) {
   };
@@ -30,39 +28,30 @@ class BallisticSimulator {
   private record BallisticSolution(Angle yaw, Angle pitch, double speed) {
   };
 
-  public record RawBallisticLaunchConditions(
-      Translation3d position,
-      Translation3d velocity,
-      AngularVelocity angularVelocity) {
+  public record RawBallisticLaunchConditions(Translation3d position, Translation3d velocity, Rotation3d spin) {
   };
 
   public BallisticSimulator(
       BallisticEnvironmentProfile environmentProfile,
-      BallisticSimulatorResolutionProfile resolutionProfile) {
+      BallisticSimulatorResolutionProfile resolutionProfile,
+      IntegratorResolution integratorResolution) {
     this.environmentProfile = environmentProfile;
     this.resolution = resolutionProfile;
-    this.projectileState = new BallisticProjectileState();
+    this.projectileState = new BallisticProjectileState(integratorResolution, (Integrator.forceInput input) -> {
+      Translation3d acceleration = Translation3d.kZero;
+      Translation3d velocityUnitDirection = input.velocity().div(1 / input.velocity().getNorm());
+      double drag = (0.5) * this.environmentProfile.ballisticProjectileDragCoefficient
+          * this.environmentProfile.airDensity * input.velocity().getSquaredNorm();
 
-    this.gravityAccelerationVector = new Translation3d(0, 0, this.environmentProfile.gravitationalAcceleration);
-  }
+      Translation3d axis = input.spin().getAxis().times(input.spin().getAngle())
 
-  private Translation3d calculateDrag() {
+      Translation3d liftAcceleration = Translation3d.cross(input.spin().getAxis(), velocityUnitDirection);
 
-  }
-
-  private Translation3d calculateMagnus() {
-
-  }
-
-  private AngularVelocity calculateInitialAngularVelocity() {
-
+      return acceleration;
+    });
   }
 
   private BallisticParameters calculateStationaryShot(BallisticCondition condition) {
-
-  }
-
-  private void stepBallistic() {
 
   }
 
@@ -83,7 +72,7 @@ class BallisticSimulator {
     RawBallisticLaunchConditions rawLaunchConditions = new RawBallisticLaunchConditions(
         new Translation3d(ballCondition.px, ballCondition.py, this.resolution.startingHeight),
         parametersToVector(parameters).plus(new Translation3d(ballCondition.vx, ballCondition.vy, 0)),
-        calculateInitialAngularVelocity());
+        calculateInitialSpin());
     this.projectileState.launch(rawLaunchConditions);
 
     while (this.projectileState.testPosition()) {
@@ -95,6 +84,7 @@ class BallisticSimulator {
   }
 
   private BallisticParameters convergeSolution(BallisticCondition ballCondition, BallisticParameters ballParameters) {
+    // https://pages.hmc.edu/ruye/MachineLearning/lectures/ch2/node7.html
     Angle yaw = ballParameters.yaw();
     Angle pitch = ballParameters.pitch();
     double speed = ballParameters.speed();
