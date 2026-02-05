@@ -58,6 +58,7 @@ public class LocalizationSubsystem extends SubsystemBase {
   private Pose2d startingPose = new Pose2d();
   private Matrix<N3, N1> standardDeviations = VecBuilder.fill(0.1, 0.1, Integer.MAX_VALUE);
   private PoseEstimate currentPose = new PoseEstimate();
+  private int faultCounter = 0;
 
   /**
    * Constructs a new LocalizationSubsystem.
@@ -106,6 +107,9 @@ public class LocalizationSubsystem extends SubsystemBase {
    */
   @Override
   public void periodic() {
+    questNav.commandPeriodic();
+    trackingPublisher.set(questNav.isTracking());
+
     for (String cameraname : APRILTAG_CAMERA_NAMES) {
       currentPose = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(cameraname);
     }
@@ -164,29 +168,36 @@ public class LocalizationSubsystem extends SubsystemBase {
                 .addVisionMeasurement(currentPose.pose, currentPose.timestampSeconds, standardDeviations);
           }
         }
-        PoseFrame[] frames = questNav.getAllUnreadPoseFrames();
-        // Iterate backwards through frames to find the most recent valid frame
-        for (int i = frames.length - 1; i >= 0; i--) {
-          PoseFrame frame = frames[i];
-          if (frame.isTracking()) {
-            Pose3d questPose = frame.questPose3d();
-            Pose3d robotPose = questPose.transformBy(ROBOT_TO_QUEST.inverse());
+      }
+    }
+    if (faultCounter <= 50) {
+      PoseFrame[] frames = questNav.getAllUnreadPoseFrames();
+      // Iterate backwards through frames to find the most recent valid frame
+      for (int i = frames.length - 1; i >= 0; i--) {
+        PoseFrame frame = frames[i];
+        if (frame.isTracking()) {
+          Pose3d questPose = frame.questPose3d();
+          Pose3d robotPose = questPose.transformBy(ROBOT_TO_QUEST.inverse());
 
-            // Make sure the pose is inside the field
-            if (FieldConstants.isValidFieldPosition(robotPose.getTranslation())) {
-              // Add the measurement
-              visionMeasurementConsumer
-                  .addVisionMeasurement(robotPose.toPose2d(), frame.dataTimestamp(), QUESTNAV_STD_DEVS);
-              // Publish for debugging
-              questPublisher.accept(robotPose);
-              break; // Found the most recent valid frame, exit loop
-            }
+          if (Math.abs(robotPose.getMeasureX().in(Meters) - currentPose.pose.getMeasureX().in(Meters)) < 0.5
+              && Math.abs(robotPose.getMeasureY().in(Meters) - currentPose.pose.getMeasureY().in(Meters)) < 0.5) {
+            faultCounter += 1;
+          } else if (faultCounter > 0) {
+            faultCounter -= 1;
+          }
+
+          // Make sure the pose is inside the field
+          if (FieldConstants.isValidFieldPosition(robotPose.getTranslation())) {
+            // Add the measurement
+            visionMeasurementConsumer
+                .addVisionMeasurement(robotPose.toPose2d(), frame.dataTimestamp(), QUESTNAV_STD_DEVS);
+            // Publish for debugging
+            questPublisher.accept(robotPose);
+            break; // Found the most recent valid frame, exit loop
           }
         }
       }
     }
-    questNav.commandPeriodic();
-    trackingPublisher.set(questNav.isTracking());
   }
 
   /**

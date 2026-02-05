@@ -75,6 +75,8 @@ public class Constants {
           0.1, // Y: 10cm error per meter
           0.05 // Theta: 0.05 radians to (Trust the Pigeon heavily)
     );
+    // TODO - Set this once you figure it out
+    public static final Distance MAX_HEIGHT = Meters.of(92314);
   }
 
   public static class QuestNavConstants {
@@ -120,7 +122,6 @@ public class Constants {
     public static final double SPINDEXER_INTAKE_VELOCITY = -10;
     public static final double SPINDEXER_AGITATE_VELOCITY = 5;
     public static final SlotConfigs SPINDEXER_SLOT_CONFIGS = new SlotConfigs().withKP(10).withKD(0).withKS(20);
-
   }
 
   public static class TransferConstants {
