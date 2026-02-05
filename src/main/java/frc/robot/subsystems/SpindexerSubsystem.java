@@ -36,6 +36,7 @@ public class SpindexerSubsystem extends SubsystemBase {
   private static final PhotonPipelineResult EMPTY_PHOTON_PIPELINE_RESULT = new PhotonPipelineResult();
   private PhotonPipelineResult photonPipelineResult = EMPTY_PHOTON_PIPELINE_RESULT;
 
+  // Directions for spindexer agitation
   private enum SpindexerDirection {
     Forward,
     Backward
@@ -105,10 +106,12 @@ public class SpindexerSubsystem extends SubsystemBase {
     spindexerMotor.stopMotor();
   }
 
+  // Returns true if the hopper is empty
   public boolean isEmpty() {
     return getLatestTarget().isEmpty();
   }
 
+  // Returns true if the hopper is full based on the area of the detected targets
   public boolean isFull() {
     if (isEmpty()) {
       return false;
@@ -124,6 +127,7 @@ public class SpindexerSubsystem extends SubsystemBase {
     return false;
   }
 
+  // spins the spindexer back and forth to unjam the fuel
   private void spin(SpindexerDirection direction) {
     if (direction == SpindexerDirection.Backward) {
       spindexerMotor.setControl(

@@ -66,22 +66,27 @@ public class TransferSubsystem extends SubsystemBase {
     return transferSysIdRoutine.quasistatic(direction).withName("Transfer quasi " + direction).finallyDo(this::stop);
   }
 
+  // Spins the transfer to feed the shooter
   public void feedShooter() {
     transferMotor.setControl(transferVelocityTorque.withVelocity(Constants.TransferConstants.TRANSFER_FEED_VELOCITY));
   }
 
+  // Spins the transfer backward to unjam the transfer
   public void unjam() {
     transferMotor.setControl(transferVelocityTorque.withVelocity(Constants.TransferConstants.TRANSFER_UNJAM_VELOCITY));
   }
 
+  // Stops the transfer motor
   public void stop() {
     transferMotor.stopMotor();
   }
 
+  // Returns true if the transfer has a ball in it
   public boolean isFull() {
     return transferBallSignal.refresh().getValue();
   }
 
+  // Returns true if the transfer is empty
   public boolean isEmpty() {
     return !isFull();
   }
