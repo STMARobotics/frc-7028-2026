@@ -2,12 +2,15 @@ package frc.robot.subsystems;
 
 import static edu.wpi.first.units.Units.Second;
 import static edu.wpi.first.units.Units.Volts;
+import static frc.robot.Constants.CANIVORE_BUS_NAME;
 
 import com.ctre.phoenix6.SignalLogger;
+import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.TorqueCurrentFOC;
 import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
+import com.ctre.phoenix6.hardware.CANrange;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
@@ -21,6 +24,11 @@ public class TransferSubsystem extends SubsystemBase {
   private final TalonFX transferMotor = new TalonFX(Constants.TransferConstants.DEVICE_ID_TRANSFER_MOTOR);
   private final VelocityTorqueCurrentFOC transferVelocityTorque = new VelocityTorqueCurrentFOC(0.0);
   private final TorqueCurrentFOC transferTorqueControl = new TorqueCurrentFOC(0.0);
+  private final CANrange transferCaNrange = new CANrange(
+      Constants.TransferConstants.DEVICE_ID_TRANSFER_CANRANGE,
+      CANIVORE_BUS_NAME);
+
+  private final StatusSignal<Boolean> transferBallSignal = transferCaNrange.getIsDetected();
 
   // NOTE: the output type is amps, NOT volts (even though it says volts)
   // https://www.chiefdelphi.com/t/sysid-with-ctre-swerve-characterization/452631/8
@@ -68,5 +76,13 @@ public class TransferSubsystem extends SubsystemBase {
 
   public void stop() {
     transferMotor.stopMotor();
+  }
+
+  public boolean isFull() {
+    return transferBallSignal.refresh().getValue();
+  }
+
+  public boolean isEmpty() {
+    return !isFull();
   }
 }

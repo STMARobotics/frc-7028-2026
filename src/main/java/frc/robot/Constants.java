@@ -109,6 +109,7 @@ public class Constants {
     public static final SlotConfigs TRANSFER_SLOT_CONFIGS = new SlotConfigs().withKP(10).withKD(0).withKS(20);
     public static final double TRANSFER_FEED_VELOCITY = 30;
     public static final double TRANSFER_UNJAM_VELOCITY = -10;
+    public static final int DEVICE_ID_TRANSFER_CANRANGE = 20;
 
   }
 
