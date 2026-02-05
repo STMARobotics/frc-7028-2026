@@ -55,7 +55,7 @@ public class LocalizationSubsystem extends SubsystemBase {
   private Pose2d startingPose = new Pose2d();
   private Matrix<N3, N1> standardDeviations = VecBuilder.fill(0.1, 0.1, Integer.MAX_VALUE);
   private PoseEstimate currentPose = new PoseEstimate();
-  private int faultCounter = 0;
+  private int questNavFaultCounter = 0;
 
   /**
    * Constructs a new LocalizationSubsystem.
@@ -106,11 +106,16 @@ public class LocalizationSubsystem extends SubsystemBase {
     trackingPublisher.set(questNav.isTracking());
 
     for (String cameraname : APRILTAG_CAMERA_NAMES) {
+      double baseXY = (questNavFaultCounter > 50) ? BAS_TAG_STDDEV : BASE_QUESTNAV_ACTIVE_STDDEV;
+    if (currentPose.tagCount  < 2) {
+    baseXY = // TODO scale down for single tag
+    }
+      
       currentPose = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(cameraname);
-      double adjustedXDeviation = standardDeviations.get(0, 0) + (0.01 * currentPose.pose.getX());
+      double adjustedXDeviation = (0.01 * currentPose.pose.getX());
       standardDeviations.set(0, 0, adjustedXDeviation);
-      double adjustedYDeviation = standardDeviations.get(0, 0) + (0.01 * currentPose.pose.getY());
-      standardDeviations.set(0, 0, adjustedYDeviation);
+      double adjustedYDeviation = (0.01 * currentPose.pose.getY());
+      standardDeviations.set(2, 0, adjustedYDeviation);
       if (RobotState.isDisabled()) {
         // When the robot is disabled, set IMU and robot orientation for each AprilTag camera
         LimelightHelpers.SetIMUMode(cameraname, 1);
@@ -136,7 +141,7 @@ public class LocalizationSubsystem extends SubsystemBase {
         }
       }
     }
-    if (faultCounter <= 50) {
+    if (questNavFaultCounter <= 50) {
       PoseFrame[] frames = questNav.getAllUnreadPoseFrames();
       // Iterate backwards through frames to find the most recent valid frame
       for (int i = frames.length - 1; i >= 0; i--) {
@@ -147,9 +152,9 @@ public class LocalizationSubsystem extends SubsystemBase {
 
           if (Math.abs(robotPose.getMeasureX().in(Meters) - currentPose.pose.getMeasureX().in(Meters)) < 0.5
               && Math.abs(robotPose.getMeasureY().in(Meters) - currentPose.pose.getMeasureY().in(Meters)) < 0.5) {
-            faultCounter += 1;
-          } else if (faultCounter > 0) {
-            faultCounter -= 1;
+            questNavFaultCounter += 1;
+          } else if (questNavFaultCounter > 0) {
+            questNavFaultCounter -= 1;
           }
 
           // Make sure the pose is inside the field
