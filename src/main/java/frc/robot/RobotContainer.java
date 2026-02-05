@@ -63,7 +63,8 @@ public class RobotContainer {
       drivetrain::addVisionMeasurement,
       drivetrain::resetPose,
       drivetrain.getYaw(),
-      drivetrain.getYawVelocity());
+      drivetrain.getYawVelocity(),
+      drivetrain::getDrivetrainAngularVelocity);
 
   /* Path follower */
   private final SendableChooser<Command> autoChooser;

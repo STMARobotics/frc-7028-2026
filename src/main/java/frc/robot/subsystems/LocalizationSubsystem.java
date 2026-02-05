@@ -1,6 +1,7 @@
 package frc.robot.subsystems;
 
 import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.DegreesPerSecond;
 import static edu.wpi.first.units.Units.Meters;
 import static frc.robot.Constants.FieldConstants.isValidFieldPosition;
 import static frc.robot.Constants.QuestNavConstants.QUESTNAV_STD_DEVS;
@@ -32,6 +33,7 @@ import frc.robot.VisionMeasurementConsumer;
 import gg.questnav.questnav.PoseFrame;
 import gg.questnav.questnav.QuestNav;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  * Subsystem for the localization system.
@@ -52,6 +54,7 @@ public class LocalizationSubsystem extends SubsystemBase {
   private final BooleanPublisher trackingPublisher = questTable.getBooleanTopic("Quest Tracking").publish();
   private final StatusSignal<Angle> yaw;
   private final StatusSignal<AngularVelocity> yawVelocity;
+  private final Supplier<AngularVelocity> robotAngularVelocitySupplier;
   private Pose2d startingPose = new Pose2d();
   private Matrix<N3, N1> standardDeviations = VecBuilder.fill(0.1, 0.1, Integer.MAX_VALUE);
   private PoseEstimate currentPose = new PoseEstimate();
@@ -65,11 +68,13 @@ public class LocalizationSubsystem extends SubsystemBase {
       VisionMeasurementConsumer addVisionMeasurement,
       Consumer<Pose2d> poseResetConsumer,
       StatusSignal<Angle> yaw,
-      StatusSignal<AngularVelocity> yawVelocity) {
+      StatusSignal<AngularVelocity> yawVelocity,
+      Supplier<AngularVelocity> angularVelocitySupplier) {
     this.visionMeasurementConsumer = addVisionMeasurement;
     this.poseResetConsumer = poseResetConsumer;
     this.yaw = yaw;
     this.yawVelocity = yawVelocity;
+    this.robotAngularVelocitySupplier = angularVelocitySupplier;
     for (int i = 0; i <= APRILTAG_CAMERA_NAMES.length; i++) {
       LimelightHelpers.setCameraPose_RobotSpace(
           APRILTAG_CAMERA_NAMES[i],
@@ -145,18 +150,19 @@ public class LocalizationSubsystem extends SubsystemBase {
       for (String cameraname : APRILTAG_CAMERA_NAMES) {
         LimelightHelpers.SetRobotOrientation(cameraname, compensatedYaw.in(Degrees), 0, 0, 0, 0, 0);
         LimelightHelpers.SetIMUMode(cameraname, 4);
-
-        // If only one tag is detected and it's close enough, use the estimated pose
-        if (currentPose.tagCount == 1) {
-          if (currentPose.avgTagDist < SINGLE_TAG_DISTANCE_THRESHOLD.in(Meters)) {
+        if (robotAngularVelocitySupplier.get().gte(DegreesPerSecond.of(720))) {
+          // If only one tag is detected and it's close enough, use the estimated pose
+          if (currentPose.tagCount == 1) {
+            if (currentPose.avgTagDist < SINGLE_TAG_DISTANCE_THRESHOLD.in(Meters)) {
+              setQuestNavPose2d(currentPose.pose);
+              visionMeasurementConsumer
+                  .addVisionMeasurement(currentPose.pose, currentPose.timestampSeconds, standardDeviations);
+            }
+          } else {
             setQuestNavPose2d(currentPose.pose);
             visionMeasurementConsumer
                 .addVisionMeasurement(currentPose.pose, currentPose.timestampSeconds, standardDeviations);
           }
-        } else {
-          setQuestNavPose2d(currentPose.pose);
-          visionMeasurementConsumer
-              .addVisionMeasurement(currentPose.pose, currentPose.timestampSeconds, standardDeviations);
         }
         PoseFrame[] frames = questNav.getAllUnreadPoseFrames();
         // Iterate backwards through frames to find the most recent valid frame

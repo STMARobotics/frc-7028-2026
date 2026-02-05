@@ -404,4 +404,9 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     return pigeon.getAngularVelocityZWorld();
   }
 
+  public AngularVelocity getDrivetrainAngularVelocity() {
+    ChassisSpeeds chassisSpeeds = this.getKinematics().toChassisSpeeds();
+    return DegreesPerSecond.of(Math.toDegrees(chassisSpeeds.omegaRadiansPerSecond));
+  }
+
 }
