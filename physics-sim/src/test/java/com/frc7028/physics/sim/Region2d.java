@@ -1,4 +1,4 @@
-package frc.ballisticSimulator;
+package com.frc7028.physics.sim;
 
 import edu.wpi.first.math.geometry.Translation2d;
 
