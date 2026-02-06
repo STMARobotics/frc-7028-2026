@@ -34,6 +34,8 @@ import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.LEDSubsystem;
 import frc.robot.subsystems.QuestNavSubsystem;
+import frc.robot.subsystems.SpindexerSubsystem;
+import frc.robot.subsystems.TransferSubsystem;
 
 @Logged(strategy = Logged.Strategy.OPT_IN)
 public class RobotContainer {
@@ -60,6 +62,10 @@ public class RobotContainer {
       TunerConstants.BackRight);
 
   private final QuestNavSubsystem questNavSubsystem = new QuestNavSubsystem(drivetrain::addVisionMeasurement);
+  @Logged
+  private final TransferSubsystem transferSubsystem = new TransferSubsystem();
+  @Logged
+  private final SpindexerSubsystem spindexerSubsystem = new SpindexerSubsystem();
   private final LEDSubsystem ledSubsystem = new LEDSubsystem();
 
   /* Path follower */
@@ -149,5 +155,16 @@ public class RobotContainer {
     SmartDashboard.putData("Rotate Dynam Fwd", drivetrain.sysIdRotationDynamCommand(kForward));
     SmartDashboard.putData("Rotate Dynam Rev", drivetrain.sysIdRotationDynamCommand(kReverse));
 
+    // Spindexer
+    SmartDashboard.putData("Spindexer Quasi Fwd", spindexerSubsystem.sysIdSpindexerQuasistaticCommand(kForward));
+    SmartDashboard.putData("Spindexer Quasi Rev", spindexerSubsystem.sysIdSpindexerQuasistaticCommand(kReverse));
+    SmartDashboard.putData("Spindexer Dynam Fwd", spindexerSubsystem.sysIdSpindexerDynamicCommand(kForward));
+    SmartDashboard.putData("Spindexer Dynam Rev", spindexerSubsystem.sysIdSpindexerDynamicCommand(kReverse));
+
+    // Transfer
+    SmartDashboard.putData("Transfer Quasi Fwd", transferSubsystem.sysIdTransferQuasistaticCommand(kForward));
+    SmartDashboard.putData("Transfer Quasi Rev", transferSubsystem.sysIdTransferQuasistaticCommand(kReverse));
+    SmartDashboard.putData("Transfer Dynam Fwd", transferSubsystem.sysIdTransferDynamicCommand(kForward));
+    SmartDashboard.putData("Transfer Dynam Rev", transferSubsystem.sysIdTransferDynamicCommand(kReverse));
   }
 }

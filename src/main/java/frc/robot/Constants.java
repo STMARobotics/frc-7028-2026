@@ -1,8 +1,10 @@
 package frc.robot;
 
 import static edu.wpi.first.units.Units.Amps;
+import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
+import static edu.wpi.first.units.Units.Seconds;
 
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.configs.SlotConfigs;
@@ -18,16 +20,19 @@ import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearVelocity;
+import edu.wpi.first.units.measure.Time;
 import frc.robot.generated.TunerConstants;
 
 public class Constants {
 
   public static final CANBus CANIVORE_BUS = new CANBus("canivore");
 
+  /**
+   * Constants for the field dimensions of the WELDED field.
+   */
   public static class FieldConstants {
-    // Dimensions for the WELDED field
-    public static final Distance FIELD_LENGTH = Meters.of(17.548);
-    public static final Distance FIELD_WIDTH = Meters.of(8.052);
+    public static final Distance FIELD_LENGTH = Inches.of(651.2);
+    public static final Distance FIELD_WIDTH = Inches.of(317.7);
 
     /**
      * Checks if a pose is within the field boundaries, and less than 3 meters high.
@@ -89,18 +94,21 @@ public class Constants {
    */
   public static class SpindexerConstants {
     public static final int DEVICE_ID_SPINDEXER_MOTOR = 15;
+    public static final String HOPPER_CAMERA_NAME = "HopperCam";
+
     public static final Current SPINDEXER_TORQUE_CURRENT_LIMIT = Amps.of(80);
     public static final Current SPINDEXER_STATOR_CURRENT_LIMIT = Amps.of(80);
     public static final Current SPINDEXER_SUPPLY_CURRENT_LIMIT = Amps.of(40);
-    public static final double SPINDEXER_FEED_VELOCITY = 20;
-    public static final double SPINDEXER_INTAKE_VELOCITY = -10;
-    public static final double SPINDEXER_AGITATE_FORWARDS_VELOCITY = 5;
-    public static final double SPINDEXER_AGITATE_BACKWARDS_VELOCITY = -5;
-    public static final SlotConfigs SPINDEXER_SLOT_CONFIGS = new SlotConfigs().withKP(10).withKD(0).withKS(20);
+
+    public static final SlotConfigs SPINDEXER_SLOT_CONFIGS = new SlotConfigs().withKP(10).withKS(0);
+
+    public static final AngularVelocity SPINDEXER_FEED_VELOCITY = RotationsPerSecond.of(20);
+    public static final AngularVelocity SPINDEXER_INTAKE_VELOCITY = RotationsPerSecond.of(-10);
+    public static final AngularVelocity SPINDEXER_AGITATE_FORWARD_VELOCITY = RotationsPerSecond.of(5);
+    public static final AngularVelocity SPINDEXER_AGITATE_BACKWARD_VELOCITY = RotationsPerSecond.of(-5);
 
     public static final double HOPPER_FULL_THRESHOLD = 85.0; // percent
-    public static final String HOPPER_CAMERA_NAME = "HopperCam";
-
+    public static final Time PIPELINE_RESULT_TTL = Seconds.of(0.25);
   }
 
   /**
@@ -108,14 +116,15 @@ public class Constants {
    */
   public static class TransferConstants {
     public static final int DEVICE_ID_TRANSFER_MOTOR = 20;
-    public static final Current TRANSFER_TORQUE_CURRENT_LIMIT = Amps.of(90);
-    public static final Current TRANSFER_STATOR_CURRENT_LIMIT = Amps.of(90);
-    public static final Current TRANSFER_SUPPLY_CURRENT_LIMIT = Amps.of(45);
-    public static final SlotConfigs TRANSFER_SLOT_CONFIGS = new SlotConfigs().withKP(10).withKD(0).withKS(20);
-    public static final double TRANSFER_FEED_VELOCITY = 30;
-    public static final double TRANSFER_UNJAM_VELOCITY = -10;
     public static final int DEVICE_ID_TRANSFER_CANRANGE = 20;
 
+    public static final Current TRANSFER_TORQUE_CURRENT_LIMIT = Amps.of(80);
+    public static final Current TRANSFER_STATOR_CURRENT_LIMIT = Amps.of(90);
+    public static final Current TRANSFER_SUPPLY_CURRENT_LIMIT = Amps.of(40);
+    public static final SlotConfigs TRANSFER_SLOT_CONFIGS = new SlotConfigs().withKP(10).withKS(0);
+
+    public static final AngularVelocity TRANSFER_FEED_VELOCITY = RotationsPerSecond.of(60);
+    public static final AngularVelocity TRANSFER_UNJAM_VELOCITY = RotationsPerSecond.of(-10);
   }
 
   /**
