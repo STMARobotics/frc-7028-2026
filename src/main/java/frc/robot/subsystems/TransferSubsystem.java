@@ -30,8 +30,10 @@ public class TransferSubsystem extends SubsystemBase {
 
   private final StatusSignal<Boolean> transferBallSignal = transferCaNrange.getIsDetected();
 
-  // NOTE: the output type is amps, NOT volts (even though it says volts)
-  // https://www.chiefdelphi.com/t/sysid-with-ctre-swerve-characterization/452631/8
+  /**
+   * NOTE: the output type is amps, NOT volts (even though it says volts)
+   * https://www.chiefdelphi.com/t/sysid-with-ctre-swerve-characterization/452631/8
+   */
   private final SysIdRoutine transferSysIdRoutine = new SysIdRoutine(
       new SysIdRoutine.Config(
           Volts.of(3.0).per(Second),
@@ -66,35 +68,35 @@ public class TransferSubsystem extends SubsystemBase {
     return transferSysIdRoutine.quasistatic(direction).withName("Transfer quasi " + direction).finallyDo(this::stop);
   }
 
-  /*
+  /**
    * Spins the transfer to feed the shooter
    */
   public void feedShooter() {
     transferMotor.setControl(transferVelocityTorque.withVelocity(Constants.TransferConstants.TRANSFER_FEED_VELOCITY));
   }
 
-  /*
+  /**
    * Spins the transfer backward to unjam the transfer
    */
   public void unjam() {
     transferMotor.setControl(transferVelocityTorque.withVelocity(Constants.TransferConstants.TRANSFER_UNJAM_VELOCITY));
   }
 
-  /*
+  /**
    * Stops the transfer motor
    */
   public void stop() {
     transferMotor.stopMotor();
   }
 
-  /*
+  /**
    * Returns true if the transfer has a ball in it
    */
   public boolean isFull() {
     return transferBallSignal.refresh().getValue();
   }
 
-  /*
+  /**
    * Returns true if the transfer is empty
    */
   public boolean isEmpty() {

@@ -85,7 +85,7 @@ public class Constants {
     );
   }
 
-  /*
+  /**
    * Constants for the Spindexer Subsystem
    */
   public static class SpindexerConstants {
@@ -104,7 +104,7 @@ public class Constants {
 
   }
 
-  /*
+  /**
    * Constants for the Transfer Subsystem
    */
   public static class TransferConstants {
