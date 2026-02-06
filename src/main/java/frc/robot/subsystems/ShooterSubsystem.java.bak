@@ -341,14 +341,15 @@ public class ShooterSubsystem extends SubsystemBase {
 
   /**
    * Sets the turret's yaw angle in radians.
-   * Expected range: [YAW_SOFT_LIMIT_REVERSE, YAW_SOFT_LIMIT_FORWARD] in rotations, converted from radians.
+   * TODO: Implement when yaw targeting strategy is decided.
    * 
    * @param yawRadians The desired yaw angle in radians.
    */
   public void setYawAngleRadians(Angle yawRadians) {
-    double currentRot = BaseStatusSignal.getLatencyCompensatedValue(yawPosition, yawVelocity).in(Rotations);
-    double desiredRot0To1 = wrap0To1(yawRadians.in(Rotations));
-    double targetRot = chooseYawTargetContinuousRotations(desiredRot0To1, currentRot);
+    double targetRot = clamp(
+        yawRadians.in(Rotations),
+          YAW_SOFT_LIMIT_REVERSE.in(Rotations),
+          YAW_SOFT_LIMIT_FORWARD.in(Rotations));
     yawMotor.setControl(yawPositionRequest.withPosition(targetRot));
   }
 
@@ -418,17 +419,20 @@ public class ShooterSubsystem extends SubsystemBase {
     setFlywheelVelocity(FLYWHEEL_IDLE_RPS);
   }
 
-  // This is commented out because the SOTMvalues datatype doesnt exist in the branch yet.
-  // /**
-  // * Starts the auto-targeting routine.
-  // *
-  // * @param SOTMvalues Custom datatype containing values from the shoot on the move utility.
-  // */
-  // public void startAutoTargeting(SOTMvalues SOTMvalues) {
-  // setYawAngleRadians(SOTMvalues.getYawAngle());
-  // setPitchAngleRadians(SOTMvalues.getPitchAngle());
-  // setFlywheelVelocity(SOTMvalues.getFlywheelRPS());
-  // }
+  /**
+   * Starts the auto-targeting routine.
+   *
+   * @param SOTMvalues Custom datatype containing values from the shoot on the move utility.
+   */
+  public void startAutoTargeting(SOTMvalues SOTMvalues) {
+    setYawAngleRadians(SOTMvalues.yawAngle);
+    setPitchAngleRadians(SOTMvalues.pitchAngle);
+    setFlywheelVelocity(SOTMvalues.flywheelRPS);
+  }
+
+  // example so it builds (innacurate)
+  public record SOTMvalues(Angle yawAngle, Angle pitchAngle, AngularVelocity flywheelRPS) {
+  }
 
   public void stopAutoTargeting() {
     stopYaw();
@@ -501,46 +505,6 @@ public class ShooterSubsystem extends SubsystemBase {
     double left = BaseStatusSignal.getLatencyCompensatedValue(leftFlywheelVelocity, leftFlywheelAcceleration)
         .in(Rotations.per(Second));
     return flywheelRps.mut_replace((right + left) / 2.0, Rotations.per(Second));
-  }
-
-  /**
-   * Chooses the best equivalent yaw target angle within soft limits, minimizing rotation.
-   * Use this for >360 deg capable turrets.
-   * 
-   * @param desiredHeading0To1Rot The desired heading in [0, 1) rotations.
-   * @param currentYawContinuousRot The current yaw angle in continuous rotations.
-   * @return The chosen yaw target angle.
-   */
-  private double chooseYawTargetContinuousRotations(double desiredHeading0To1Rot, double currentYawContinuousRot) {
-    final double desired = wrap0To1(desiredHeading0To1Rot);
-    final double current = currentYawContinuousRot;
-
-    final double min = YAW_SOFT_LIMIT_REVERSE.in(Rotations);
-    final double max = YAW_SOFT_LIMIT_FORWARD.in(Rotations);
-
-    boolean found = false;
-    double best = 0.0;
-    double bestDist = Double.POSITIVE_INFINITY;
-
-    for (int k = -2; k <= 2; k++) {
-      double cand = desired + k;
-      if (cand < min || cand > max) {
-        continue;
-      }
-      double dist = Math.abs(cand - current);
-      if (dist < bestDist) {
-        bestDist = dist;
-        best = cand;
-        found = true;
-      }
-    }
-
-    if (!found) {
-      double nearest = desired + Math.rint(current - desired);
-      best = clamp(nearest, min, max);
-    }
-
-    return best;
   }
 
   /**
