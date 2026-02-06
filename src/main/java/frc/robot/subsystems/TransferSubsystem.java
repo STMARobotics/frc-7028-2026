@@ -2,7 +2,9 @@ package frc.robot.subsystems;
 
 import static edu.wpi.first.units.Units.Second;
 import static edu.wpi.first.units.Units.Volts;
-import static frc.robot.Constants.CANIVORE_BUS_NAME;
+import static frc.robot.Constants.CANIVORE_BUS;
+import static frc.robot.Constants.TransferConstants.DEVICE_ID_TRANSFER_CANRANGE;
+import static frc.robot.Constants.TransferConstants.DEVICE_ID_TRANSFER_MOTOR;
 
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.StatusSignal;
@@ -20,20 +22,20 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Constants;
 
+/**
+ * Subsystem for the Transfer.
+ */
 public class TransferSubsystem extends SubsystemBase {
-  private final TalonFX transferMotor = new TalonFX(Constants.TransferConstants.DEVICE_ID_TRANSFER_MOTOR);
+  private final TalonFX transferMotor = new TalonFX(DEVICE_ID_TRANSFER_MOTOR, CANIVORE_BUS);
+  private final CANrange transferCaNrange = new CANrange(DEVICE_ID_TRANSFER_CANRANGE, CANIVORE_BUS);
+
   private final VelocityTorqueCurrentFOC transferVelocityTorque = new VelocityTorqueCurrentFOC(0.0);
   private final TorqueCurrentFOC transferTorqueControl = new TorqueCurrentFOC(0.0);
-  private final CANrange transferCaNrange = new CANrange(
-      Constants.TransferConstants.DEVICE_ID_TRANSFER_CANRANGE,
-      CANIVORE_BUS_NAME);
 
   private final StatusSignal<Boolean> transferBallSignal = transferCaNrange.getIsDetected();
 
-  /**
-   * NOTE: the output type is amps, NOT volts (even though it says volts)
-   * https://www.chiefdelphi.com/t/sysid-with-ctre-swerve-characterization/452631/8
-   */
+  // NOTE: the output type is amps, NOT volts (even though it says volts)
+  // https://www.chiefdelphi.com/t/sysid-with-ctre-swerve-characterization/452631/8
   private final SysIdRoutine transferSysIdRoutine = new SysIdRoutine(
       new SysIdRoutine.Config(
           Volts.of(3.0).per(Second),

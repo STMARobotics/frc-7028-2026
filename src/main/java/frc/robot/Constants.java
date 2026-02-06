@@ -22,8 +22,7 @@ import frc.robot.generated.TunerConstants;
 
 public class Constants {
 
-  public static final String CANIVORE_BUS_NAME = "canivore";
-  public static final CANBus CANIVORE_BUS = new CANBus(CANIVORE_BUS_NAME);
+  public static final CANBus CANIVORE_BUS = new CANBus("canivore");
 
   public static class FieldConstants {
     // Dimensions for the WELDED field

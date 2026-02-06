@@ -2,6 +2,8 @@ package frc.robot.subsystems;
 
 import static edu.wpi.first.units.Units.Second;
 import static edu.wpi.first.units.Units.Volts;
+import static frc.robot.Constants.CANIVORE_BUS;
+import static frc.robot.Constants.SpindexerConstants.DEVICE_ID_SPINDEXER_MOTOR;
 
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.configs.Slot0Configs;
@@ -23,12 +25,10 @@ import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
 /**
- * The is the Subsystem for the Spindexer.
- * 
+ * Subsystem for the Spindexer.
  */
-
 public class SpindexerSubsystem extends SubsystemBase {
-  private final TalonFX spindexerMotor = new TalonFX(Constants.SpindexerConstants.DEVICE_ID_SPINDEXER_MOTOR);
+  private final TalonFX spindexerMotor = new TalonFX(DEVICE_ID_SPINDEXER_MOTOR, CANIVORE_BUS);
   private final VelocityTorqueCurrentFOC spindexerVelocityTorque = new VelocityTorqueCurrentFOC(0.0);
   private final TorqueCurrentFOC spindexerTorqueControl = new TorqueCurrentFOC(0.0);
   private final PhotonCamera hopperCam = new PhotonCamera(Constants.SpindexerConstants.HOPPER_CAMERA_NAME);
@@ -44,10 +44,8 @@ public class SpindexerSubsystem extends SubsystemBase {
     Backward
   }
 
-  /**
-   * NOTE: the output type is amps, NOT volts (even though it says volts)
-   * https://www.chiefdelphi.com/t/sysid-with-ctre-swerve-characterization/452631/8
-   */
+  // NOTE: the output type is amps, NOT volts (even though it says volts)
+  // https://www.chiefdelphi.com/t/sysid-with-ctre-swerve-characterization/452631/8
   private final SysIdRoutine spindexerSysIdRoutine = new SysIdRoutine(
       new SysIdRoutine.Config(
           Volts.of(3.0).per(Second),
@@ -144,7 +142,9 @@ public class SpindexerSubsystem extends SubsystemBase {
   }
 
   /**
-   * spins the spindexer back and forth to unjam the fuel
+   * Spins the spindexer in the given direction
+   * 
+   * @param direction direction to spin
    */
   private void spin(SpindexerDirection direction) {
     if (direction == SpindexerDirection.Backward) {
