@@ -94,12 +94,23 @@ public class Constants {
     public static final int DEVICE_ID_POSITION = 10;
     public static final int DEVICE_ID_ROLLER = 11;
     public static final int DEVICE_ID_CANCODER = 10;
-    public static final Current PEAK_DEPLOYMENT_CURRENT = Amps.of(80);
-    public static final Current PEAK_RETRACTED_CURRENT = PEAK_DEPLOYMENT_CURRENT.unaryMinus();
+    public static final Current PEAK_FORWARD_ROLLER_CURRENT = Amps.of(80);
+    public static final Current PEAK_REVERSE_ROLLER_CURRENT = PEAK_FORWARD_ROLLER_CURRENT.unaryMinus();
 
-    public static final Current SUPPLY_CURRENT_LIMIT = Amps.of(40);
+    public static final Current ROLLER_SUPPLY_LIMIT = Amps.of(40);
 
-    public static final SlotConfigs SLOT_CONFIGS = SlotConfigs().withKP(0)
+    public static final Current DEPLOY_PEAK_FORWORD_CURRENT = Amps.of(80);
+    public static final Current DEPLOY_PEAK_REVERSE_CURRENT = Amps.of(80);
+
+    public static final Current DEPLOY_SUPPLY_LIMIT = Amps.of(40);
+
+    public static final SlotConfigs ROLLER_SLOT_CONFIGS = SlotConfigs().withKP(0)
+        .withKI(0.0)
+        .withKD(0.0)
+        .withKS(0.0)
+        .withKV(0.0);
+
+    public static final SlotConfigs DEPLOY_SLOT_CONFIGS = SlotConfigs().withKP(0)
         .withKI(0.0)
         .withKD(0.0)
         .withKS(0.0)
