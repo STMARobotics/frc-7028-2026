@@ -6,7 +6,7 @@ class BallisticEnvironmentProfile {
   double airDensity;
   double ballisticProjectileDragCoefficient;
   double ballisticProjectileCrossSectionalArea;
-  double ballisticProjectileLiftCoefficient;
+  double ballisticProjectileMagnusCoefficient;
   double ballisticProjectileRadius;
 
   public BallisticEnvironmentProfile(
@@ -15,15 +15,15 @@ class BallisticEnvironmentProfile {
       double airDensity,
       double ballisticProjectileDragCoefficient,
       double ballisticProjectileCrossSectionalArea,
-      double ballisticProjectileLiftCoefficient,
+      double ballisticProjectileMagnusCoefficient,
       double ballisticProjectileRadius) {
     this.ballisticProjectileMass = ballisticProjectileMass;
     this.gravitationalAcceleration = gravitationalAcceleration;
     this.airDensity = airDensity;
     this.ballisticProjectileDragCoefficient = ballisticProjectileDragCoefficient;
-    this.ballisticProjectileCrossSectionalArea = ballisticProjectileCrossSectionalArea;
-    this.ballisticProjectileLiftCoefficient = ballisticProjectileLiftCoefficient;
+    this.ballisticProjectileMagnusCoefficient = ballisticProjectileMagnusCoefficient;
     this.ballisticProjectileRadius = ballisticProjectileRadius;
+    this.ballisticProjectileCrossSectionalArea = Math.PI * Math.pow(ballisticProjectileRadius, 2);
   }
 
 }

@@ -37,19 +37,26 @@ class BallisticSimulator {
       IntegratorResolution integratorResolution) {
     this.environmentProfile = environmentProfile;
     this.resolution = resolutionProfile;
-    this.projectileState = new BallisticProjectileState(integratorResolution, (Integrator.forceInput input) -> {
-      Translation3d acceleration = Translation3d.kZero;
+    this.projectileState = new BallisticProjectileState(integratorResolution, (Integrator.forceInput state) -> {
+      Translation3d acceleration = Translation3d.kZero; // <0, 0, 0>
+      Translation3d stateVel = state.velocity();
+      Rotation3d stateSpin = state.spin();
 
-      acceleration = acceleration.plus(new Translation3d(0, 0, this.environmentProfile.gravitationalAcceleration));
+      Translation3d spinAxis = new Translation3d(stateSpin.getAxis()).times(stateSpin.getAngle());
 
-      Translation3d velocityUnitDirection = input.velocity().div(1 / input.velocity().getNorm());
-      Translation3d drag =  (-0.5) * this.environmentProfile.ballisticProjectileDragCoefficient
-          * this.environmentProfile.airDensity * input.velocity().getSquaredNorm();
+      Translation3d unitDirection = stateVel.div(stateVel.getNorm());
 
-      Translation3d axis = new Translation3d(input.spin().getAxis().times(input.spin().getAngle()));
+      double dynamicPressure = 0.5d * environmentProfile.airDensity * stateVel.getSquaredNorm();
 
-      Translation3d dragForce = axis.times()
+      double drag = environmentProfile.ballisticProjectileDragCoefficient * dynamicPressure
+          * environmentProfile.ballisticProjectileCrossSectionalArea;
 
+      double magnus = (0.5d) * environmentProfile.airDensity * environmentProfile.ballisticProjectileCrossSectionalArea
+          * environmentProfile.ballisticProjectileMagnusCoefficient;
+
+      acceleration = acceleration.plus(unitDirection.times(-1 * drag))
+          .plus((new Translation3d(spinAxis.cross(stateVel)).times(magnus)).times(magnus))
+          .plus(new Translation3d(0, 0, environmentProfile.gravitationalAcceleration));
       return acceleration;
     });
   }
