@@ -25,11 +25,14 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import frc.robot.Constants.OdometryContants;
 import frc.robot.Constants.QuestNavConstants;
+import frc.robot.commands.led.DefaultLEDCommand;
+import frc.robot.commands.led.LEDBootAnimationCommand;
 import frc.robot.controls.ControlBindings;
 import frc.robot.controls.JoystickControlBindings;
 import frc.robot.controls.XBoxControlBindings;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
+import frc.robot.subsystems.LEDSubsystem;
 import frc.robot.subsystems.QuestNavSubsystem;
 
 @Logged(strategy = Logged.Strategy.OPT_IN)
@@ -57,6 +60,7 @@ public class RobotContainer {
       TunerConstants.BackRight);
 
   private final QuestNavSubsystem questNavSubsystem = new QuestNavSubsystem(drivetrain::addVisionMeasurement);
+  private final LEDSubsystem ledSubsystem = new LEDSubsystem();
 
   /* Path follower */
   private final SendableChooser<Command> autoChooser;
@@ -81,6 +85,13 @@ public class RobotContainer {
     CommandScheduler.getInstance().schedule(FollowPathCommand.warmupCommand());
 
     populateSysIdDashboard();
+
+    // Run the boot animation
+    var bootAnimation = new LEDBootAnimationCommand(ledSubsystem);
+    CommandScheduler.getInstance().schedule(bootAnimation);
+
+    // Set up default commmands
+    ledSubsystem.setDefaultCommand(new DefaultLEDCommand(ledSubsystem));
   }
 
   private void configureBindings() {
