@@ -85,6 +85,9 @@ public class Constants {
     );
   }
 
+  /*
+   * Constants for the Spindexer Subsystem
+   */
   public static class SpindexerConstants {
     public static final int DEVICE_ID_SPINDEXER_MOTOR = 15;
     public static final Current SPINDEXER_TORQUE_CURRENT_LIMIT = Amps.of(80);
@@ -101,6 +104,9 @@ public class Constants {
 
   }
 
+  /*
+   * Constants for the Transfer Subsystem
+   */
   public static class TransferConstants {
     public static final int DEVICE_ID_TRANSFER_MOTOR = 20;
     public static final Current TRANSFER_TORQUE_CURRENT_LIMIT = Amps.of(90);
