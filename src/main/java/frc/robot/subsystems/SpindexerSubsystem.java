@@ -2,6 +2,8 @@ package frc.robot.subsystems;
 
 import static edu.wpi.first.units.Units.Second;
 import static edu.wpi.first.units.Units.Volts;
+import static frc.robot.Constants.CANIVORE_BUS;
+import static frc.robot.Constants.SpindexerConstants.DEVICE_ID_SPINDEXER_MOTOR;
 
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.configs.Slot0Configs;
@@ -23,12 +25,10 @@ import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
 /**
- * The is the Subsystem for the Spindexer.
- * 
+ * Subsystem for the Spindexer.
  */
-
 public class SpindexerSubsystem extends SubsystemBase {
-  private final TalonFX spindexerMotor = new TalonFX(Constants.SpindexerConstants.DEVICE_ID_SPINDEXER_MOTOR);
+  private final TalonFX spindexerMotor = new TalonFX(DEVICE_ID_SPINDEXER_MOTOR, CANIVORE_BUS);
   private final VelocityTorqueCurrentFOC spindexerVelocityTorque = new VelocityTorqueCurrentFOC(0.0);
   private final TorqueCurrentFOC spindexerTorqueControl = new TorqueCurrentFOC(0.0);
   private final PhotonCamera hopperCam = new PhotonCamera(Constants.SpindexerConstants.HOPPER_CAMERA_NAME);
@@ -36,6 +36,9 @@ public class SpindexerSubsystem extends SubsystemBase {
   private static final PhotonPipelineResult EMPTY_PHOTON_PIPELINE_RESULT = new PhotonPipelineResult();
   private PhotonPipelineResult photonPipelineResult = EMPTY_PHOTON_PIPELINE_RESULT;
 
+  /**
+   * Directions for spindexer agitation
+   */
   private enum SpindexerDirection {
     Forward,
     Backward
@@ -80,19 +83,25 @@ public class SpindexerSubsystem extends SubsystemBase {
     return spindexerSysIdRoutine.quasistatic(direction).withName("Spindexer quasi " + direction).finallyDo(this::stop);
   }
 
-  // Spins the spindexer forward to feed the shooter
+  /**
+   * Spins the spindexer forward to feed the shooter
+   */
   public void feedShooter() {
     spindexerMotor
         .setControl(spindexerVelocityTorque.withVelocity(Constants.SpindexerConstants.SPINDEXER_FEED_VELOCITY));
   }
 
-  // Spins the spindexer backward well intakeing fuel
+  /**
+   * Spins the spindexer backward well intakeing fuel
+   */
   public void intake() {
     spindexerMotor
         .setControl(spindexerVelocityTorque.withVelocity(Constants.SpindexerConstants.SPINDEXER_INTAKE_VELOCITY));
   }
 
-  // Agitates the spindexer back and forth to prevent jams
+  /**
+   * Agitates the spindexer back and forth to prevent jams
+   */
   public Command agitate() {
     return run(() -> this.spin(SpindexerDirection.Forward)).withTimeout(0.5)
         .andThen(run(() -> this.spin(SpindexerDirection.Backward)).withTimeout(0.5))
@@ -100,15 +109,23 @@ public class SpindexerSubsystem extends SubsystemBase {
         .finallyDo(this::stop);
   }
 
-  // Stops the spindexer
+  /**
+   * Stops the spindexer
+   */
   public void stop() {
     spindexerMotor.stopMotor();
   }
 
+  /**
+   * Returns true if the hopper is empty
+   */
   public boolean isEmpty() {
     return getLatestTarget().isEmpty();
   }
 
+  /**
+   * Returns true if the hopper is full based on the area of the detected targets
+   */
   public boolean isFull() {
     if (isEmpty()) {
       return false;
@@ -124,6 +141,11 @@ public class SpindexerSubsystem extends SubsystemBase {
     return false;
   }
 
+  /**
+   * Spins the spindexer in the given direction
+   * 
+   * @param direction direction to spin
+   */
   private void spin(SpindexerDirection direction) {
     if (direction == SpindexerDirection.Backward) {
       spindexerMotor.setControl(
@@ -137,7 +159,9 @@ public class SpindexerSubsystem extends SubsystemBase {
   private List<PhotonTrackedTarget> getLatestTarget() {
     List<PhotonPipelineResult> photonResults = hopperCam.getAllUnreadResults();
 
-    // If there are results this will grab the last item on the list
+    /**
+     * If there are results this will grab the last item on the list
+     */
     if (photonResults.size() >= 1) {
       photonPipelineResult = photonResults.get(photonResults.size() - 1);
     }
@@ -145,8 +169,10 @@ public class SpindexerSubsystem extends SubsystemBase {
     double currentTime = Timer.getFPGATimestamp();
     double resultTime = photonPipelineResult.getTimestampSeconds();
 
-    // since the results are cached, the value is checked against the Time To Live (TTL) to
-    // ensure that the value isn't to old
+    /**
+     * since the results are cached, the value is checked against the Time To Live (TTL) to
+     * ensure that the value isn't to old
+     */
     if (currentTime - resultTime >= PIPELINE_RESULT_TTL) {
       photonPipelineResult = EMPTY_PHOTON_PIPELINE_RESULT;
     }

@@ -2,12 +2,17 @@ package frc.robot.subsystems;
 
 import static edu.wpi.first.units.Units.Second;
 import static edu.wpi.first.units.Units.Volts;
+import static frc.robot.Constants.CANIVORE_BUS;
+import static frc.robot.Constants.TransferConstants.DEVICE_ID_TRANSFER_CANRANGE;
+import static frc.robot.Constants.TransferConstants.DEVICE_ID_TRANSFER_MOTOR;
 
 import com.ctre.phoenix6.SignalLogger;
+import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.TorqueCurrentFOC;
 import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
+import com.ctre.phoenix6.hardware.CANrange;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
@@ -17,10 +22,17 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Constants;
 
+/**
+ * Subsystem for the Transfer.
+ */
 public class TransferSubsystem extends SubsystemBase {
-  private final TalonFX transferMotor = new TalonFX(Constants.TransferConstants.DEVICE_ID_TRANSFER_MOTOR);
+  private final TalonFX transferMotor = new TalonFX(DEVICE_ID_TRANSFER_MOTOR, CANIVORE_BUS);
+  private final CANrange transferCaNrange = new CANrange(DEVICE_ID_TRANSFER_CANRANGE, CANIVORE_BUS);
+
   private final VelocityTorqueCurrentFOC transferVelocityTorque = new VelocityTorqueCurrentFOC(0.0);
   private final TorqueCurrentFOC transferTorqueControl = new TorqueCurrentFOC(0.0);
+
+  private final StatusSignal<Boolean> transferBallSignal = transferCaNrange.getIsDetected();
 
   // NOTE: the output type is amps, NOT volts (even though it says volts)
   // https://www.chiefdelphi.com/t/sysid-with-ctre-swerve-characterization/452631/8
@@ -58,15 +70,38 @@ public class TransferSubsystem extends SubsystemBase {
     return transferSysIdRoutine.quasistatic(direction).withName("Transfer quasi " + direction).finallyDo(this::stop);
   }
 
+  /**
+   * Spins the transfer to feed the shooter
+   */
   public void feedShooter() {
     transferMotor.setControl(transferVelocityTorque.withVelocity(Constants.TransferConstants.TRANSFER_FEED_VELOCITY));
   }
 
+  /**
+   * Spins the transfer backward to unjam the transfer
+   */
   public void unjam() {
     transferMotor.setControl(transferVelocityTorque.withVelocity(Constants.TransferConstants.TRANSFER_UNJAM_VELOCITY));
   }
 
+  /**
+   * Stops the transfer motor
+   */
   public void stop() {
     transferMotor.stopMotor();
+  }
+
+  /**
+   * Returns true if the transfer has a ball in it
+   */
+  public boolean isFull() {
+    return transferBallSignal.refresh().getValue();
+  }
+
+  /**
+   * Returns true if the transfer is empty
+   */
+  public boolean isEmpty() {
+    return !isFull();
   }
 }
