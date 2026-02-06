@@ -69,7 +69,7 @@ public class Constants {
   /**
    * Constants for odometry state estimation
    */
-  public static class OdometryContants {
+  public static class OdometryConstants {
     // Trust the physics/encoders moderately
     public static final Matrix<N3, N1> STATE_STD_DEVS = VecBuilder.fill(
         0.1, // X: 10cm error per meter (Trust wheels moderately)
@@ -80,9 +80,9 @@ public class Constants {
 
   public static class QuestNavConstants {
     // TODO - Set this once the robot is designed
-    public static Transform3d ROBOT_TO_QUEST = new Transform3d(new Translation3d(), new Rotation3d());
+    public static final Transform3d ROBOT_TO_QUEST = new Transform3d(new Translation3d(), new Rotation3d());
 
-    public static Matrix<N3, N1> QUESTNAV_STD_DEVS = VecBuilder.fill(
+    public static final Matrix<N3, N1> QUESTNAV_STD_DEVS = VecBuilder.fill(
         0.03, // X: Trust Quest to within 3cm (Trust more than odometry)
           0.03, // Y: Trust Quest to within 3cm
           0.5 // Theta: Trust Quest rotation LESS than Gyro (Trust Pigeon more)
