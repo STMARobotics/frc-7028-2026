@@ -71,6 +71,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
+import java.util.Objects;
 
 /**
  * ShooterSubsystem: turret yaw + pitch (hood) + flywheel.
@@ -126,8 +127,22 @@ public class ShooterSubsystem extends SubsystemBase {
   private double yawSetpointRotations = 0.0;
   private double pitchSetpointRotations = 0.0;
   private double flywheelSetpointRps = 0.0;
+  private int readyStableCycles = 0;
 
   private static final double TWO_PI = 2.0 * Math.PI;
+  private static final int READY_STABLE_CYCLES_REQUIRED = 3;
+
+  /**
+   * External targeting input for the shooter.
+   * Yaw is expected to be a wrapped heading [0, 2pi) radians.
+   */
+  public static record ShooterTarget(Angle targetYawRadians, Angle targetPitchRadians, AngularVelocity targetFlywheelRps) {
+    public ShooterTarget {
+      targetYawRadians = Objects.requireNonNull(targetYawRadians, "targetYawRadians");
+      targetPitchRadians = Objects.requireNonNull(targetPitchRadians, "targetPitchRadians");
+      targetFlywheelRps = Objects.requireNonNull(targetFlywheelRps, "targetFlywheelRps");
+    }
+  }
 
   // SysId routines
   private final SysIdRoutine yawSysIdRoutine = new SysIdRoutine(
@@ -300,7 +315,7 @@ public class ShooterSubsystem extends SubsystemBase {
     }
 
     double currentRot = BaseStatusSignal.getLatencyCompensatedValue(yawPosition, yawVelocity).in(Rotations);
-    double targetRot = chooseYawTargetContinuousRotations(yawAbsoluteRotations, currentRot);
+    double targetRot = chooseYawShortestDistance(yawAbsoluteRotations, currentRot);
     yawMotor.setPosition(targetRot);
 
     yawSetpointRotations = targetRot;
@@ -390,13 +405,19 @@ public class ShooterSubsystem extends SubsystemBase {
   public void periodic() {
     BaseStatusSignal.refreshAll(
         yawPosition,
-          yawVelocity,
-          pitchPosition,
-          pitchVelocity,
-          rightFlywheelVelocity,
-          leftFlywheelVelocity,
-          rightFlywheelAcceleration,
-          leftFlywheelAcceleration);
+        yawVelocity,
+        pitchPosition,
+        pitchVelocity,
+        rightFlywheelVelocity,
+        leftFlywheelVelocity,
+        rightFlywheelAcceleration,
+        leftFlywheelAcceleration);
+
+    if (isShooterAtSetpoints()) {
+      readyStableCycles++;
+    } else {
+      readyStableCycles = 0;
+    }
   }
 
   // Setpoints
@@ -406,10 +427,10 @@ public class ShooterSubsystem extends SubsystemBase {
    * 
    * @param yawRadians The desired yaw angle in radians.
    */
-  public void setYawAngleRadians(Angle yawRadians) {
+  public void setYawAngle(Angle yawRadians) {
     double currentRot = BaseStatusSignal.getLatencyCompensatedValue(yawPosition, yawVelocity).in(Rotations);
     double desiredRot0To1 = wrap0To1(yawRadians.in(Rotations));
-    double targetRot = chooseYawTargetContinuousRotations(desiredRot0To1, currentRot);
+    double targetRot = chooseYawShortestDistance(desiredRot0To1, currentRot);
     yawSetpointRotations = targetRot;
     yawMotor.setControl(yawPositionRequest.withPosition(targetRot));
   }
@@ -420,34 +441,34 @@ public class ShooterSubsystem extends SubsystemBase {
    * 
    * @param yawRadians The desired yaw angle in radians.
    */
-  public void setYawAngleRadians(double yawRadians) {
-    setYawAngleRadians(Radians.of(yawRadians));
+  public void setYawAngle(double yawRadians) {
+    setYawAngle(Radians.of(yawRadians));
   }
 
-  /**
-   * Sets the turret's yaw angle in continuous radians.
-   * Expected range: [YAW_SOFT_LIMIT_REVERSE, YAW_SOFT_LIMIT_FORWARD] in rotations, converted from radians.
-   * 
-   * @param yawRadians The desired yaw angle in continuous radians.
-   */
-  public void setYawAngleContinuousRadians(Angle yawRadians) {
-    double targetRot = clamp(
-        yawRadians.in(Rotations),
-          YAW_SOFT_LIMIT_REVERSE.in(Rotations),
-          YAW_SOFT_LIMIT_FORWARD.in(Rotations));
-    yawSetpointRotations = targetRot;
-    yawMotor.setControl(yawPositionRequest.withPosition(targetRot));
-  }
+  // /**
+  //  * Sets the turret's yaw angle in continuous radians.
+  //  * Expected range: [YAW_SOFT_LIMIT_REVERSE, YAW_SOFT_LIMIT_FORWARD] in rotations, converted from radians.
+  //  * 
+  //  * @param yawRadians The desired yaw angle in continuous radians.
+  //  */
+  // public void setYawAngleContinuousRadians(Angle yawRadians) {
+  //   double targetRot = clamp(
+  //       yawRadians.in(Rotations),
+  //         YAW_SOFT_LIMIT_REVERSE.in(Rotations),
+  //         YAW_SOFT_LIMIT_FORWARD.in(Rotations));
+  //   yawSetpointRotations = targetRot;
+  //   yawMotor.setControl(yawPositionRequest.withPosition(targetRot));
+  // }
 
-  /**
-   * Sets the turret's yaw angle in continuous radians.
-   * Convenience overload when the input is a raw radians value.
-   * 
-   * @param yawRadians The desired yaw angle in continuous radians.
-   */
-  public void setYawAngleContinuousRadians(double yawRadians) {
-    setYawAngleContinuousRadians(Radians.of(yawRadians));
-  }
+  // /**
+  //  * Sets the turret's yaw angle in continuous radians.
+  //  * Convenience overload when the input is a raw radians value.
+  //  * 
+  //  * @param yawRadians The desired yaw angle in continuous radians.
+  //  */
+  // public void setYawAngleContinuousRadians(double yawRadians) {
+  //   setYawAngleContinuousRadians(Radians.of(yawRadians));
+  // }
 
   /**
    * Sets the hood's pitch angle in radians.
@@ -506,12 +527,37 @@ public class ShooterSubsystem extends SubsystemBase {
     setFlywheelVelocity(Rotations.per(Second).of(rps));
   }
 
+  /**
+   * Applies an externally computed target solution.
+   * Yaw should be wrapped [0, 2pi) radians and will be unwrapped to the nearest legal continuous yaw internally.
+   *
+   * @param target Combined shooter target values.
+   */
+  public void applyTarget(ShooterTarget target) {
+    Objects.requireNonNull(target, "target");
+    setYawAngle(target.targetYawRadians());
+    setPitchAngleRadians(target.targetPitchRadians());
+    setFlywheelRps(target.targetFlywheelRps());
+  }
+
+  /**
+   * Applies an externally computed target solution.
+   * Yaw should be wrapped [0, 2pi) radians and will be unwrapped to the nearest legal continuous yaw internally.
+   *
+   * @param targetYawRadians Wrapped yaw heading.
+   * @param targetPitchRadians Desired hood pitch.
+   * @param targetFlywheelRps Desired flywheel speed.
+   */
+  public void applyTarget(Angle targetYawRadians, Angle targetPitchRadians, AngularVelocity targetFlywheelRps) {
+    applyTarget(new ShooterTarget(targetYawRadians, targetPitchRadians, targetFlywheelRps));
+  }
+
   // Idle / Stop
   /**
    * Moves yaw to the idle center.
    */
   public void idleYaw() {
-    setYawAngleRadians(YAW_IDLE_CENTER);
+    setYawAngle(YAW_IDLE_CENTER);
   }
 
   /**
@@ -542,17 +588,23 @@ public class ShooterSubsystem extends SubsystemBase {
     setFlywheelVelocity(FLYWHEEL_IDLE_RPS);
   }
 
-  // This is commented out because the SOTMvalues datatype doesnt exist in the branch yet.
-  // /**
-  // * Starts the auto-targeting routine.
-  // *
-  // * @param SOTMvalues Custom datatype containing values from the shoot on the move utility.
-  // */
-  // public void startAutoTargeting(SOTMvalues SOTMvalues) {
-  // setYawAngleRadians(SOTMvalues.getYawAngle());
-  // setPitchAngleRadians(SOTMvalues.getPitchAngle());
-  // setFlywheelVelocity(SOTMvalues.getFlywheelRPS());
-  // }
+  /**
+   * Idles all shooter mechanisms to their default positions/speeds.
+   */
+  public void idleAll() {
+    idleYaw();
+    idlePitch();
+    idleFlywheel();
+  }
+
+  /**
+   * Tracks a shooter target by applying all three setpoints.
+   *
+   * @param target Combined shooter target values.
+   */
+  public void startAutoTargeting(ShooterTarget target) {
+    applyTarget(target);
+  }
 
   public void stopAutoTargeting() {
     stopYaw();
@@ -581,6 +633,7 @@ public class ShooterSubsystem extends SubsystemBase {
     rightFlywheelMotor.stopMotor();
     leftFlywheelMotor.stopMotor();
     flywheelSetpointRps = 0.0;
+    readyStableCycles = 0;
   }
 
   /**
@@ -689,32 +742,32 @@ public class ShooterSubsystem extends SubsystemBase {
    * @return True if all shooter setpoints are met.
    */
   public boolean isShooterReady() {
+    return isShooterAtSetpoints();
+  }
+
+  /**
+   * Checks if yaw, pitch, and flywheel have met setpoints for multiple cycles and yaw sync is valid.
+   *
+   * @return True if shooter is stable and safe to fire.
+   */
+  public boolean isShooterReadyForFire() {
+    return yawSyncOk && !yawSyncOutOfRange && readyStableCycles >= READY_STABLE_CYCLES_REQUIRED;
+  }
+
+  private boolean isShooterAtSetpoints() {
     return isYawAtSetpoint() && isPitchAtSetpoint() && isFlywheelAtSpeed();
   }
 
   // Helpers
   /**
-   * Checks if the yaw is within the idle range.
-   * Idle range is defined as a window around {@code YAW_IDLE_CENTER}.
-   * 
-   * @return True if yaw is within idle range.
-   */
-  private boolean isYawInIdleRange() {
-    double current = BaseStatusSignal.getLatencyCompensatedValue(yawPosition, yawVelocity).in(Rotations);
-    double center = wrap0To1(YAW_IDLE_CENTER.in(Rotations));
-    double delta = wrapToMinusHalfToHalf(current - center);
-    return Math.abs(delta) <= YAW_IDLE_HALF_RANGE.in(Rotations);
-  }
-
-  /**
    * Chooses the best equivalent yaw target angle within soft limits, minimizing rotation.
-   * Use this for >360 deg capable turrets. TODO: Confirm this, Osowski mentioned it was 390?
+   * Use this for >360 deg capable turrets.
    * 
    * @param desiredHeading0To1Rot The desired heading in [0, 1) rotations.
    * @param currentYawContinuousRot The current yaw angle in continuous rotations.
    * @return The chosen yaw target angle.
    */
-  private double chooseYawTargetContinuousRotations(double desiredHeading0To1Rot, double currentYawContinuousRot) {
+  private double chooseYawShortestDistance(double desiredHeading0To1Rot, double currentYawContinuousRot) {
     final double desired = wrap0To1(desiredHeading0To1Rot);
     final double current = currentYawContinuousRot;
 
