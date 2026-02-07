@@ -3,13 +3,14 @@ package frc.robot.subsystems;
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Meters;
 import static frc.robot.Constants.FieldConstants.isValidFieldPosition;
+import static frc.robot.Constants.QuestNavConstants.QUESTNAV_FAILURE_THRESHOLD;
 import static frc.robot.Constants.QuestNavConstants.QUESTNAV_STD_DEVS;
 import static frc.robot.Constants.QuestNavConstants.ROBOT_TO_QUEST;
 import static frc.robot.Constants.VisionConstants.APRILTAG_CAMERA_NAMES;
 import static frc.robot.Constants.VisionConstants.APRILTAG_STD_DEVS;
 import static frc.robot.Constants.VisionConstants.QUESTNAV_ACTIVE_APRILTAG_STD_DEVS;
 import static frc.robot.Constants.VisionConstants.ROBOT_TO_CAMERA_TRANSFORMS;
-import static frc.robot.Constants.VisionConstants.SINGLE_TAG_DISTANCE_THRESHOLD;
+import static frc.robot.Constants.VisionConstants.TAG_DISTANCE_THRESHOLD;
 
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
@@ -56,7 +57,7 @@ public class LocalizationSubsystem extends SubsystemBase {
   private final Supplier<Angle> yaw;
   private final DoubleSupplier robotAngularVelocitySupplier;
   private Pose2d startingPose = new Pose2d();
-  private int questNavFaultCounter = 0;
+  private double questNavFaultCounter = 0.0;
 
   /**
    * Constructs a new LocalizationSubsystem.
@@ -108,50 +109,52 @@ public class LocalizationSubsystem extends SubsystemBase {
     PoseEstimate bestEstimate = null;
     double bestDeviation = Double.MAX_VALUE;
 
-    for (String cameraname : APRILTAG_CAMERA_NAMES) {
-      PoseEstimate currentPose = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(cameraname);
-      if (currentPose != null) {
+    for (String cameraName : APRILTAG_CAMERA_NAMES) {
 
-        double baseStandardDeviations = (questNavFaultCounter < 6) ? APRILTAG_STD_DEVS
-            : QUESTNAV_ACTIVE_APRILTAG_STD_DEVS;
+      if (RobotState.isDisabled()) {
+        // When the robot is disabled, set IMU and robot orientation for each AprilTag camera
+        LimelightHelpers.SetIMUMode(cameraName, 1);
+        LimelightHelpers.SetRobotOrientation(cameraName, startingPose.getRotation().getDegrees(), 0, 0, 0, 0, 0);
+        PoseEstimate currentPose = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(cameraName);
 
-        double adjustedXYDeviation = baseStandardDeviations + (0.01 * Math.pow(currentPose.avgTagDist, 2));
-
-        Matrix<N3, N1> adjustedDeviations = VecBuilder.fill(adjustedXYDeviation, adjustedXYDeviation, Double.MAX_VALUE);
-        if (bestDeviation > adjustedDeviations.get(0, 0)) {
-          bestEstimate = currentPose;
-          bestDeviation = adjustedDeviations.get(0, 0);
+        Pose2d poseToUse = startingPose;
+        if (currentPose != null && currentPose.tagCount != 0 && isValidFieldPosition(currentPose.pose.getTranslation())
+            && (currentPose.avgTagDist < TAG_DISTANCE_THRESHOLD.in(Meters))
+            && (currentPose.pose.getTranslation().getDistance(startingPose.getTranslation()) < 3.0)) {
+          // The pose is valid, use it
+          poseToUse = currentPose.pose;
         }
 
-        if (RobotState.isDisabled()) {
-          // When the robot is disabled, set IMU and robot orientation for each AprilTag camera
-          LimelightHelpers.SetIMUMode(cameraname, 1);
-          LimelightHelpers.SetRobotOrientation(cameraname, startingPose.getRotation().getDegrees(), 0, 0, 0, 0, 0);
+        setQuestNavPose(poseToUse);
+        poseResetConsumer.accept(poseToUse);
 
-          Pose2d poseToUse = startingPose;
-          if (isValidFieldPosition(currentPose.pose.getTranslation())
-              && (currentPose.tagCount > 1
-                  || (currentPose.tagCount == 1 && currentPose.avgTagDist < SINGLE_TAG_DISTANCE_THRESHOLD.in(Meters)))
-              && (currentPose.pose.getTranslation().getDistance(startingPose.getTranslation()) < 3.0)
-              && currentPose.tagCount != 0) {
-            // The pose is valid, use it
-            poseToUse = currentPose.pose;
+      } else {
+        // When the robot is enabled, set IMU mode for each AprilTag camera
+        LimelightHelpers.SetIMUMode(cameraName, 4);
+        LimelightHelpers.SetRobotOrientation(cameraName, yaw.get().in(Degrees), 0, 0, 0, 0, 0);
+        PoseEstimate currentPose = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(cameraName);
+
+        if (currentPose != null && Math.abs(robotAngularVelocitySupplier.getAsDouble()) <= 4 * Math.PI
+            && (currentPose.avgTagDist < TAG_DISTANCE_THRESHOLD.in(Meters))
+            && isValidFieldPosition(currentPose.pose.getTranslation()) && currentPose.tagCount != 0) {
+
+          double baseStandardDeviations = (questNavFaultCounter > QUESTNAV_FAILURE_THRESHOLD) ? APRILTAG_STD_DEVS
+              : QUESTNAV_ACTIVE_APRILTAG_STD_DEVS;
+
+          double adjustedXYDeviation = baseStandardDeviations + (0.01 * Math.pow(currentPose.avgTagDist, 2));
+
+          Matrix<N3, N1> adjustedDeviations = VecBuilder
+              .fill(adjustedXYDeviation, adjustedXYDeviation, Double.MAX_VALUE);
+          if (bestDeviation > adjustedDeviations.get(0, 0)) {
+            bestEstimate = currentPose;
+            bestDeviation = adjustedDeviations.get(0, 0);
           }
 
-          setQuestNavPose(poseToUse);
-          poseResetConsumer.accept(poseToUse);
-        } else {
-          // When the robot is enabled, set IMU mode for each AprilTag camera
-          LimelightHelpers.SetRobotOrientation(cameraname, yaw.get().in(Degrees), 0, 0, 0, 0, 0);
-          LimelightHelpers.SetIMUMode(cameraname, 4);
-          if (robotAngularVelocitySupplier.getAsDouble() <= 4 * Math.PI
-              && (currentPose.tagCount != 1 || currentPose.avgTagDist < SINGLE_TAG_DISTANCE_THRESHOLD.in(Meters))
-              && currentPose.tagCount != 0 && isValidFieldPosition(currentPose.pose.getTranslation())) {
-            visionMeasurementConsumer
-                .addVisionMeasurement(currentPose.pose, currentPose.timestampSeconds, adjustedDeviations);
-          }
+          visionMeasurementConsumer
+              .addVisionMeasurement(currentPose.pose, currentPose.timestampSeconds, adjustedDeviations);
         }
       }
+
     }
     PoseFrame[] frames = questNav.getAllUnreadPoseFrames();
     // Iterate backwards through frames to find the most recent valid frame
@@ -166,7 +169,7 @@ public class LocalizationSubsystem extends SubsystemBase {
             ? robotPose.toPose2d().getTranslation().getDistance(bestEstimate.pose.getTranslation())
             : 0;
 
-        if (error > 0.5 && questNavFaultCounter < 6) {
+        if (error > 0.5 && questNavFaultCounter < QUESTNAV_FAILURE_THRESHOLD) {
           questNavFaultCounter += Math.pow(error, 2);
           questHealthPublisher.accept(false);
         } else {
@@ -175,8 +178,9 @@ public class LocalizationSubsystem extends SubsystemBase {
           }
           questHealthPublisher.accept(true);
           // Make sure the pose is inside the field
-          if (FieldConstants.isValidFieldPosition(robotPose.getTranslation()) && questNavFaultCounter <= 6) {
-            // Add the measurement
+          if (FieldConstants.isValidFieldPosition(robotPose.getTranslation())
+              && questNavFaultCounter < QUESTNAV_FAILURE_THRESHOLD) {
+            // Add the measurements
             visionMeasurementConsumer
                 .addVisionMeasurement(robotPose.toPose2d(), frame.dataTimestamp(), QUESTNAV_STD_DEVS);
             // Publish for debugging

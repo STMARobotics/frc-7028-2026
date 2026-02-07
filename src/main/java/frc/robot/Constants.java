@@ -89,7 +89,7 @@ public class Constants {
   public static class QuestNavConstants {
     // TODO - Set this once the robot is designed
     public static final Transform3d ROBOT_TO_QUEST = new Transform3d(new Translation3d(), new Rotation3d());
-
+    public static final double QUESTNAV_FAILURE_THRESHOLD = 6;
     public static final Matrix<N3, N1> QUESTNAV_STD_DEVS = VecBuilder.fill(
         0.03, // X: Trust Quest to within 3cm (Trust more than odometry)
           0.03, // Y: Trust Quest to within 3cm
@@ -118,7 +118,7 @@ public class Constants {
     public static final double APRILTAG_STD_DEVS = 0.1;
     public static final double QUESTNAV_ACTIVE_APRILTAG_STD_DEVS = 1.5;
 
-    public static final Distance SINGLE_TAG_DISTANCE_THRESHOLD = Meters.of(3.5);
+    public static final Distance TAG_DISTANCE_THRESHOLD = Meters.of(3.5);
   }
 
   public static class IntakeConstants {
