@@ -68,6 +68,16 @@
     "source.fixAll.spotlessGradle": "explicit"
   },
   "editor.detectIndentation": false,
+  "editor.showDeprecated": true,
+  "editor.suggest.showDeprecated": true,
+  "editor.semanticTokenColorCustomizations": {
+    "enabled": true,
+    "rules": {
+      "*.deprecated": { 
+         "strikethrough": true
+      }
+    }
+  },
   "java.inlayHints.parameterNames.enabled": "none",
   "java.settings.url": ".vscode/org.eclipse.jdt.core.prefs",
   "java.format.enabled": false,
