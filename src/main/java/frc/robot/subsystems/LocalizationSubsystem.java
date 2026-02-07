@@ -1,0 +1,215 @@
+package frc.robot.subsystems;
+
+import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.Meters;
+import static frc.robot.Constants.FieldConstants.isValidFieldPosition;
+import static frc.robot.Constants.QuestNavConstants.QUESTNAV_FAILURE_THRESHOLD;
+import static frc.robot.Constants.QuestNavConstants.QUESTNAV_STD_DEVS;
+import static frc.robot.Constants.QuestNavConstants.ROBOT_TO_QUEST;
+import static frc.robot.Constants.VisionConstants.APRILTAG_CAMERA_NAMES;
+import static frc.robot.Constants.VisionConstants.APRILTAG_STD_DEVS;
+import static frc.robot.Constants.VisionConstants.QUESTNAV_ACTIVE_APRILTAG_STD_DEVS;
+import static frc.robot.Constants.VisionConstants.ROBOT_TO_CAMERA_TRANSFORMS;
+import static frc.robot.Constants.VisionConstants.TAG_DISTANCE_THRESHOLD;
+
+import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.numbers.N1;
+import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.networktables.BooleanPublisher;
+import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.networktables.StructPublisher;
+import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.wpilibj.RobotState;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants.FieldConstants;
+import frc.robot.LimelightHelpers;
+import frc.robot.LimelightHelpers.PoseEstimate;
+import frc.robot.VisionMeasurementConsumer;
+import gg.questnav.questnav.PoseFrame;
+import gg.questnav.questnav.QuestNav;
+import java.util.function.Consumer;
+import java.util.function.DoubleSupplier;
+import java.util.function.Supplier;
+
+/**
+ * Subsystem for the localization system.
+ * <p>
+ * This subsystem integrates Limelight and QuestNav vision systems to provide pose estimation and field localization.
+ * It manages camera pose configuration, vision measurement consumption, and field position validation.
+ * Vision measurements are fused from multiple sources and published for use by other subsystems.
+ */
+public class LocalizationSubsystem extends SubsystemBase {
+
+  private final QuestNav questNav = new QuestNav();
+  private final VisionMeasurementConsumer visionMeasurementConsumer;
+  private final Consumer<Pose2d> poseResetConsumer;
+
+  private final NetworkTable localizationTable = NetworkTableInstance.getDefault().getTable("Localization-Robot");
+  private final StructPublisher<Pose3d> questPublisher = localizationTable
+      .getStructTopic("Quest Robot Pose", Pose3d.struct)
+      .publish();
+  private final BooleanPublisher trackingPublisher = localizationTable.getBooleanTopic("Quest Tracking").publish();
+  private final BooleanPublisher questHealthPublisher = localizationTable.getBooleanTopic("Quest Healthy?").publish();
+  private final Supplier<Angle> yaw;
+  private final DoubleSupplier robotAngularVelocitySupplier;
+  private Pose2d startingPose = new Pose2d();
+  private double questNavFaultCounter = 0.0;
+
+  /**
+   * Constructs a new LocalizationSubsystem.
+   *
+   * @param addVisionMeasurement the consumer for vision-based pose measurements
+   */
+  public LocalizationSubsystem(
+      VisionMeasurementConsumer addVisionMeasurement,
+      Consumer<Pose2d> poseResetConsumer,
+      Supplier<Angle> yaw,
+      DoubleSupplier angularVelocitySupplier) {
+    this.visionMeasurementConsumer = addVisionMeasurement;
+    this.poseResetConsumer = poseResetConsumer;
+    this.yaw = yaw;
+    this.robotAngularVelocitySupplier = angularVelocitySupplier;
+    for (int i = 0; i < APRILTAG_CAMERA_NAMES.length; i++) {
+      LimelightHelpers.setCameraPose_RobotSpace(
+          APRILTAG_CAMERA_NAMES[i],
+            ROBOT_TO_CAMERA_TRANSFORMS[i].getX(),
+            ROBOT_TO_CAMERA_TRANSFORMS[i].getY(),
+            ROBOT_TO_CAMERA_TRANSFORMS[i].getZ(),
+            ROBOT_TO_CAMERA_TRANSFORMS[i].getRotation().getMeasureX().in(Degrees),
+            ROBOT_TO_CAMERA_TRANSFORMS[i].getRotation().getMeasureY().in(Degrees),
+            ROBOT_TO_CAMERA_TRANSFORMS[i].getRotation().getMeasureZ().in(Degrees));
+    }
+  }
+
+  /**
+   * Sets the starting pose for the robot at the beginning of a match.
+   * <p>
+   * This pose is used to initialize robot orientation and serves as a fallback
+   * for translation if vision-based localization is unavailable.
+   */
+  public void setInitialPose(Pose2d pose) {
+    startingPose = pose;
+  }
+
+  /**
+   * Periodically updates the localization system with vision and pose data.
+   * <p>
+   * This method is called automatically by the scheduler. It updates IMU modes, sets robot orientation,
+   * retrieves and validates vision-based pose estimates from Limelight and QuestNav, and provides
+   * vision measurements to the consumer.
+   */
+  @Override
+  public void periodic() {
+    questNav.commandPeriodic();
+    trackingPublisher.set(questNav.isTracking());
+    PoseEstimate bestEstimate = null;
+    double bestDeviation = Double.MAX_VALUE;
+
+    for (String cameraName : APRILTAG_CAMERA_NAMES) {
+
+      if (RobotState.isDisabled()) {
+        // When the robot is disabled, set IMU and robot orientation for each AprilTag camera
+        LimelightHelpers.SetIMUMode(cameraName, 1);
+        LimelightHelpers.SetRobotOrientation(cameraName, startingPose.getRotation().getDegrees(), 0, 0, 0, 0, 0);
+        PoseEstimate currentPose = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(cameraName);
+
+        Pose2d poseToUse = startingPose;
+        if (currentPose != null && currentPose.tagCount != 0 && isValidFieldPosition(currentPose.pose.getTranslation())
+            && (currentPose.avgTagDist < TAG_DISTANCE_THRESHOLD.in(Meters))
+            && (currentPose.pose.getTranslation().getDistance(startingPose.getTranslation()) < 3.0)) {
+          // The pose is valid, use it
+          poseToUse = currentPose.pose;
+        }
+
+        setQuestNavPose(poseToUse);
+        poseResetConsumer.accept(poseToUse);
+
+      } else {
+        // When the robot is enabled, set IMU mode for each AprilTag camera
+        LimelightHelpers.SetIMUMode(cameraName, 4);
+        LimelightHelpers.SetRobotOrientation(cameraName, yaw.get().in(Degrees), 0, 0, 0, 0, 0);
+        PoseEstimate currentPose = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(cameraName);
+
+        if (currentPose != null && Math.abs(robotAngularVelocitySupplier.getAsDouble()) <= 4 * Math.PI
+            && (currentPose.avgTagDist < TAG_DISTANCE_THRESHOLD.in(Meters))
+            && isValidFieldPosition(currentPose.pose.getTranslation()) && currentPose.tagCount != 0) {
+
+          double baseStandardDeviations = (questNavFaultCounter > QUESTNAV_FAILURE_THRESHOLD) ? APRILTAG_STD_DEVS
+              : QUESTNAV_ACTIVE_APRILTAG_STD_DEVS;
+
+          double adjustedXYDeviation = baseStandardDeviations + (0.01 * Math.pow(currentPose.avgTagDist, 2));
+
+          Matrix<N3, N1> adjustedDeviations = VecBuilder
+              .fill(adjustedXYDeviation, adjustedXYDeviation, Double.MAX_VALUE);
+          if (bestDeviation > adjustedDeviations.get(0, 0)) {
+            bestEstimate = currentPose;
+            bestDeviation = adjustedDeviations.get(0, 0);
+          }
+
+          visionMeasurementConsumer
+              .addVisionMeasurement(currentPose.pose, currentPose.timestampSeconds, adjustedDeviations);
+        }
+      }
+
+    }
+    PoseFrame[] frames = questNav.getAllUnreadPoseFrames();
+    // Iterate backwards through frames to find the most recent valid frame
+    for (int i = frames.length - 1; i >= 0; i--) {
+      PoseFrame frame = frames[i];
+      if (frame.isTracking()) {
+        Pose3d questPose = frame.questPose3d();
+        Pose3d robotPose = questPose.transformBy(ROBOT_TO_QUEST.inverse());
+        questPublisher.set(robotPose);
+
+        double error = (bestEstimate != null)
+            ? robotPose.toPose2d().getTranslation().getDistance(bestEstimate.pose.getTranslation())
+            : 0;
+
+        if (error > 0.5 && questNavFaultCounter < QUESTNAV_FAILURE_THRESHOLD) {
+          questNavFaultCounter += Math.pow(error, 2);
+          questHealthPublisher.set(false);
+        } else {
+          if (questNavFaultCounter > 0.0) {
+            questNavFaultCounter -= 1.0;
+          }
+          questHealthPublisher.set(true);
+          // Make sure the pose is inside the field
+          if (FieldConstants.isValidFieldPosition(robotPose.getTranslation())
+              && questNavFaultCounter < QUESTNAV_FAILURE_THRESHOLD) {
+            // Add the measurements
+            visionMeasurementConsumer
+                .addVisionMeasurement(robotPose.toPose2d(), frame.dataTimestamp(), QUESTNAV_STD_DEVS);
+            // Publish for debugging
+            break; // Found the most recent valid frame, exit loop
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * Sets the QuestNav pose from the given robot pose.
+   * 
+   * @param robotPose robot pose
+   */
+  public void setQuestNavPose(Pose3d robotPose) {
+    Pose3d questPose = robotPose.transformBy(ROBOT_TO_QUEST);
+    questNav.setPose(questPose);
+  }
+
+  /**
+   * Sets the QuestNav pose from the given 2D robot pose.
+   * <p>
+   * This sets the 3D pose with a Z of 0 (on the floor) and no pitch or roll.
+   *
+   * @param pose2d the robot's 2D pose
+   */
+  public void setQuestNavPose(Pose2d pose2d) {
+    setQuestNavPose(new Pose3d(pose2d));
+  }
+
+}

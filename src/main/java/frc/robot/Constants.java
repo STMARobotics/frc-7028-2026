@@ -1,5 +1,7 @@
 package frc.robot;
 
+import static edu.wpi.first.math.util.Units.degreesToRadians;
+import static edu.wpi.first.math.util.Units.inchesToMeters;
 import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Meters;
@@ -87,12 +89,36 @@ public class Constants {
   public static class QuestNavConstants {
     // TODO - Set this once the robot is designed
     public static final Transform3d ROBOT_TO_QUEST = new Transform3d(new Translation3d(), new Rotation3d());
-
+    public static final double QUESTNAV_FAILURE_THRESHOLD = 6.0;
     public static final Matrix<N3, N1> QUESTNAV_STD_DEVS = VecBuilder.fill(
         0.03, // X: Trust Quest to within 3cm (Trust more than odometry)
           0.03, // Y: Trust Quest to within 3cm
           0.5 // Theta: Trust Quest rotation LESS than Gyro (Trust Pigeon more)
     );
+  }
+
+  /**
+   * Constants for vision processing
+   */
+  public static class VisionConstants {
+    public static final String[] APRILTAG_CAMERA_NAMES = { "left", "right", "back" };
+    // TODO - Set this once the robot is designed
+    public static final Transform3d[] ROBOT_TO_CAMERA_TRANSFORMS = new Transform3d[] {
+        new Transform3d(
+            new Translation3d(inchesToMeters(0), inchesToMeters(0), inchesToMeters(0)),
+            new Rotation3d(0, 0, degreesToRadians(0))),
+        new Transform3d(
+            new Translation3d(inchesToMeters(0), inchesToMeters(0), inchesToMeters(0)),
+            new Rotation3d(0, 0, degreesToRadians(0))),
+        new Transform3d(
+            new Translation3d(inchesToMeters(0), inchesToMeters(0), inchesToMeters(0)),
+            new Rotation3d(0, degreesToRadians(0), degreesToRadians(0))) };
+
+    // The standard deviations of our vision estimated poses, which affect correction rate
+    public static final double APRILTAG_STD_DEVS = 0.1;
+    public static final double QUESTNAV_ACTIVE_APRILTAG_STD_DEVS = 1.5;
+
+    public static final Distance TAG_DISTANCE_THRESHOLD = Meters.of(3.5);
   }
 
   public static class IntakeConstants {
