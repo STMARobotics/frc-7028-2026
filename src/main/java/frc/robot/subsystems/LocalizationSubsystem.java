@@ -15,7 +15,6 @@ import static frc.robot.Constants.VisionConstants.SINGLE_TAG_DISTANCE_THRESHOLD;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
-import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.networktables.BooleanPublisher;
@@ -105,18 +104,30 @@ public class LocalizationSubsystem extends SubsystemBase {
   public void periodic() {
     questNav.commandPeriodic();
     trackingPublisher.set(questNav.isTracking());
+    PoseEstimate bestEstimate = new PoseEstimate();
+    double bestDeviation = 0;
 
     for (String cameraname : APRILTAG_CAMERA_NAMES) {
       Matrix<N3, N1> standardDeviations = (questNavFaultCounter < 50) ? APRILTAG_STD_DEVS
           : QUESTNAV_ACTIVE_APRILTAG_STD_DEVS;
       if (currentPose.tagCount < 2) {
-        // TODO scale down for single tag
+        // TODO scale down for single tag maybe
       }
 
       currentPose = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(cameraname);
       double adjustedXYDeviation = standardDeviations.get(0, 0) + (0.01 * Math.pow(currentPose.avgTagDist, 2));
       standardDeviations.set(0, 0, adjustedXYDeviation);
       standardDeviations.set(1, 0, adjustedXYDeviation);
+      if (bestDeviation == 0) {
+        bestEstimate = currentPose;
+        bestDeviation = standardDeviations.get(0, 0);
+      } else {
+        if (bestDeviation < standardDeviations.get(0, 0)) {
+          bestEstimate = currentPose;
+          bestDeviation = standardDeviations.get(0, 0);
+        }
+      }
+
       if (RobotState.isDisabled()) {
         // When the robot is disabled, set IMU and robot orientation for each AprilTag camera
         LimelightHelpers.SetIMUMode(cameraname, 1);
@@ -155,13 +166,7 @@ public class LocalizationSubsystem extends SubsystemBase {
           Pose3d questPose = frame.questPose3d();
           Pose3d robotPose = questPose.transformBy(ROBOT_TO_QUEST.inverse());
 
-          Translation2d averageTranslation = new Translation2d();
-          for (String cameraname : APRILTAG_CAMERA_NAMES) {
-            averageTranslation
-                .plus(LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(cameraname).pose.getTranslation());
-          }
-          averageTranslation.div(3);
-          if (robotPose.toPose2d().getTranslation().getDistance(averageTranslation) < 0.5) {
+          if (robotPose.toPose2d().getTranslation().getDistance(bestEstimate.pose.getTranslation()) < 0.5) {
             questNavFaultCounter += 1;
           } else if (questNavFaultCounter > 0) {
             questNavFaultCounter -= 1;
