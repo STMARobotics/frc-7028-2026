@@ -8,7 +8,7 @@ import java.util.function.Function;
 
 public class VectorState {
 
-  Translation3d position;
+  public Translation3d position;
   Translation3d velocity;
   Rotation3d spin;
   Integrator integrator;

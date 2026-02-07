@@ -1,13 +1,13 @@
 package com.frc7028.physics.sim;
 
-class BallisticEnvironmentProfile {
-  double ballisticProjectileMass;
-  double gravitationalAcceleration;
-  double airDensity;
-  double ballisticProjectileDragCoefficient;
-  double ballisticProjectileCrossSectionalArea;
-  double ballisticProjectileMagnusCoefficient;
-  double ballisticProjectileRadius;
+public class BallisticEnvironmentProfile {
+  public double ballisticProjectileMass;
+  public double gravitationalAcceleration;
+  public double airDensity;
+  public double ballisticProjectileDragCoefficient;
+  public double ballisticProjectileCrossSectionalArea;
+  public double ballisticProjectileMagnusCoefficient;
+  public double ballisticProjectileRadius;
 
   public BallisticEnvironmentProfile(
       double ballisticProjectileMass,

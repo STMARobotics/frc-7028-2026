@@ -1,13 +1,14 @@
 package com.frc7028.physics.sim;
 
+import com.frc7028.BallisticPrecomputer;
 import com.frc7028.physics.sim.Integrator.forceInput;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation3d;
 import java.util.function.Function;
 
-class BallisticProjectileState extends VectorState {
+public class BallisticProjectileState extends VectorState {
 
-  BallisticSimulator simulator;
+  BallisticPrecomputer simulator;
   BoundryState boundryState;
   CollisionStatus collisionStatus;
   Translation3d error;
@@ -20,11 +21,11 @@ class BallisticProjectileState extends VectorState {
   }
 
   public void launch(Translation3d position, Translation3d velocity, Rotation3d spin) {
+    this.integrator.reset();
+
     this.position = position;
     this.velocity = velocity;
     this.spin = spin;
-
-    this.integrator.reset();
   }
 
   public enum BoundryState {
@@ -51,7 +52,7 @@ class BallisticProjectileState extends VectorState {
   }
 
   private boolean testOutOfBounds() {
-    if (!this.simulator.resolution.fieldBounds.testPosition(position)) {
+    if (!this.simulator.fieldMetrics.fieldBounds().testPosition(position)) {
       resolveBoundryState(BoundryState.OUT_OF_BOUNDS);
       resolveCollision(CollisionStatus.FAILURE);
       return true;
@@ -60,7 +61,7 @@ class BallisticProjectileState extends VectorState {
   }
 
   private boolean testRejectedBoundries() {
-    for (Region3d region : this.simulator.resolution.rejectRegions) {
+    for (Region3d region : this.simulator.fieldMetrics.rejectRegions()) {
       if (region.testPosition(position)) {
         resolveBoundryState(BoundryState.OUT_OF_BOUNDS);
         resolveCollision(CollisionStatus.FAILURE);
@@ -71,7 +72,7 @@ class BallisticProjectileState extends VectorState {
   }
 
   private boolean testTarget() {
-    if (this.simulator.resolution.targetRegion.testPosition(position)) {
+    if (this.simulator.fieldMetrics.targetRegion().testPosition(position)) {
       resolveBoundryState(BoundryState.IN_BOUNDS);
       resolveCollision(CollisionStatus.TARGET);
       return true;
@@ -80,7 +81,7 @@ class BallisticProjectileState extends VectorState {
   }
 
   private boolean testObstacles() {
-    for (Region3d obstacle : this.simulator.resolution.obstacleRegions) {
+    for (Region3d obstacle : this.simulator.fieldMetrics.obstacles()) {
       if (obstacle.testPosition(position)) {
         resolveBoundryState(BoundryState.FAIL);
         resolveCollision(CollisionStatus.OBSTACLE);

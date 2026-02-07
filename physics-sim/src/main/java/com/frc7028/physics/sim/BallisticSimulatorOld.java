@@ -13,9 +13,9 @@ import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.units.measure.Angle;
 import java.util.HashMap;
 
-class BallisticSimulator {
+class BallisticSimulatorOld {
   BallisticEnvironmentProfile environmentProfile;
-  BallisticSimulatorResolutionProfile resolution;
+  SimulatorResolution resolution;
   BallisticProjectileState projectileState;
 
   public record BallisticCondition(double px, double py, double vx, double vy) {
@@ -31,9 +31,9 @@ class BallisticSimulator {
   public record RawBallisticLaunchConditions(Translation3d position, Translation3d velocity, Rotation3d spin) {
   };
 
-  public BallisticSimulator(
+  public BallisticSimulatorOld(
       BallisticEnvironmentProfile environmentProfile,
-      BallisticSimulatorResolutionProfile resolutionProfile,
+      SimulatorResolution resolutionProfile,
       IntegratorResolution integratorResolution) {
     this.environmentProfile = environmentProfile;
     this.resolution = resolutionProfile;

@@ -1,0 +1,192 @@
+package com.frc7028;
+
+import static edu.wpi.first.units.Units.Radians;
+import static java.lang.Math.atan2;
+import static java.lang.Math.cos;
+import static java.lang.Math.sin;
+
+import com.frc7028.physics.sim.BallisticEnvironmentProfile;
+import com.frc7028.physics.sim.BallisticProjectileState;
+import com.frc7028.physics.sim.FieldMetrics;
+import com.frc7028.physics.sim.Integrator.forceInput;
+import com.frc7028.physics.sim.IntegratorResolution;
+import com.frc7028.physics.sim.SimulatorResolution;
+import edu.wpi.first.math.MatBuilder;
+import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.units.measure.Angle;
+import java.util.function.Function;
+
+public class BallisticPrecomputer {
+
+  public SimulatorResolution simulatorResolution;
+  public IntegratorResolution integratorResolution;
+  public BallisticEnvironmentProfile environmentProfile;
+  public FieldMetrics fieldMetrics;
+
+  BallisticProjectileState projectileState;
+
+  Function<forceInput, Translation3d> forceFunction;
+
+  Function<Double, Rotation3d> speedToSpin;
+
+  private record RobotState(Translation2d position, Translation2d velocity) {
+  }
+
+  private record ShotParameters(Angle yaw, Angle pitch, double speed) {
+    ShotParameters stepYaw(Angle step) {
+      return new ShotParameters(yaw.plus(step), pitch, speed);
+    };
+
+    ShotParameters stepPitch(Angle step) {
+      return new ShotParameters(yaw, pitch.plus(step), speed);
+    }
+
+    ShotParameters stepSpeed(double step) {
+      return new ShotParameters(yaw, pitch, speed + step);
+    }
+
+  }
+
+  private record SimulationResult(Translation3d error, double errorYaw, double errorRadial, double errorHeight) {
+
+  }
+
+  private Translation3d anglesToUnitVec(Angle yaw, Angle pitch) {
+    double yawRadians = yaw.in(Radians);
+    double pitchRadians = pitch.in(Radians);
+    return new Translation3d(
+        cos(pitchRadians) * cos(yawRadians),
+        cos(pitchRadians) * sin(yawRadians),
+        sin(pitchRadians));
+  };
+
+  public BallisticPrecomputer(
+      SimulatorResolution simulatorResolution,
+      IntegratorResolution integratorResolution,
+      BallisticEnvironmentProfile environmentProfile,
+      FieldMetrics fieldMetrics,
+      Function<Double, Rotation3d> speedToSpin) {
+    this.simulatorResolution = simulatorResolution;
+    this.integratorResolution = integratorResolution;
+    this.environmentProfile = environmentProfile;
+    this.fieldMetrics = fieldMetrics;
+
+    this.forceFunction = (forceInput projectileState) -> {
+      Translation3d acceleration = Translation3d.kZero; // <0, 0, 0>
+      Translation3d stateVel = projectileState.velocity();
+      Rotation3d stateSpin = projectileState.spin();
+
+      Translation3d spinAxis = new Translation3d(stateSpin.getAxis()).times(stateSpin.getAngle());
+
+      Translation3d unitDirection = stateVel.div(stateVel.getNorm());
+
+      double dynamicPressure = 0.5d * environmentProfile.airDensity * stateVel.getSquaredNorm();
+
+      double drag = environmentProfile.ballisticProjectileDragCoefficient * dynamicPressure
+          * environmentProfile.ballisticProjectileCrossSectionalArea;
+
+      double magnus = (0.5d) * environmentProfile.airDensity * environmentProfile.ballisticProjectileCrossSectionalArea
+          * environmentProfile.ballisticProjectileMagnusCoefficient;
+
+      acceleration = acceleration.plus(unitDirection.times(-1 * drag))
+          .plus((new Translation3d(spinAxis.cross(stateVel))).times(magnus))
+          .plus(new Translation3d(0, 0, environmentProfile.gravitationalAcceleration));
+      return acceleration;
+    };
+
+    this.projectileState = new BallisticProjectileState(integratorResolution, forceFunction);
+  }
+
+  private SimulationResult simulateBall(
+      BallisticProjectileState simulatedProjectileState,
+      RobotState state,
+      ShotParameters parameters) {
+    Translation3d initialPosition = new Translation3d(
+        state.position.getX(),
+        state.position.getY(),
+        this.fieldMetrics.startingHeight());
+    Translation3d initialVelocity = new Translation3d(state.position.getX(), state.position.getY(), 0)
+        .plus(anglesToUnitVec(parameters.yaw, parameters.pitch).times(parameters.speed));
+
+    // Launch the projectile
+    simulatedProjectileState.launch(initialPosition, initialVelocity, this.speedToSpin.apply(parameters.speed()));
+
+    // Actually step the projectile over time, and stop when it either collides or is out of bounds
+    while (simulatedProjectileState.testPosition()) {
+      simulatedProjectileState.step();
+    }
+
+    Translation3d endPosition = simulatedProjectileState.position;
+    Translation3d errorDisplacement = endPosition.minus(this.fieldMetrics.targetRegion().center);
+
+    Translation2d errorDisplacement2D = errorDisplacement.toTranslation2d();
+    return new SimulationResult(
+        errorDisplacement,
+        atan2(errorDisplacement2D.getY(), errorDisplacement.getX()),
+        errorDisplacement2D.getNorm(),
+        errorDisplacement.getZ());
+  }
+
+  private ShotParameters convergeSolution(
+      BallisticProjectileState simulatedProjectileState,
+      RobotState state,
+      ShotParameters parameters) {
+    // https://pages.hmc.edu/ruye/MachineLearning/lectures/ch2/node7.html
+
+    Angle yaw = parameters.yaw();
+    Angle pitch = parameters.pitch();
+    double speed = parameters.speed();
+
+    double yawRads = yaw.baseUnitMagnitude();
+    double pitchRads = pitch.baseUnitMagnitude();
+
+    SimulationResult errorPrior = simulateBall(simulatedProjectileState, state, parameters);
+
+    double errRadialPrior = errorPrior.errorRadial();
+    double errYawPrior = errorPrior.errorYaw();
+    double errHeightPrior = errorPrior.errorHeight;
+
+    if (errorPrior.error.getNorm() < this.simulatorResolution.targetMaxDistanceForConvergence()) {
+      return parameters;
+    }
+
+    Angle deltaAngle = this.simulatorResolution.deltaAngle();
+    double deltaSpeed = this.simulatorResolution.deltaTime();
+
+    double da = deltaAngle.baseUnitMagnitude();
+
+    ShotParameters steppedYawParameters = parameters.stepYaw(deltaAngle);
+    ShotParameters steppedPitchParameters = parameters.stepPitch(deltaAngle);
+    ShotParameters steppedSpeedParameters = parameters.stepSpeed(deltaSpeed);
+
+    SimulationResult steppedYaw = simulateBall(simulatedProjectileState, state, steppedYawParameters);
+    SimulationResult steppedPitch = simulateBall(simulatedProjectileState, state, steppedPitchParameters);
+    SimulationResult steppedSpeed = simulateBall(simulatedProjectileState, state, steppedSpeedParameters);
+
+    // y(yaw); p(pitch); s(speed)
+    // Ey(error yaw); Er(error radial); Ez(error height)
+
+    // Compose jacobian [errorYaw, errorDistance(radial), errorHeight] x [dYaw, dPitch, dSpeed]
+
+    double Eydy = (steppedYaw.errorYaw() - errYawPrior) / da;
+    double Erdy = (steppedYaw.errorRadial() - errRadialPrior) / da;
+    double Ezdy = (steppedYaw.errorHeight() - errHeightPrior) / da;
+
+    double Eydp = (steppedPitch.errorYaw() - errYawPrior) / da;
+    double Erdp = (steppedPitch.errorRadial() - errRadialPrior) / da;
+    double Ezdp = (steppedPitch.errorHeight() - errHeightPrior) / da;
+
+    double Eyds = (steppedPitch.errorYaw() - errHeightPrior) / deltaSpeed;
+    double Erds = (steppedPitch.errorRadial() - errRadialPrior) / deltaSpeed;
+    double Ezds = (steppedPitch.errorHeight() - errHeightPrior) / deltaSpeed;
+
+    Matrix<N3, N3> ErrorJacobian = MatBuilder
+        .fill(N3.instance, N3.instance, Eydy, Erdy, Ezdy, Eydp, Erdp, Ezdp, Eyds, Erds, Ezds);
+    Matrix<N3, N1> Parameters = MatBuilder
+        .fill()
+  }
+}
