@@ -60,6 +60,8 @@ public class ClimbSubsystem extends SubsystemBase {
     PREPARE_L1,
     /** L1 position */
     L1,
+    /** L1 hang position, not all the way handing off to L1 */
+    L1_HANG,
     /** Extend to climb to L2 */
     PREPARE_L2,
     /** L2 position */
@@ -127,8 +129,8 @@ public class ClimbSubsystem extends SubsystemBase {
 
   @Override
   public void periodic() {
-    // Stow and L1 are the same position
-    if (ClimbAction.STOW == currentAction || ClimbAction.L1 == currentAction) {
+    // Stow and L1 hang are the same position
+    if (ClimbAction.STOW == currentAction || ClimbAction.L1_HANG == currentAction) {
       BaseStatusSignal.refreshAll(stowSensorSignal, climbPositionSignal);
       Angle climbPosition = climbPositionSignal.getValue();
       if (stowSensorSignal.getValue()) {
@@ -161,7 +163,14 @@ public class ClimbSubsystem extends SubsystemBase {
    */
   public void L1() {
     currentAction = ClimbAction.L1;
-    // periodic() will handle moving to the L1 position
+    climbMotorLeader.setControl(voltageOut.withOutput(CLIMB_OUTPUT_REVERSE_VOLTAGE));
+  }
+
+  /**
+   * Moves to the L1 hang position, which is not fully hanging on L1 so the robot can descend.
+   */
+  public void L1Hang() {
+    currentAction = ClimbAction.L1_HANG;
   }
 
   /**
@@ -253,10 +262,11 @@ public class ClimbSubsystem extends SubsystemBase {
       case PREPARE_L2:
       case PREPARE_L3:
         return topLimitSwitchSignal.refresh().getValue();
+      case L1:
       case L2:
       case L3:
         return bottomLimitSwitchSignal.refresh().getValue();
-      case L1:
+      case L1_HANG:
       case STOW:
         return stowSensorSignal.refresh().getValue();
       case IDLE:
