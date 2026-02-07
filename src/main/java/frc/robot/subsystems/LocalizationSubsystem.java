@@ -173,8 +173,8 @@ public class LocalizationSubsystem extends SubsystemBase {
           questNavFaultCounter += Math.pow(error, 2);
           questHealthPublisher.set(false);
         } else {
-          if (questNavFaultCounter > 0) {
-            questNavFaultCounter -= 1;
+          if (questNavFaultCounter > 0.0) {
+            questNavFaultCounter -= 1.0;
           }
           questHealthPublisher.set(true);
           // Make sure the pose is inside the field
