@@ -1,9 +1,11 @@
 package frc.robot;
 
 import static edu.wpi.first.units.Units.Amps;
+import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
+import static edu.wpi.first.units.Units.Seconds;
 
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
@@ -23,17 +25,19 @@ import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearVelocity;
+import edu.wpi.first.units.measure.Time;
 import frc.robot.generated.TunerConstants;
 
 public class Constants {
 
-  public static final String CANIVORE_BUS_NAME = "canivore";
-  public static final CANBus CANIVORE_BUS = new CANBus(CANIVORE_BUS_NAME);
+  public static final CANBus CANIVORE_BUS = new CANBus("canivore");
 
+  /**
+   * Constants for the field dimensions of the WELDED field.
+   */
   public static class FieldConstants {
-    // Dimensions for the WELDED field
-    public static final Distance FIELD_LENGTH = Meters.of(17.548);
-    public static final Distance FIELD_WIDTH = Meters.of(8.052);
+    public static final Distance FIELD_LENGTH = Inches.of(651.2);
+    public static final Distance FIELD_WIDTH = Inches.of(317.7);
 
     /**
      * Checks if a pose is within the field boundaries, and less than 3 meters high.
@@ -70,7 +74,7 @@ public class Constants {
   /**
    * Constants for odometry state estimation
    */
-  public static class OdometryContants {
+  public static class OdometryConstants {
     // Trust the physics/encoders moderately
     public static final Matrix<N3, N1> STATE_STD_DEVS = VecBuilder.fill(
         0.1, // X: 10cm error per meter (Trust wheels moderately)
@@ -81,9 +85,9 @@ public class Constants {
 
   public static class QuestNavConstants {
     // TODO - Set this once the robot is designed
-    public static Transform3d ROBOT_TO_QUEST = new Transform3d(new Translation3d(), new Rotation3d());
+    public static final Transform3d ROBOT_TO_QUEST = new Transform3d(new Translation3d(), new Rotation3d());
 
-    public static Matrix<N3, N1> QUESTNAV_STD_DEVS = VecBuilder.fill(
+    public static final Matrix<N3, N1> QUESTNAV_STD_DEVS = VecBuilder.fill(
         0.03, // X: Trust Quest to within 3cm (Trust more than odometry)
           0.03, // Y: Trust Quest to within 3cm
           0.5 // Theta: Trust Quest rotation LESS than Gyro (Trust Pigeon more)
@@ -104,13 +108,13 @@ public class Constants {
 
     public static final Current DEPLOY_SUPPLY_LIMIT = Amps.of(40);
 
-    public static final SlotConfigs ROLLER_SLOT_CONFIGS = SlotConfigs().withKP(0)
+    public static final SlotConfigs ROLLER_SLOT_CONFIGS = new SlotConfigs().withKP(0)
         .withKI(0.0)
         .withKD(0.0)
         .withKS(0.0)
         .withKV(0.0);
 
-    public static final SlotConfigs DEPLOY_SLOT_CONFIGS = SlotConfigs().withKP(0)
+    public static final SlotConfigs DEPLOY_SLOT_CONFIGS = new SlotConfigs().withKP(0)
         .withKI(0.0)
         .withKD(0.0)
         .withKS(0.0)
@@ -134,29 +138,48 @@ public class Constants {
 
   public static class SpindexerConstants {
     public static final int DEVICE_ID_SPINDEXER_MOTOR = 15;
+    public static final String HOPPER_CAMERA_NAME = "HopperCam";
+
     public static final Current SPINDEXER_TORQUE_CURRENT_LIMIT = Amps.of(80);
     public static final Current SPINDEXER_STATOR_CURRENT_LIMIT = Amps.of(80);
     public static final Current SPINDEXER_SUPPLY_CURRENT_LIMIT = Amps.of(40);
-    public static final double SPINDEXER_FEED_VELOCITY = 20;
-    public static final double SPINDEXER_INTAKE_VELOCITY = -10;
-    public static final double SPINDEXER_AGITATE_VELOCITY = 5;
-    public static final SlotConfigs SPINDEXER_SLOT_CONFIGS = new SlotConfigs().withKP(10).withKD(0).withKS(20);
 
+    public static final SlotConfigs SPINDEXER_SLOT_CONFIGS = new SlotConfigs().withKP(10).withKS(0);
+
+    public static final AngularVelocity SPINDEXER_FEED_VELOCITY = RotationsPerSecond.of(20);
+    public static final AngularVelocity SPINDEXER_INTAKE_VELOCITY = RotationsPerSecond.of(-10);
+    public static final AngularVelocity SPINDEXER_AGITATE_FORWARD_VELOCITY = RotationsPerSecond.of(5);
+    public static final AngularVelocity SPINDEXER_AGITATE_BACKWARD_VELOCITY = RotationsPerSecond.of(-5);
+
+    public static final double HOPPER_FULL_THRESHOLD = 85.0; // percent
+    public static final Time PIPELINE_RESULT_TTL = Seconds.of(0.25);
   }
 
+  /**
+   * Constants for the Transfer Subsystem
+   */
   public static class TransferConstants {
     public static final int DEVICE_ID_TRANSFER_MOTOR = 20;
-    public static final Current TRANSFER_TORQUE_CURRENT_LIMIT = Amps.of(90);
+    public static final int DEVICE_ID_TRANSFER_CANRANGE = 20;
+
+    public static final Current TRANSFER_TORQUE_CURRENT_LIMIT = Amps.of(80);
     public static final Current TRANSFER_STATOR_CURRENT_LIMIT = Amps.of(90);
-    public static final Current TRANSFER_SUPPLY_CURRENT_LIMIT = Amps.of(45);
-    public static final SlotConfigs TRANSFER_SLOT_CONFIGS = new SlotConfigs().withKP(10).withKD(0).withKS(20);
-    public static final double TRANSFER_FEED_VELOCITY = 30;
-    public static final double TRANSFER_UNJAM_VELOCITY = -10;
+    public static final Current TRANSFER_SUPPLY_CURRENT_LIMIT = Amps.of(40);
+    public static final SlotConfigs TRANSFER_SLOT_CONFIGS = new SlotConfigs().withKP(10).withKS(0);
 
+    public static final AngularVelocity TRANSFER_FEED_VELOCITY = RotationsPerSecond.of(60);
+    public static final AngularVelocity TRANSFER_UNJAM_VELOCITY = RotationsPerSecond.of(-10);
   }
 
-  public static SlotConfigs SlotConfigs() {
-    // TODO Auto-generated method stub
-    throw new UnsupportedOperationException("Unimplemented method 'SlotConfigs'");
+  /**
+   * Constants for the LEDs
+   */
+  public static class LEDConstants {
+    public static final int DEVICE_ID_LEDS = 9;
+
+    public static final int LED_STRIP_LENGTH = 49;
+
+    public static final int TOTAL_LEDS = 2 * LED_STRIP_LENGTH;
   }
+
 }

@@ -23,14 +23,19 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
-import frc.robot.Constants.OdometryContants;
+import frc.robot.Constants.OdometryConstants;
 import frc.robot.Constants.QuestNavConstants;
+import frc.robot.commands.led.DefaultLEDCommand;
+import frc.robot.commands.led.LEDBootAnimationCommand;
 import frc.robot.controls.ControlBindings;
 import frc.robot.controls.JoystickControlBindings;
 import frc.robot.controls.XBoxControlBindings;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
+import frc.robot.subsystems.LEDSubsystem;
 import frc.robot.subsystems.QuestNavSubsystem;
+import frc.robot.subsystems.SpindexerSubsystem;
+import frc.robot.subsystems.TransferSubsystem;
 
 @Logged(strategy = Logged.Strategy.OPT_IN)
 public class RobotContainer {
@@ -49,7 +54,7 @@ public class RobotContainer {
   public final CommandSwerveDrivetrain drivetrain = new CommandSwerveDrivetrain(
       TunerConstants.DrivetrainConstants,
       0,
-      OdometryContants.STATE_STD_DEVS,
+      OdometryConstants.STATE_STD_DEVS,
       QuestNavConstants.QUESTNAV_STD_DEVS,
       TunerConstants.FrontLeft,
       TunerConstants.FrontRight,
@@ -57,6 +62,11 @@ public class RobotContainer {
       TunerConstants.BackRight);
 
   private final QuestNavSubsystem questNavSubsystem = new QuestNavSubsystem(drivetrain::addVisionMeasurement);
+  @Logged
+  private final TransferSubsystem transferSubsystem = new TransferSubsystem();
+  @Logged
+  private final SpindexerSubsystem spindexerSubsystem = new SpindexerSubsystem();
+  private final LEDSubsystem ledSubsystem = new LEDSubsystem();
 
   /* Path follower */
   private final SendableChooser<Command> autoChooser;
@@ -81,6 +91,13 @@ public class RobotContainer {
     CommandScheduler.getInstance().schedule(FollowPathCommand.warmupCommand());
 
     populateSysIdDashboard();
+
+    // Run the boot animation
+    var bootAnimation = new LEDBootAnimationCommand(ledSubsystem);
+    CommandScheduler.getInstance().schedule(bootAnimation);
+
+    // Set up default commmands
+    ledSubsystem.setDefaultCommand(new DefaultLEDCommand(ledSubsystem));
   }
 
   private void configureBindings() {
@@ -138,5 +155,16 @@ public class RobotContainer {
     SmartDashboard.putData("Rotate Dynam Fwd", drivetrain.sysIdRotationDynamCommand(kForward));
     SmartDashboard.putData("Rotate Dynam Rev", drivetrain.sysIdRotationDynamCommand(kReverse));
 
+    // Spindexer
+    SmartDashboard.putData("Spindexer Quasi Fwd", spindexerSubsystem.sysIdSpindexerQuasistaticCommand(kForward));
+    SmartDashboard.putData("Spindexer Quasi Rev", spindexerSubsystem.sysIdSpindexerQuasistaticCommand(kReverse));
+    SmartDashboard.putData("Spindexer Dynam Fwd", spindexerSubsystem.sysIdSpindexerDynamicCommand(kForward));
+    SmartDashboard.putData("Spindexer Dynam Rev", spindexerSubsystem.sysIdSpindexerDynamicCommand(kReverse));
+
+    // Transfer
+    SmartDashboard.putData("Transfer Quasi Fwd", transferSubsystem.sysIdTransferQuasistaticCommand(kForward));
+    SmartDashboard.putData("Transfer Quasi Rev", transferSubsystem.sysIdTransferQuasistaticCommand(kReverse));
+    SmartDashboard.putData("Transfer Dynam Fwd", transferSubsystem.sysIdTransferDynamicCommand(kForward));
+    SmartDashboard.putData("Transfer Dynam Rev", transferSubsystem.sysIdTransferDynamicCommand(kReverse));
   }
 }
