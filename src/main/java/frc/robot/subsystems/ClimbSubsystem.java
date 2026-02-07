@@ -34,6 +34,7 @@ import com.ctre.phoenix6.signals.S1CloseStateValue;
 import com.ctre.phoenix6.signals.S2CloseStateValue;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.ClimbConstants;
 
@@ -203,6 +204,19 @@ public class ClimbSubsystem extends SubsystemBase {
   public void L3() {
     currentAction = ClimbAction.L3;
     climbMotorLeader.setControl(voltageOut.withOutput(CLIMB_OUTPUT_REVERSE_VOLTAGE));
+  }
+
+  /**
+   * Creates a new command that will stow the climb mechanism by running a full sequence. Unlike {@link #stow()}, this
+   * command will stow both hooks by first fully extending the climb, and then stowing.
+   * 
+   * @return a new command that will stow the climb mechanism
+   */
+  public Command fullyStowCommand() {
+    return run(this::L1).until(this::isActionComplete)
+        .andThen(run(this::stow))
+        .until(this::isActionComplete)
+        .finallyDo(this::stop);
   }
 
   /**
