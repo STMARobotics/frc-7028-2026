@@ -34,11 +34,10 @@ import static frc.robot.Constants.ShooterConstants.PITCH_SUPPLY_CURRENT_LIMIT;
 import static frc.robot.Constants.ShooterConstants.RIGHT_FLYWHEEL_MOTOR_ID;
 import static frc.robot.Constants.ShooterConstants.YAW_CONTINUOUS_WRAP;
 import static frc.robot.Constants.ShooterConstants.YAW_ENCODER_ID;
+import static frc.robot.Constants.ShooterConstants.YAW_IDLE_CENTER;
 import static frc.robot.Constants.ShooterConstants.YAW_MAGNETIC_OFFSET;
 import static frc.robot.Constants.ShooterConstants.YAW_MOTION_MAGIC_CONFIGS;
 import static frc.robot.Constants.ShooterConstants.YAW_MOTOR_ID;
-import static frc.robot.Constants.ShooterConstants.YAW_IDLE_CENTER;
-import static frc.robot.Constants.ShooterConstants.YAW_IDLE_HALF_RANGE;
 import static frc.robot.Constants.ShooterConstants.YAW_POSITION_TOLERANCE;
 import static frc.robot.Constants.ShooterConstants.YAW_ROTOR_TO_SENSOR_RATIO;
 import static frc.robot.Constants.ShooterConstants.YAW_SLOT_CONFIGS;
@@ -136,7 +135,10 @@ public class ShooterSubsystem extends SubsystemBase {
    * External targeting input for the shooter.
    * Yaw is expected to be a wrapped heading [0, 2pi) radians.
    */
-  public static record ShooterTarget(Angle targetYawRadians, Angle targetPitchRadians, AngularVelocity targetFlywheelRps) {
+  public static record ShooterTarget(
+      Angle targetYawRadians,
+      Angle targetPitchRadians,
+      AngularVelocity targetFlywheelRps) {
     public ShooterTarget {
       targetYawRadians = Objects.requireNonNull(targetYawRadians, "targetYawRadians");
       targetPitchRadians = Objects.requireNonNull(targetPitchRadians, "targetPitchRadians");
@@ -405,13 +407,13 @@ public class ShooterSubsystem extends SubsystemBase {
   public void periodic() {
     BaseStatusSignal.refreshAll(
         yawPosition,
-        yawVelocity,
-        pitchPosition,
-        pitchVelocity,
-        rightFlywheelVelocity,
-        leftFlywheelVelocity,
-        rightFlywheelAcceleration,
-        leftFlywheelAcceleration);
+          yawVelocity,
+          pitchPosition,
+          pitchVelocity,
+          rightFlywheelVelocity,
+          leftFlywheelVelocity,
+          rightFlywheelAcceleration,
+          leftFlywheelAcceleration);
 
     if (isShooterAtSetpoints()) {
       readyStableCycles++;
@@ -446,28 +448,28 @@ public class ShooterSubsystem extends SubsystemBase {
   }
 
   // /**
-  //  * Sets the turret's yaw angle in continuous radians.
-  //  * Expected range: [YAW_SOFT_LIMIT_REVERSE, YAW_SOFT_LIMIT_FORWARD] in rotations, converted from radians.
-  //  * 
-  //  * @param yawRadians The desired yaw angle in continuous radians.
-  //  */
+  // * Sets the turret's yaw angle in continuous radians.
+  // * Expected range: [YAW_SOFT_LIMIT_REVERSE, YAW_SOFT_LIMIT_FORWARD] in rotations, converted from radians.
+  // *
+  // * @param yawRadians The desired yaw angle in continuous radians.
+  // */
   // public void setYawAngleContinuousRadians(Angle yawRadians) {
-  //   double targetRot = clamp(
-  //       yawRadians.in(Rotations),
-  //         YAW_SOFT_LIMIT_REVERSE.in(Rotations),
-  //         YAW_SOFT_LIMIT_FORWARD.in(Rotations));
-  //   yawSetpointRotations = targetRot;
-  //   yawMotor.setControl(yawPositionRequest.withPosition(targetRot));
+  // double targetRot = clamp(
+  // yawRadians.in(Rotations),
+  // YAW_SOFT_LIMIT_REVERSE.in(Rotations),
+  // YAW_SOFT_LIMIT_FORWARD.in(Rotations));
+  // yawSetpointRotations = targetRot;
+  // yawMotor.setControl(yawPositionRequest.withPosition(targetRot));
   // }
 
   // /**
-  //  * Sets the turret's yaw angle in continuous radians.
-  //  * Convenience overload when the input is a raw radians value.
-  //  * 
-  //  * @param yawRadians The desired yaw angle in continuous radians.
-  //  */
+  // * Sets the turret's yaw angle in continuous radians.
+  // * Convenience overload when the input is a raw radians value.
+  // *
+  // * @param yawRadians The desired yaw angle in continuous radians.
+  // */
   // public void setYawAngleContinuousRadians(double yawRadians) {
-  //   setYawAngleContinuousRadians(Radians.of(yawRadians));
+  // setYawAngleContinuousRadians(Radians.of(yawRadians));
   // }
 
   /**
@@ -528,28 +530,28 @@ public class ShooterSubsystem extends SubsystemBase {
   }
 
   // /**
-  //  * Applies an externally computed target solution.
-  //  * Yaw should be wrapped [0, 2pi) radians and will be unwrapped to the nearest legal continuous yaw internally.
-  //  *
-  //  * @param target Combined shooter target values.
-  //  */
+  // * Applies an externally computed target solution.
+  // * Yaw should be wrapped [0, 2pi) radians and will be unwrapped to the nearest legal continuous yaw internally.
+  // *
+  // * @param target Combined shooter target values.
+  // */
   // private void applyTarget(ShooterTarget target) {
-  //   Objects.requireNonNull(target, "target");
-  //   setYawAngle(target.targetYawRadians());
-  //   setPitchAngleRadians(target.targetPitchRadians());
-  //   setFlywheelRps(target.targetFlywheelRps());
+  // Objects.requireNonNull(target, "target");
+  // setYawAngle(target.targetYawRadians());
+  // setPitchAngleRadians(target.targetPitchRadians());
+  // setFlywheelRps(target.targetFlywheelRps());
   // }
 
   // /**
-  //  * Applies an externally computed target solution.
-  //  * Yaw should be wrapped [0, 2pi) radians and will be unwrapped to the nearest legal continuous yaw internally.
-  //  *
-  //  * @param targetYawRadians Wrapped yaw heading.
-  //  * @param targetPitchRadians Desired hood pitch.
-  //  * @param targetFlywheelRps Desired flywheel speed.
-  //  */
+  // * Applies an externally computed target solution.
+  // * Yaw should be wrapped [0, 2pi) radians and will be unwrapped to the nearest legal continuous yaw internally.
+  // *
+  // * @param targetYawRadians Wrapped yaw heading.
+  // * @param targetPitchRadians Desired hood pitch.
+  // * @param targetFlywheelRps Desired flywheel speed.
+  // */
   // public void applyTarget(Angle targetYawRadians, Angle targetPitchRadians, AngularVelocity targetFlywheelRps) {
-  //   applyTarget(new ShooterTarget(targetYawRadians, targetPitchRadians, targetFlywheelRps));
+  // applyTarget(new ShooterTarget(targetYawRadians, targetPitchRadians, targetFlywheelRps));
   // }
 
   // Idle / Stop
@@ -598,12 +600,12 @@ public class ShooterSubsystem extends SubsystemBase {
   }
 
   // /**
-  //  * Tracks a shooter target by applying all three setpoints.
-  //  *
-  //  * @param target Combined shooter target values.
-  //  */
+  // * Tracks a shooter target by applying all three setpoints.
+  // *
+  // * @param target Combined shooter target values.
+  // */
   // public void startAutoTargeting(ShooterTarget target) {
-  //   applyTarget(target);
+  // applyTarget(target);
   // }
 
   public void stopAutoTargeting() {
