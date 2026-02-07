@@ -84,8 +84,6 @@ public class Constants {
           0.1, // Y: 10cm error per meter
           0.05 // Theta: 0.05 radians to (Trust the Pigeon heavily)
     );
-    // TODO - Set this once you figure it out
-    public static final Distance MAX_HEIGHT = Meters.of(92314);
   }
 
   public static class QuestNavConstants {
@@ -103,7 +101,7 @@ public class Constants {
    * Constants for vision processing
    */
   public static class VisionConstants {
-    public static final String[] APRILTAG_CAMERA_NAMES = { "figure", "these", "out" };
+    public static final String[] APRILTAG_CAMERA_NAMES = { "left", "right", "back" };
     // TODO - Set this once the robot is designed
     public static final Transform3d[] ROBOT_TO_CAMERA_TRANSFORMS = new Transform3d[] {
         new Transform3d(
@@ -117,8 +115,8 @@ public class Constants {
             new Rotation3d(0, degreesToRadians(0), degreesToRadians(0))) };
 
     // The standard deviations of our vision estimated poses, which affect correction rate
-    public static final Matrix<N3, N1> APRILTAG_STD_DEVS = VecBuilder.fill(2, 2, Integer.MAX_VALUE);
-    public static final Matrix<N3, N1> QUESTNAV_ACTIVE_APRILTAG_STD_DEVS = VecBuilder.fill(200, 200, Integer.MAX_VALUE);
+    public static final double APRILTAG_STD_DEVS = 0.1;
+    public static final double QUESTNAV_ACTIVE_APRILTAG_STD_DEVS = 1.5;
 
     public static final Distance SINGLE_TAG_DISTANCE_THRESHOLD = Meters.of(3.5);
   }
