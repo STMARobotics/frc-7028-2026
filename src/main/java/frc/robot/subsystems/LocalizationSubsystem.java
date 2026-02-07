@@ -137,7 +137,7 @@ public class LocalizationSubsystem extends SubsystemBase {
         // When the robot is enabled, set IMU mode for each AprilTag camera
         LimelightHelpers.SetRobotOrientation(cameraname, yaw.get().in(Degrees), 0, 0, 0, 0, 0);
         LimelightHelpers.SetIMUMode(cameraname, 4);
-        if ((!robotAngularVelocitySupplier.get().gte(RadiansPerSecond.of(2)))
+        if ((!robotAngularVelocitySupplier.get().gte(RadiansPerSecond.of(2 * Math.PI)))
             && (currentPose.tagCount != 1 || currentPose.avgTagDist < SINGLE_TAG_DISTANCE_THRESHOLD.in(Meters))
             && currentPose.tagCount != 0) {
           setQuestNavPose(currentPose.pose);
