@@ -1,0 +1,50 @@
+package frc.robot.commands;
+
+import edu.wpi.first.wpilibj2.command.Command;
+import frc.robot.subsystems.ClimbSubsystem;
+
+/**
+ * Command to climb to L1 (Level 1) in autonomous mode.
+ * 
+ * <p>
+ * This command prepares the climb mechanism and pulls the robot up to the L1 bar.
+ */
+public class ClimbToL1Command extends Command {
+
+  private final ClimbSubsystem climbSubsystem;
+
+  /**
+   * Creates a new ClimbToL1Command.
+   * 
+   * @param climbSubsystem the climb subsystem
+   */
+  public ClimbToL1Command(ClimbSubsystem climbSubsystem) {
+    this.climbSubsystem = climbSubsystem;
+    addRequirements(climbSubsystem);
+  }
+
+  @Override
+  public void initialize() {
+    climbSubsystem.prepareToL1();
+  }
+
+  @Override
+  public void execute() {
+    // Wait until the prepare action is complete, then move to L1
+    if (climbSubsystem.getCurrentAction() == ClimbSubsystem.ClimbAction.PREPARE_L1
+        && climbSubsystem.isActionComplete()) {
+      climbSubsystem.L1();
+    }
+  }
+
+  @Override
+  public void end(boolean interrupted) {
+    climbSubsystem.stop();
+  }
+
+  @Override
+  public boolean isFinished() {
+    // Finished when we're at L1 and the action is complete
+    return climbSubsystem.getCurrentAction() == ClimbSubsystem.ClimbAction.L1 && climbSubsystem.isActionComplete();
+  }
+}

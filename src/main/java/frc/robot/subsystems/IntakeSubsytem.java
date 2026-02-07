@@ -55,9 +55,8 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 
-/**
- * This is the intake subsystem
- * 
+/*
+ * Subsytem for the intake.
  */
 @Logged(strategy = Logged.Strategy.OPT_IN)
 public class IntakeSubsytem extends SubsystemBase {
@@ -104,8 +103,8 @@ public class IntakeSubsytem extends SubsystemBase {
   /**
    * Creates a new substyem for the intake
    */
-  // Configure the roller motor
   public IntakeSubsytem() {
+    // Configure the roller motor
     var rollerConfig = new TalonFXConfiguration();
     rollerConfig.withMotorOutput(
         new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast).withInverted(InvertedValue.Clockwise_Positive))
