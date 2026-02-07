@@ -396,11 +396,21 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     return super.samplePoseAt(Utils.fpgaToCurrentTime(timestampSeconds));
   }
 
+  /**
+   * Gets the current yaw angle of the drivetrain, latency-compensated using the yaw and yaw velocity signals.
+   *
+   * @return The current yaw angle as an {@link Angle}.
+   */
   public Angle getYawData() {
     BaseStatusSignal.refreshAll(yaw, yawVelocity);
     return BaseStatusSignal.getLatencyCompensatedValue(yaw, yawVelocity);
   }
 
+  /**
+   * Gets the angular velocity of the drivetrain in radians per second.
+   *
+   * @return The drivetrain's angular velocity as an {@link AngularVelocity}.
+   */
   public AngularVelocity getDrivetrainAngularVelocity() {
     return RadiansPerSecond.of(this.getState().Speeds.omegaRadiansPerSecond);
   }
