@@ -105,8 +105,9 @@ public final class Constants {
     public static final int RIGHT_FLYWHEEL_MOTOR_ID = 27;
     public static final int LEFT_FLYWHEEL_MOTOR_ID = 28;
 
-    public static final int YAW_STATUS_UPDATE_RATE_HZ = 100;
-    public static final int PITCH_STATUS_UPDATE_RATE_HZ = 100;
+    public static final int YAW_STATUS_UPDATE_RATE_HZ = 50; // 50 hz is typical for periodic() and execute() loops, so
+                                                            // >50 is wasted can traffic
+    public static final int PITCH_STATUS_UPDATE_RATE_HZ = 50;
     public static final int FLYWHEEL_STATUS_UPDATE_RATE_HZ = 50;
 
     public static final Current YAW_STATOR_CURRENT_LIMIT = Amps.of(100);
@@ -124,9 +125,8 @@ public final class Constants {
 
     public static final Angle YAW_SOFT_LIMIT_FORWARD = Rotations.of(0.5); // placeholder (~180deg)
     public static final Angle YAW_SOFT_LIMIT_REVERSE = Rotations.of(-0.5); // placeholder
-    public static final Boolean YAW_CONTINUOUS_WRAP = true;
+    public static final Boolean YAW_CONTINUOUS_WRAP = false; // false?
     public static final Angle YAW_HOME_ANGLE = Rotations.of(0.0); // placeholder
-    public static final Angle YAW_IDLE_CENTER = Rotations.of(0.0); // placeholder
     public static final Angle YAW_IDLE_HALF_RANGE = Rotations.of(0.25); // placeholder (~90deg)
     public static final Angle YAW_POSITION_TOLERANCE = Rotations.of(0.01); // placeholder (~3.6deg)
     public static final Angle PITCH_SOFT_LIMIT_FORWARD = Rotations.of(0.2); // placeholder
