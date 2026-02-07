@@ -14,6 +14,7 @@ import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.units.measure.Angle;
+import java.util.HashMap;
 import java.util.function.Function;
 
 public class BallisticPrecomputer {
@@ -28,6 +29,8 @@ public class BallisticPrecomputer {
   Function<forceInput, Translation3d> forceFunction;
 
   Function<Double, Rotation3d> speedToSpin;
+
+  Function<RobotState, ShotParameters> computeShotGuess;
 
   private record RobotState(Translation2d position, Translation2d velocity) {
   }
@@ -69,7 +72,8 @@ public class BallisticPrecomputer {
       IntegratorResolution integratorResolution,
       BallisticEnvironmentProfile environmentProfile,
       FieldMetrics fieldMetrics,
-      Function<Double, Rotation3d> speedToSpin) {
+      Function<Double, Rotation3d> speedToSpin,
+      Function<RobotState, ShotParameters> computeShotGuess) {
     this.simulatorResolution = simulatorResolution;
     this.integratorResolution = integratorResolution;
     this.environmentProfile = environmentProfile;
@@ -98,6 +102,8 @@ public class BallisticPrecomputer {
       return acceleration;
     };
 
+    this.computeShotGuess = computeShotGuess;
+
     this.projectileState = new BallisticProjectileState(integratorResolution, forceFunction);
   }
 
@@ -122,8 +128,8 @@ public class BallisticPrecomputer {
 
     Translation3d endPosition = simulatedProjectileState.position;
     Translation3d errorDisplacement = endPosition.minus(this.fieldMetrics.targetRegion().center);
-
     Translation2d errorDisplacement2D = errorDisplacement.toTranslation2d();
+
     return new SimulationResult(
         errorDisplacement,
         atan2(errorDisplacement2D.getY(), errorDisplacement.getX()),
@@ -142,13 +148,6 @@ public class BallisticPrecomputer {
     while (iterations <= this.simulatorResolution.maxIterations()) {
       iterations++;
 
-      Angle yaw = parameters.yaw();
-      Angle pitch = parameters.pitch();
-      double speed = parameters.speed();
-
-      double yawRads = yaw.baseUnitMagnitude();
-      double pitchRads = pitch.baseUnitMagnitude();
-
       SimulationResult errorPrior = simulateBall(simulatedProjectileState, state, parameters);
 
       double errRadialPrior = errorPrior.errorRadial();
@@ -160,7 +159,7 @@ public class BallisticPrecomputer {
       }
 
       Angle deltaAngle = this.simulatorResolution.deltaAngle();
-      double deltaSpeed = this.simulatorResolution.deltaTime();
+      double deltaSpeed = this.simulatorResolution.delta_dSpeed();
 
       double da = deltaAngle.baseUnitMagnitude();
 
@@ -185,7 +184,7 @@ public class BallisticPrecomputer {
       double Erdp = (steppedPitch.errorRadial() - errRadialPrior) / da;
       double Ezdp = (steppedPitch.errorHeight() - errHeightPrior) / da;
 
-      double Eyds = (steppedSpeed.errorYaw() - errHeightPrior) / deltaSpeed;
+      double Eyds = (steppedSpeed.errorYaw() - errYawPrior) / deltaSpeed;
       double Erds = (steppedSpeed.errorRadial() - errRadialPrior) / deltaSpeed;
       double Ezds = (steppedSpeed.errorHeight() - errHeightPrior) / deltaSpeed;
 
@@ -193,16 +192,48 @@ public class BallisticPrecomputer {
           .fill(N3.instance, N3.instance, Eydy, Erdy, Ezdy, Eydp, Erdp, Ezdp, Eyds, Erds, Ezds);
       Matrix<N3, N1> baseError = MatBuilder.fill(N3.instance, N1.instance, errYawPrior, errRadialPrior, errHeightPrior);
 
+      // May want to consider different method for "inverse" of matrix thats more efficent or stable. See
+      // "psuedo-inverse"
       Matrix<N3, N1> parameterStepMatrix = ErrorJacobian.inv().times(baseError);
 
       Angle yawStep = Radians.of(-parameterStepMatrix.get(0, 0));
-      Angle pitchStep = Radians.of(-parameterStepMatrix.get(0, 1));
-      double speedStep = -parameterStepMatrix.get(0, 2);
+      Angle pitchStep = Radians.of(-parameterStepMatrix.get(1, 0));
+      double speedStep = -parameterStepMatrix.get(2, 0);
 
       parameters = parameters.stepAll(yawStep, pitchStep, speedStep);
     }
 
     return parameters;
+  }
 
+  public HashMap<RobotState, ShotParameters> computeTable() {
+    Region2d fieldPlane = this.fieldMetrics.fieldPlane();
+
+    Translation2d minPos = fieldPlane.min;
+    Translation2d maxPos = fieldPlane.max;
+
+    HashMap<RobotState, ShotParameters> shotParameters = new HashMap<>();
+
+    double dp = this.simulatorResolution.delta_dPosComp();
+    double dv = this.simulatorResolution.delta_dVelComp();
+    double mxVComp = this.simulatorResolution.maxVelComponent();
+
+    for (double px = minPos.getX(); px <= maxPos.getX(); px += dp) {
+      for (double py = minPos.getY(); py <= maxPos.getY(); py += dp) {
+        for (double vx = -mxVComp; vx <= mxVComp; vx += dv) {
+          for (double vy = -mxVComp; vy <= mxVComp; vy += dv) {
+            RobotState currenRobotState = new RobotState(new Translation2d(px, py), new Translation2d(vx, vy));
+            shotParameters.put(
+                currenRobotState,
+                  convergeSolution(
+                      this.projectileState,
+                        currenRobotState,
+                        this.computeShotGuess.apply(currenRobotState)));
+          }
+        }
+      }
+    }
+
+    return shotParameters;
   }
 }

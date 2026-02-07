@@ -9,5 +9,6 @@ public record SimulatorResolution(
     double delta_dPosComp,
     double delta_dVelComp,
     double targetMaxDistanceForConvergence,
+    double maxVelComponent,
     int maxIterations) {
 }
