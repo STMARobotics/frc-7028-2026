@@ -109,9 +109,11 @@ public class ClimbSubsystem extends SubsystemBase {
                 .withSupplyCurrentLimitEnable(true))
         .withHardwareLimitSwitch(
             new HardwareLimitSwitchConfigs().withForwardLimitRemoteCANdiS1(limitCanDi)
+                .withForwardLimitEnable(true)
                 .withForwardLimitAutosetPositionEnable(true)
                 .withForwardLimitAutosetPositionValue(CLIMB_FORWARD_LIMIT)
                 .withReverseLimitRemoteCANdiS2(limitCanDi)
+                .withReverseLimitEnable(true)
                 .withReverseLimitAutosetPositionEnable(true)
                 .withReverseLimitAutosetPositionValue(CLIMB_REVERSE_LIMIT))
         .withMotorOutput(
