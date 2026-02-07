@@ -35,7 +35,6 @@ import static frc.robot.Constants.ShooterConstants.RIGHT_FLYWHEEL_MOTOR_ID;
 import static frc.robot.Constants.ShooterConstants.YAW_CONTINUOUS_WRAP;
 import static frc.robot.Constants.ShooterConstants.YAW_ENCODER_ID;
 import static frc.robot.Constants.ShooterConstants.YAW_HOME_ANGLE;
-import static frc.robot.Constants.ShooterConstants.YAW_IDLE_CENTER;
 import static frc.robot.Constants.ShooterConstants.YAW_MAGNETIC_OFFSET;
 import static frc.robot.Constants.ShooterConstants.YAW_MOTION_MAGIC_CONFIGS;
 import static frc.robot.Constants.ShooterConstants.YAW_MOTOR_ID;
