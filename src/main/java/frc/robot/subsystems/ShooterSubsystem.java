@@ -501,7 +501,7 @@ public class ShooterSubsystem extends SubsystemBase {
    * 
    * @param rps The desired flywheel velocity in RPS.
    */
-  private void setFlywheelVelocity(AngularVelocity rps) {
+  public void setFlywheelVelocity(AngularVelocity rps) {
     double targetRps = clamp(rps.in(Rotations.per(Second)), 0.0, FLYWHEEL_MAX_RPS.in(Rotations.per(Second)));
     flywheelSetpointRps = targetRps;
     rightFlywheelMotor.setControl(rightFlywheelVelocityRequest.withVelocity(Rotations.per(Second).of(targetRps)));
@@ -527,30 +527,30 @@ public class ShooterSubsystem extends SubsystemBase {
     setFlywheelVelocity(Rotations.per(Second).of(rps));
   }
 
-  /**
-   * Applies an externally computed target solution.
-   * Yaw should be wrapped [0, 2pi) radians and will be unwrapped to the nearest legal continuous yaw internally.
-   *
-   * @param target Combined shooter target values.
-   */
-  public void applyTarget(ShooterTarget target) {
-    Objects.requireNonNull(target, "target");
-    setYawAngle(target.targetYawRadians());
-    setPitchAngleRadians(target.targetPitchRadians());
-    setFlywheelRps(target.targetFlywheelRps());
-  }
+  // /**
+  //  * Applies an externally computed target solution.
+  //  * Yaw should be wrapped [0, 2pi) radians and will be unwrapped to the nearest legal continuous yaw internally.
+  //  *
+  //  * @param target Combined shooter target values.
+  //  */
+  // private void applyTarget(ShooterTarget target) {
+  //   Objects.requireNonNull(target, "target");
+  //   setYawAngle(target.targetYawRadians());
+  //   setPitchAngleRadians(target.targetPitchRadians());
+  //   setFlywheelRps(target.targetFlywheelRps());
+  // }
 
-  /**
-   * Applies an externally computed target solution.
-   * Yaw should be wrapped [0, 2pi) radians and will be unwrapped to the nearest legal continuous yaw internally.
-   *
-   * @param targetYawRadians Wrapped yaw heading.
-   * @param targetPitchRadians Desired hood pitch.
-   * @param targetFlywheelRps Desired flywheel speed.
-   */
-  public void applyTarget(Angle targetYawRadians, Angle targetPitchRadians, AngularVelocity targetFlywheelRps) {
-    applyTarget(new ShooterTarget(targetYawRadians, targetPitchRadians, targetFlywheelRps));
-  }
+  // /**
+  //  * Applies an externally computed target solution.
+  //  * Yaw should be wrapped [0, 2pi) radians and will be unwrapped to the nearest legal continuous yaw internally.
+  //  *
+  //  * @param targetYawRadians Wrapped yaw heading.
+  //  * @param targetPitchRadians Desired hood pitch.
+  //  * @param targetFlywheelRps Desired flywheel speed.
+  //  */
+  // public void applyTarget(Angle targetYawRadians, Angle targetPitchRadians, AngularVelocity targetFlywheelRps) {
+  //   applyTarget(new ShooterTarget(targetYawRadians, targetPitchRadians, targetFlywheelRps));
+  // }
 
   // Idle / Stop
   /**
@@ -597,14 +597,14 @@ public class ShooterSubsystem extends SubsystemBase {
     idleFlywheel();
   }
 
-  /**
-   * Tracks a shooter target by applying all three setpoints.
-   *
-   * @param target Combined shooter target values.
-   */
-  public void startAutoTargeting(ShooterTarget target) {
-    applyTarget(target);
-  }
+  // /**
+  //  * Tracks a shooter target by applying all three setpoints.
+  //  *
+  //  * @param target Combined shooter target values.
+  //  */
+  // public void startAutoTargeting(ShooterTarget target) {
+  //   applyTarget(target);
+  // }
 
   public void stopAutoTargeting() {
     stopYaw();
