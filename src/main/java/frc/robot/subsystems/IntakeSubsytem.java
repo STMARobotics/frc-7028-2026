@@ -55,7 +55,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 
-/*
+/**
  * Subsytem for the intake.
  */
 @Logged(strategy = Logged.Strategy.OPT_IN)
