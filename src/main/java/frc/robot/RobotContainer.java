@@ -72,7 +72,7 @@ public class RobotContainer {
       drivetrain::addVisionMeasurement,
       drivetrain::resetPose,
       drivetrain::getYawData,
-      drivetrain::getDrivetrainAngularVelocity);
+      () -> drivetrain.getState().Speeds.omegaRadiansPerSecond);
   @Logged
   private final TransferSubsystem transferSubsystem = new TransferSubsystem();
   @Logged

@@ -2,7 +2,6 @@ package frc.robot.subsystems;
 
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Meters;
-import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static frc.robot.Constants.FieldConstants.isValidFieldPosition;
 import static frc.robot.Constants.QuestNavConstants.QUESTNAV_STD_DEVS;
 import static frc.robot.Constants.QuestNavConstants.ROBOT_TO_QUEST;
@@ -23,7 +22,6 @@ import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.units.measure.Angle;
-import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj.RobotState;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.FieldConstants;
@@ -33,6 +31,7 @@ import frc.robot.VisionMeasurementConsumer;
 import gg.questnav.questnav.PoseFrame;
 import gg.questnav.questnav.QuestNav;
 import java.util.function.Consumer;
+import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
 /**
@@ -55,7 +54,7 @@ public class LocalizationSubsystem extends SubsystemBase {
   private final BooleanPublisher trackingPublisher = localizationTable.getBooleanTopic("Quest Tracking").publish();
   private final BooleanPublisher questHealthPublisher = localizationTable.getBooleanTopic("Quest Healthy?").publish();
   private final Supplier<Angle> yaw;
-  private final Supplier<AngularVelocity> robotAngularVelocitySupplier;
+  private final DoubleSupplier robotAngularVelocitySupplier;
   private Pose2d startingPose = new Pose2d();
   private int questNavFaultCounter = 0;
 
@@ -68,7 +67,7 @@ public class LocalizationSubsystem extends SubsystemBase {
       VisionMeasurementConsumer addVisionMeasurement,
       Consumer<Pose2d> poseResetConsumer,
       Supplier<Angle> yaw,
-      Supplier<AngularVelocity> angularVelocitySupplier) {
+      DoubleSupplier angularVelocitySupplier) {
     this.visionMeasurementConsumer = addVisionMeasurement;
     this.poseResetConsumer = poseResetConsumer;
     this.yaw = yaw;
@@ -145,7 +144,7 @@ public class LocalizationSubsystem extends SubsystemBase {
           // When the robot is enabled, set IMU mode for each AprilTag camera
           LimelightHelpers.SetRobotOrientation(cameraname, yaw.get().in(Degrees), 0, 0, 0, 0, 0);
           LimelightHelpers.SetIMUMode(cameraname, 4);
-          if (robotAngularVelocitySupplier.get().lte(RadiansPerSecond.of(4 * Math.PI))
+          if (robotAngularVelocitySupplier.getAsDouble() <= 4 * Math.PI
               && (currentPose.tagCount != 1 || currentPose.avgTagDist < SINGLE_TAG_DISTANCE_THRESHOLD.in(Meters))
               && currentPose.tagCount != 0 && isValidFieldPosition(currentPose.pose.getTranslation())) {
             visionMeasurementConsumer
