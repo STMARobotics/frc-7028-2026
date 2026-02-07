@@ -4,43 +4,50 @@
 
 package frc.robot.subsystems;
 
-import static edu.wpi.first.units.Units.Amps;
-import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.Second;
 import static edu.wpi.first.units.Units.Volts;
 import static frc.robot.Constants.CANIVORE_BUS;
+import static frc.robot.Constants.IntakeConstants.DEPLOYED_POSITION;
+import static frc.robot.Constants.IntakeConstants.DEPLOY_CANCODER_OFFSET;
 import static frc.robot.Constants.IntakeConstants.DEPLOY_MOTION_MAGIC_CONFIGS;
-import static frc.robot.Constants.IntakeConstants.DEPLOY_PEAK_FORWORD_CURRENT;
-import static frc.robot.Constants.IntakeConstants.DEPLOY_PEAK_REVERSE_CURRENT;
-import static frc.robot.Constants.IntakeConstants.DEPLOY_POSITIONS_RETRACTED;
-import static frc.robot.Constants.IntakeConstants.DEPLOY_POSITION_DEPLOYED;
 import static frc.robot.Constants.IntakeConstants.DEPLOY_ROTOR_TO_SENSOR_RATIO;
 import static frc.robot.Constants.IntakeConstants.DEPLOY_SLOT_CONFIGS;
-import static frc.robot.Constants.IntakeConstants.DEPLOY_SUPPLY_LIMIT;
+import static frc.robot.Constants.IntakeConstants.DEPLOY_STATOR_CURRENT_LIMIT;
+import static frc.robot.Constants.IntakeConstants.DEPLOY_SUPPLY_CURRENT_LIMIT;
 import static frc.robot.Constants.IntakeConstants.DEPLOY_TOLERANCE;
-import static frc.robot.Constants.IntakeConstants.DEVICE_ID_POSITION;
-import static frc.robot.Constants.IntakeConstants.DEVICE_ID_ROLLER;
-import static frc.robot.Constants.IntakeConstants.INTAKE_VELOCITY;
-import static frc.robot.Constants.IntakeConstants.PEAK_FORWARD_ROLLER_CURRENT;
-import static frc.robot.Constants.IntakeConstants.PEAK_REVERSE_ROLLER_CURRENT;
-import static frc.robot.Constants.IntakeConstants.REVERSE_VELOCITY;
+import static frc.robot.Constants.IntakeConstants.DEVICE_ID_DEPLOY_CANCODER;
+import static frc.robot.Constants.IntakeConstants.DEVICE_ID_DEPLOY_MOTOR;
+import static frc.robot.Constants.IntakeConstants.DEVICE_ID_ROLLER_MOTOR;
+import static frc.robot.Constants.IntakeConstants.RETRACTED_POSITION;
+import static frc.robot.Constants.IntakeConstants.ROLLER_EJECT_VELOCITY;
+import static frc.robot.Constants.IntakeConstants.ROLLER_INTAKE_VELOCITY;
+import static frc.robot.Constants.IntakeConstants.ROLLER_PEAK_DEPLOY_CURRENT_FORWARD;
+import static frc.robot.Constants.IntakeConstants.ROLLER_PEAK_DEPLOY_CURRENT_REVERSE;
 import static frc.robot.Constants.IntakeConstants.ROLLER_SLOT_CONFIGS;
-import static frc.robot.Constants.IntakeConstants.ROLLER_SUPPLY_LIMIT;
+import static frc.robot.Constants.IntakeConstants.ROLLER_SUPPLY_CURRENT_LIMIT;
 
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.StatusSignal;
+import com.ctre.phoenix6.configs.CANcoderConfiguration;
+import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
+import com.ctre.phoenix6.configs.FeedbackConfigs;
+import com.ctre.phoenix6.configs.MagnetSensorConfigs;
+import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
+import com.ctre.phoenix6.configs.SoftwareLimitSwitchConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.configs.TorqueCurrentConfigs;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
+import com.ctre.phoenix6.controls.TorqueCurrentFOC;
 import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
-import edu.wpi.first.units.AngleUnit;
-import edu.wpi.first.units.Measure;
+import com.ctre.phoenix6.signals.SensorDirectionValue;
+import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -52,41 +59,45 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
  * This is the intake subsystem
  * 
  */
-
+@Logged(strategy = Logged.Strategy.OPT_IN)
 public class IntakeSubsytem extends SubsystemBase {
 
-  private final TalonFX rollerMotor = new TalonFX(DEVICE_ID_ROLLER, CANIVORE_BUS);
-  private final TalonFX deployMotor = new TalonFX(DEVICE_ID_POSITION, CANIVORE_BUS);
-  private final CANcoder deployCANcoder = new CANcoder(DEVICE_ID_ROLLER, CANIVORE_BUS);
+  private final TalonFX rollerMotor = new TalonFX(DEVICE_ID_ROLLER_MOTOR, CANIVORE_BUS);
+  private final TalonFX deployMotor = new TalonFX(DEVICE_ID_DEPLOY_MOTOR, CANIVORE_BUS);
+  private final CANcoder deployCANcoder = new CANcoder(DEVICE_ID_DEPLOY_CANCODER, CANIVORE_BUS);
 
   // Motor request objects
   private final MotionMagicVoltage deployControl = new MotionMagicVoltage(0.0).withEnableFOC(true);
   private final VelocityTorqueCurrentFOC rollerControl = new VelocityTorqueCurrentFOC(0.0);
-  private final VoltageOut sysIdDeployControl = new VoltageOut(0.0);
-  private final VoltageOut sysIdRollerControl = new VoltageOut(0.0);
+
+  private final TorqueCurrentFOC rollerSysIdControl = new TorqueCurrentFOC(0.0);
+  private final VoltageOut deploySysIdControl = new VoltageOut(0.0).withEnableFOC(true);
+
   private final StatusSignal<Angle> deployPositionSignal = deployMotor.getPosition();
   private final StatusSignal<AngularVelocity> deployVelocitySignal = deployMotor.getVelocity();
 
   // SysId routines
+  // NOTE: the output type is amps, NOT volts (even though it says volts)
+  // https://www.chiefdelphi.com/t/sysid-with-ctre-swerve-characterization/452631/8
   private final SysIdRoutine rollerSysIdRoutine = new SysIdRoutine(
       new SysIdRoutine.Config(
           Volts.of(5).per(Second),
           Volts.of(30),
           null,
-          state -> SignalLogger.writeString("Intake SysId", state.toString())),
+          state -> SignalLogger.writeString("Intake Roller SysId", state.toString())),
       new SysIdRoutine.Mechanism(
-          (volts) -> rollerMotor.setControl(sysIdRollerControl.withOutput(volts.in(Volts))),
+          (amps) -> rollerMotor.setControl(rollerSysIdControl.withOutput(amps.in(Volts))),
           null,
           this));
 
   private final SysIdRoutine deploySysIdRoutine = new SysIdRoutine(
       new SysIdRoutine.Config(
-          Volts.of(5).per(Second),
-          Volts.of(30),
+          Volts.of(1).per(Second),
+          Volts.of(2),
           null,
-          state -> SignalLogger.writeString("Deploy SysId", state.toString())),
+          state -> SignalLogger.writeString("Intake Deploy SysId", state.toString())),
       new SysIdRoutine.Mechanism(
-          (volts) -> deployMotor.setControl(sysIdDeployControl.withOutput(volts.in(Volts))),
+          (volts) -> deployMotor.setControl(deploySysIdControl.withOutput(volts.in(Volts))),
           null,
           this));
 
@@ -96,63 +107,77 @@ public class IntakeSubsytem extends SubsystemBase {
   // Configure the roller motor
   public IntakeSubsytem() {
     var rollerConfig = new TalonFXConfiguration();
-    rollerConfig.MotorOutput.NeutralMode = NeutralModeValue.Coast;
-    rollerConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
-    rollerConfig.Slot0 = Slot0Configs.from(ROLLER_SLOT_CONFIGS);
-    rollerConfig.TorqueCurrent.PeakForwardTorqueCurrent = PEAK_FORWARD_ROLLER_CURRENT.in(Amps);
-    rollerConfig.TorqueCurrent.PeakReverseTorqueCurrent = PEAK_REVERSE_ROLLER_CURRENT.in(Amps);
-    rollerConfig.CurrentLimits.SupplyCurrentLimit = ROLLER_SUPPLY_LIMIT.in(Amps);
-    rollerConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
+    rollerConfig.withMotorOutput(
+        new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast).withInverted(InvertedValue.Clockwise_Positive))
+        .withSlot0(Slot0Configs.from(ROLLER_SLOT_CONFIGS))
+        .withTorqueCurrent(
+            new TorqueCurrentConfigs().withPeakForwardTorqueCurrent(ROLLER_PEAK_DEPLOY_CURRENT_FORWARD)
+                .withPeakReverseTorqueCurrent(ROLLER_PEAK_DEPLOY_CURRENT_REVERSE))
+        .withCurrentLimits(
+            new CurrentLimitsConfigs().withSupplyCurrentLimit(ROLLER_SUPPLY_CURRENT_LIMIT)
+                .withSupplyCurrentLimitEnable(true));
     rollerMotor.getConfigurator().apply(rollerConfig);
+
+    // Configure the CANcoder for the deploy
+    var cancoderConfig = new CANcoderConfiguration();
+    cancoderConfig.withMagnetSensor(
+        new MagnetSensorConfigs().withMagnetOffset(DEPLOY_CANCODER_OFFSET)
+            .withSensorDirection(SensorDirectionValue.Clockwise_Positive));
+    deployCANcoder.getConfigurator().apply(cancoderConfig);
 
     // Configure the deploy motor
     var deployConfig = new TalonFXConfiguration();
-    deployConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
-    deployConfig.Feedback.RotorToSensorRatio = DEPLOY_ROTOR_TO_SENSOR_RATIO;
-    deployConfig.TorqueCurrent.PeakForwardTorqueCurrent = DEPLOY_PEAK_FORWORD_CURRENT.in(Amps);
-    deployConfig.TorqueCurrent.PeakReverseTorqueCurrent = DEPLOY_PEAK_REVERSE_CURRENT.in(Amps);
-    deployConfig.CurrentLimits.SupplyCurrentLimit = DEPLOY_SUPPLY_LIMIT.in(Amps);
-    deployConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
-    deployConfig.MotionMagic = DEPLOY_MOTION_MAGIC_CONFIGS;
-    deployConfig.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
-    deployConfig.SoftwareLimitSwitch.ForwardSoftLimitThreshold = DEPLOY_POSITIONS_RETRACTED.in(Rotations);
-    deployConfig.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
-    deployConfig.SoftwareLimitSwitch.ReverseSoftLimitThreshold = DEPLOY_POSITION_DEPLOYED.in(Rotations);
-    deployConfig.Feedback.withFusedCANcoder(deployCANcoder);
-    deployConfig.Slot0 = Slot0Configs.from(DEPLOY_SLOT_CONFIGS);
+    deployConfig
+        .withMotorOutput(
+            new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast)
+                .withInverted(InvertedValue.CounterClockwise_Positive))
+        .withFeedback(
+            new FeedbackConfigs().withRotorToSensorRatio(DEPLOY_ROTOR_TO_SENSOR_RATIO)
+                .withFusedCANcoder(deployCANcoder))
+        .withSlot0(Slot0Configs.from(DEPLOY_SLOT_CONFIGS))
+        .withMotionMagic(DEPLOY_MOTION_MAGIC_CONFIGS)
+        .withCurrentLimits(
+            new CurrentLimitsConfigs().withSupplyCurrentLimit(DEPLOY_SUPPLY_CURRENT_LIMIT)
+                .withSupplyCurrentLimitEnable(true)
+                .withStatorCurrentLimit(DEPLOY_STATOR_CURRENT_LIMIT)
+                .withStatorCurrentLimitEnable(true))
+        .withSoftwareLimitSwitch(
+            new SoftwareLimitSwitchConfigs().withForwardSoftLimitEnable(true)
+                .withForwardSoftLimitThreshold(DEPLOYED_POSITION)
+                .withReverseSoftLimitEnable(true)
+                .withReverseSoftLimitThreshold(RETRACTED_POSITION));
     deployMotor.getConfigurator().apply(deployConfig);
-
   }
 
   /**
-   * Command to run the Rollers SysID routine in dynamic mode
+   * Command to run roller SysId routine in dynamic mode
    * 
    * @param direction The direction to run the roller motor for dynamic mode
-   * @return The SysID output for dynamic mode
+   * @return The SysId output data for dynamic mode
    */
   public Command sysIdRollerDynamicCommand(Direction direction) {
     return rollerSysIdRoutine.dynamic(direction)
         .withName("SysId intake dynam " + direction)
-        .finallyDo(this::stopRollers);
+        .finallyDo(this::stopIntaking);
   }
 
   /**
-   * Command to run the Rollers SysID routine in quasistatic mode
+   * Command to run roller SysId routine in quasistatic mode
    * 
-   * @param direction The direcion to run the roller motor for quasistatic mode
-   * @return The SysID output data for quasistaitc mode
+   * @param direction The direction to run the roller motor for quasistatic mode
+   * @return The SysId output data for quasistatic mode
    */
-  public Command sysIdRollerQuasistatiCommand(Direction direction) {
+  public Command sysIdRollerQuasistaticCommand(Direction direction) {
     return rollerSysIdRoutine.quasistatic(direction)
-        .withName("SysId intake static " + direction)
-        .finallyDo(this::stopRollers);
+        .withName("SysId intake quasi " + direction)
+        .finallyDo(this::stopIntaking);
   }
 
   /**
-   * Command to run the Deploy SysID routine in dynamic mode
+   * Command to run deploy SysId routine in dynamic mode
    * 
-   * @param direction The direction to run the deploy motor for dynmaic mode
-   * @return The SysID output for dynmaic mode
+   * @param direction The direction to run the deploy motor for dynamic mode
+   * @return The SysId output data for dynamic mode
    */
   public Command sysIdDeployDynamicCommand(Direction direction) {
     return deploySysIdRoutine.dynamic(direction)
@@ -161,86 +186,88 @@ public class IntakeSubsytem extends SubsystemBase {
   }
 
   /**
-   * Command to run the Deploy SysID routine in quasistatic mode
+   * Command to run deploy SysId routine in quasistatic mode
    * 
    * @param direction The direction to run the deploy motor for quasistatic mode
-   * @return The SysID output for quasistatic mode
+   * @return The SysId output data for quasistatic mode
    */
-  public Command sysIdDeployQuasistatiCommand(Direction direction) {
+  public Command sysIdDeployQuasistaticCommand(Direction direction) {
     return deploySysIdRoutine.quasistatic(direction)
-        .withName("SysID deply static  " + direction)
+        .withName("SysId deploy quasi " + direction)
         .finallyDo(this::stopDeploy);
   }
 
   /**
-   * Allows the rollers to intake fuel
+   * Runs the intake rollers to intake fuel
    */
-  public void intakeRollers() {
-    runRollers(INTAKE_VELOCITY);
+  public void runIntake() {
+    rollerMotor.setControl(rollerControl.withVelocity(ROLLER_INTAKE_VELOCITY));
   }
 
   /**
-  * 
-  */
-  public void ejectRollers() {
-    runRollers(REVERSE_VELOCITY);
+   * Reverses the intake rollers to eject fuel
+   */
+  public void reverseIntake() {
+    rollerMotor.setControl(rollerControl.withVelocity(ROLLER_EJECT_VELOCITY));
   }
 
   /**
    * Deploys the intake
    */
   public void deploy() {
-    runDepoly(DEPLOY_POSITION_DEPLOYED);
+    deployMotor.setControl(deployControl.withPosition(DEPLOYED_POSITION));
   }
 
   /**
    * Retracts the intake
    */
   public void retract() {
-    runDepoly(DEPLOY_POSITIONS_RETRACTED);
+    deployMotor.setControl(deployControl.withPosition(RETRACTED_POSITION));
   }
 
   /**
-   * Stops the intake from extending.
+   * Stops the intake rollers
+   */
+  public void stopIntaking() {
+    rollerMotor.stopMotor();
+  }
+
+  /**
+   * Stops the deploy
    */
   public void stopDeploy() {
     deployMotor.stopMotor();
   }
 
   /**
-   * Stops the intake from collecting fuel
+   * Stops all intake motion
    */
-  public void stopRollers() {
-    rollerMotor.stopMotor();
-  }
-
-  private void runRollers(AngularVelocity velocity) {
-    rollerMotor.setControl(rollerControl.withVelocity(velocity));
-  }
-
-  private void runDepoly(Measure<AngleUnit> deployPositionDeployed) {
-    deployMotor.setControl(deployControl);
+  public void stop() {
+    stopIntaking();
+    stopDeploy();
   }
 
   /**
-   * Sets a limit for how far the intake can be deployed
+   * Checks if the intake is deployed
    * 
-   * @return Is the intake deployed
+   * @return true if the intake is deployed, false otherwise
    */
+  @Logged
   public boolean isDeployed() {
     BaseStatusSignal.refreshAll(deployPositionSignal, deployVelocitySignal);
     Angle deployPosition = BaseStatusSignal.getLatencyCompensatedValue(deployPositionSignal, deployVelocitySignal);
-    return deployPosition.isNear(DEPLOY_POSITION_DEPLOYED, DEPLOY_TOLERANCE);
+    return deployPosition.isNear(DEPLOYED_POSITION, DEPLOY_TOLERANCE);
   }
 
   /**
-   * Sets a limit for how far the intake can be retracted back
+   * Checks if the intake is retracted
    * 
-   * @return Is the intake deployed
+   * @return true if the intake is retracted, false otherwise
    */
-  public boolean isRetacted() {
+  @Logged
+  public boolean isRetracted() {
     BaseStatusSignal.refreshAll(deployPositionSignal, deployVelocitySignal);
     Angle deployPosition = BaseStatusSignal.getLatencyCompensatedValue(deployPositionSignal, deployVelocitySignal);
-    return deployPosition.isNear(DEPLOY_POSITIONS_RETRACTED, DEPLOY_TOLERANCE);
+    return deployPosition.isNear(RETRACTED_POSITION, DEPLOY_TOLERANCE);
   }
 }

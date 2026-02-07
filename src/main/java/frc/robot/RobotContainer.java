@@ -13,6 +13,7 @@ import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveModule.SteerRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.commands.FollowPathCommand;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -25,6 +26,8 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import frc.robot.Constants.OdometryConstants;
 import frc.robot.Constants.QuestNavConstants;
+import frc.robot.commands.DeployIntakeCommand;
+import frc.robot.commands.IntakeCommand;
 import frc.robot.commands.led.DefaultLEDCommand;
 import frc.robot.commands.led.LEDBootAnimationCommand;
 import frc.robot.controls.ControlBindings;
@@ -32,6 +35,7 @@ import frc.robot.controls.JoystickControlBindings;
 import frc.robot.controls.XBoxControlBindings;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
+import frc.robot.subsystems.IntakeSubsytem;
 import frc.robot.subsystems.LEDSubsystem;
 import frc.robot.subsystems.QuestNavSubsystem;
 import frc.robot.subsystems.SpindexerSubsystem;
@@ -66,6 +70,8 @@ public class RobotContainer {
   private final TransferSubsystem transferSubsystem = new TransferSubsystem();
   @Logged
   private final SpindexerSubsystem spindexerSubsystem = new SpindexerSubsystem();
+  @Logged
+  private final IntakeSubsytem intakeSubsystem = new IntakeSubsytem();
   private final LEDSubsystem ledSubsystem = new LEDSubsystem();
 
   /* Path follower */
@@ -82,6 +88,7 @@ public class RobotContainer {
     }
 
     // Configure and populate the auto command chooser with autos from PathPlanner
+    configurePathPlannerCommands();
     autoChooser = AutoBuilder.buildAutoChooser();
     SmartDashboard.putData("Auto Mode", autoChooser);
 
@@ -122,6 +129,11 @@ public class RobotContainer {
     RobotModeTriggers.disabled().whileTrue(drivetrain.applyRequest(() -> idle).ignoringDisable(true));
 
     drivetrain.registerTelemetry(drivetrainTelemetry::telemeterize);
+  }
+
+  private void configurePathPlannerCommands() {
+    NamedCommands.registerCommand("DeployInstake", new DeployIntakeCommand(intakeSubsystem));
+    NamedCommands.registerCommand("Intake", new IntakeCommand(intakeSubsystem, spindexerSubsystem));
   }
 
   public Command getAutonomousCommand() {
