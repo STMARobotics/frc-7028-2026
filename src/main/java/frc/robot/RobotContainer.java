@@ -53,7 +53,7 @@ public class RobotContainer {
       TunerConstants.DrivetrainConstants,
       0,
       OdometryContants.STATE_STD_DEVS,
-      QuestNavConstants.BASE_QUESTNAV_STD_DEVS,
+      QuestNavConstants.QUESTNAV_STD_DEVS,
       TunerConstants.FrontLeft,
       TunerConstants.FrontRight,
       TunerConstants.BackLeft,
@@ -62,7 +62,7 @@ public class RobotContainer {
   private final LocalizationSubsystem localizationSubsystem = new LocalizationSubsystem(
       drivetrain::addVisionMeasurement,
       drivetrain::resetPose,
-      drivetrain::getYaw,
+      drivetrain::getYawData,
       drivetrain::getDrivetrainAngularVelocity);
 
   /* Path follower */
@@ -103,7 +103,7 @@ public class RobotContainer {
     controlBindings.seedFieldCentric().ifPresent(trigger -> trigger.onTrue(Commands.runOnce(() -> {
       Pose2d robotCurrentPose = drivetrain.getState().Pose;
       Pose2d robotNewPose = new Pose2d(robotCurrentPose.getTranslation(), drivetrain.getOperatorForwardDirection());
-      localizationSubsystem.setQuestNavPose2d(robotNewPose);
+      localizationSubsystem.setQuestNavPose(robotNewPose);
       drivetrain.resetPose(robotNewPose);
     })));
 

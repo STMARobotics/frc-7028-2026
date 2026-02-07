@@ -1,13 +1,11 @@
 package frc.robot.subsystems;
 
 import static edu.wpi.first.units.Units.*;
-import static frc.robot.Constants.OdometryContants.DEVICE_ID_PIGEON;
 
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.Utils;
-import com.ctre.phoenix6.hardware.Pigeon2;
 import com.ctre.phoenix6.swerve.SwerveDrivetrainConstants;
 import com.ctre.phoenix6.swerve.SwerveModuleConstants;
 import com.ctre.phoenix6.swerve.SwerveRequest;
@@ -62,9 +60,8 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
   private final SwerveRequest.SysIdSwerveSteerGains m_steerCharacterization = new SwerveRequest.SysIdSwerveSteerGains();
   private final SwerveRequest.SysIdSwerveRotation m_rotationCharacterization = new SwerveRequest.SysIdSwerveRotation();
   private final SysIdSwerveTranslationTorque m_translationCharacterizationTorque = new SysIdSwerveTranslationTorque();
-  private final Pigeon2 pigeon = new Pigeon2(DEVICE_ID_PIGEON);
-  private final StatusSignal<Angle> yaw = pigeon.getYaw();
-  private final StatusSignal<AngularVelocity> yawVelocity = pigeon.getAngularVelocityZWorld();
+  private final StatusSignal<Angle> yaw = this.getPigeon2().getYaw();
+  private final StatusSignal<AngularVelocity> yawVelocity = this.getPigeon2().getAngularVelocityZWorld();
 
   /*
    * SysId routine for characterizing translation with Voltage output mode. This is used to find PID gains for the drive
@@ -399,14 +396,13 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     return super.samplePoseAt(Utils.fpgaToCurrentTime(timestampSeconds));
   }
 
-  public Angle getYaw() {
-    BaseStatusSignal.refreshAll(yaw);
+  public Angle getYawData() {
+    BaseStatusSignal.refreshAll(yaw, yawVelocity);
     return BaseStatusSignal.getLatencyCompensatedValue(yaw, yawVelocity);
   }
 
   public AngularVelocity getDrivetrainAngularVelocity() {
-    ChassisSpeeds chassisSpeeds = this.getKinematics().toChassisSpeeds();
-    return DegreesPerSecond.of(Math.toDegrees(chassisSpeeds.omegaRadiansPerSecond));
+    return RadiansPerSecond.of(this.getState().Speeds.omegaRadiansPerSecond);
   }
 
 }
