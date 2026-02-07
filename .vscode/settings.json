@@ -68,6 +68,16 @@
     "source.fixAll.spotlessGradle": "explicit"
   },
   "editor.detectIndentation": false,
+  "editor.showDeprecated": true,
+  "editor.suggest.showDeprecated": true,
+  "editor.semanticTokenColorCustomizations": {
+    "enabled": true,
+    "rules": {
+      "*.deprecated": { 
+         "strikethrough": true
+      }
+    }
+  },
   "java.inlayHints.parameterNames.enabled": "none",
   "java.settings.url": ".vscode/org.eclipse.jdt.core.prefs",
   "java.format.enabled": false,
@@ -92,4 +102,6 @@
   "java.jdt.ls.vmargs": "-XX:+UseParallelGC -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -Dsun.zip.disableMemoryMapping=true -Xmx4G -Xms100m -Xlog:disable",
   "java.saveActions.organizeImports": false,
   "files.trimTrailingWhitespaceInRegexAndStrings": false,
+  "wpilib.skipSelectSimulateExtension": true,
+  "files.eol": "\n",
 }
