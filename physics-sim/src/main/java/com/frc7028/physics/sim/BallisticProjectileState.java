@@ -1,6 +1,5 @@
 package com.frc7028.physics.sim;
 
-import com.frc7028.BallisticPrecomputer;
 import com.frc7028.physics.sim.Integrator.forceInput;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation3d;

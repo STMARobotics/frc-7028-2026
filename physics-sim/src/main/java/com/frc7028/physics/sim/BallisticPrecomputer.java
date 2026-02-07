@@ -32,10 +32,10 @@ public class BallisticPrecomputer {
 
   Function<RobotState, ShotParameters> computeShotGuess;
 
-  private record RobotState(Translation2d position, Translation2d velocity) {
+  public record RobotState(Translation2d position, Translation2d velocity) {
   }
 
-  private record ShotParameters(Angle yaw, Angle pitch, double speed) {
+  public record ShotParameters(Angle yaw, Angle pitch, double speed) {
     ShotParameters stepYaw(Angle step) {
       return new ShotParameters(yaw.plus(step), pitch, speed);
     };

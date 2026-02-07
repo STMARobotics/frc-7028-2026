@@ -9,5 +9,4 @@ public record FieldMetrics(
     ArrayList<Region3d> rejectRegions,
     Region3d targetRegion,
     double startingHeight) {
-
 }
