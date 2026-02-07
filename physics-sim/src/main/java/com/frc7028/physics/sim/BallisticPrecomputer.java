@@ -1,21 +1,17 @@
-package com.frc7028;
+package com.frc7028.physics.sim;
 
 import static edu.wpi.first.units.Units.Radians;
 import static java.lang.Math.atan2;
 import static java.lang.Math.cos;
 import static java.lang.Math.sin;
 
-import com.frc7028.physics.sim.BallisticEnvironmentProfile;
-import com.frc7028.physics.sim.BallisticProjectileState;
-import com.frc7028.physics.sim.FieldMetrics;
 import com.frc7028.physics.sim.Integrator.forceInput;
-import com.frc7028.physics.sim.IntegratorResolution;
-import com.frc7028.physics.sim.SimulatorResolution;
 import edu.wpi.first.math.MatBuilder;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.units.measure.Angle;
 import java.util.function.Function;
@@ -47,6 +43,10 @@ public class BallisticPrecomputer {
 
     ShotParameters stepSpeed(double step) {
       return new ShotParameters(yaw, pitch, speed + step);
+    }
+
+    ShotParameters stepAll(Angle stepYaw, Angle stepPitch, double stepSpeed) {
+      return new ShotParameters(yaw.plus(stepYaw), pitch.plus(stepPitch), speed + stepSpeed);
     }
 
   }
@@ -137,56 +137,72 @@ public class BallisticPrecomputer {
       ShotParameters parameters) {
     // https://pages.hmc.edu/ruye/MachineLearning/lectures/ch2/node7.html
 
-    Angle yaw = parameters.yaw();
-    Angle pitch = parameters.pitch();
-    double speed = parameters.speed();
+    int iterations = 0;
 
-    double yawRads = yaw.baseUnitMagnitude();
-    double pitchRads = pitch.baseUnitMagnitude();
+    while (iterations <= this.simulatorResolution.maxIterations()) {
+      iterations++;
 
-    SimulationResult errorPrior = simulateBall(simulatedProjectileState, state, parameters);
+      Angle yaw = parameters.yaw();
+      Angle pitch = parameters.pitch();
+      double speed = parameters.speed();
 
-    double errRadialPrior = errorPrior.errorRadial();
-    double errYawPrior = errorPrior.errorYaw();
-    double errHeightPrior = errorPrior.errorHeight;
+      double yawRads = yaw.baseUnitMagnitude();
+      double pitchRads = pitch.baseUnitMagnitude();
 
-    if (errorPrior.error.getNorm() < this.simulatorResolution.targetMaxDistanceForConvergence()) {
-      return parameters;
+      SimulationResult errorPrior = simulateBall(simulatedProjectileState, state, parameters);
+
+      double errRadialPrior = errorPrior.errorRadial();
+      double errYawPrior = errorPrior.errorYaw();
+      double errHeightPrior = errorPrior.errorHeight();
+
+      if (errorPrior.error.getNorm() < this.simulatorResolution.targetMaxDistanceForConvergence()) {
+        return parameters;
+      }
+
+      Angle deltaAngle = this.simulatorResolution.deltaAngle();
+      double deltaSpeed = this.simulatorResolution.deltaTime();
+
+      double da = deltaAngle.baseUnitMagnitude();
+
+      ShotParameters steppedYawParameters = parameters.stepYaw(deltaAngle);
+      ShotParameters steppedPitchParameters = parameters.stepPitch(deltaAngle);
+      ShotParameters steppedSpeedParameters = parameters.stepSpeed(deltaSpeed);
+
+      SimulationResult steppedYaw = simulateBall(simulatedProjectileState, state, steppedYawParameters);
+      SimulationResult steppedPitch = simulateBall(simulatedProjectileState, state, steppedPitchParameters);
+      SimulationResult steppedSpeed = simulateBall(simulatedProjectileState, state, steppedSpeedParameters);
+
+      // y(yaw); p(pitch); s(speed)
+      // Ey(error yaw); Er(error radial); Ez(error height)
+
+      // Compose jacobian [errorYaw, errorDistance(radial), errorHeight] x [dYaw, dPitch, dSpeed]
+
+      double Eydy = (steppedYaw.errorYaw() - errYawPrior) / da;
+      double Erdy = (steppedYaw.errorRadial() - errRadialPrior) / da;
+      double Ezdy = (steppedYaw.errorHeight() - errHeightPrior) / da;
+
+      double Eydp = (steppedPitch.errorYaw() - errYawPrior) / da;
+      double Erdp = (steppedPitch.errorRadial() - errRadialPrior) / da;
+      double Ezdp = (steppedPitch.errorHeight() - errHeightPrior) / da;
+
+      double Eyds = (steppedSpeed.errorYaw() - errHeightPrior) / deltaSpeed;
+      double Erds = (steppedSpeed.errorRadial() - errRadialPrior) / deltaSpeed;
+      double Ezds = (steppedSpeed.errorHeight() - errHeightPrior) / deltaSpeed;
+
+      Matrix<N3, N3> ErrorJacobian = MatBuilder
+          .fill(N3.instance, N3.instance, Eydy, Erdy, Ezdy, Eydp, Erdp, Ezdp, Eyds, Erds, Ezds);
+      Matrix<N3, N1> baseError = MatBuilder.fill(N3.instance, N1.instance, errYawPrior, errRadialPrior, errHeightPrior);
+
+      Matrix<N3, N1> parameterStepMatrix = ErrorJacobian.inv().times(baseError);
+
+      Angle yawStep = Radians.of(-parameterStepMatrix.get(0, 0));
+      Angle pitchStep = Radians.of(-parameterStepMatrix.get(0, 1));
+      double speedStep = -parameterStepMatrix.get(0, 2);
+
+      parameters = parameters.stepAll(yawStep, pitchStep, speedStep);
     }
 
-    Angle deltaAngle = this.simulatorResolution.deltaAngle();
-    double deltaSpeed = this.simulatorResolution.deltaTime();
+    return parameters;
 
-    double da = deltaAngle.baseUnitMagnitude();
-
-    ShotParameters steppedYawParameters = parameters.stepYaw(deltaAngle);
-    ShotParameters steppedPitchParameters = parameters.stepPitch(deltaAngle);
-    ShotParameters steppedSpeedParameters = parameters.stepSpeed(deltaSpeed);
-
-    SimulationResult steppedYaw = simulateBall(simulatedProjectileState, state, steppedYawParameters);
-    SimulationResult steppedPitch = simulateBall(simulatedProjectileState, state, steppedPitchParameters);
-    SimulationResult steppedSpeed = simulateBall(simulatedProjectileState, state, steppedSpeedParameters);
-
-    // y(yaw); p(pitch); s(speed)
-    // Ey(error yaw); Er(error radial); Ez(error height)
-
-    // Compose jacobian [errorYaw, errorDistance(radial), errorHeight] x [dYaw, dPitch, dSpeed]
-
-    double Eydy = (steppedYaw.errorYaw() - errYawPrior) / da;
-    double Erdy = (steppedYaw.errorRadial() - errRadialPrior) / da;
-    double Ezdy = (steppedYaw.errorHeight() - errHeightPrior) / da;
-
-    double Eydp = (steppedPitch.errorYaw() - errYawPrior) / da;
-    double Erdp = (steppedPitch.errorRadial() - errRadialPrior) / da;
-    double Ezdp = (steppedPitch.errorHeight() - errHeightPrior) / da;
-
-    double Eyds = (steppedPitch.errorYaw() - errHeightPrior) / deltaSpeed;
-    double Erds = (steppedPitch.errorRadial() - errRadialPrior) / deltaSpeed;
-    double Ezds = (steppedPitch.errorHeight() - errHeightPrior) / deltaSpeed;
-
-    Matrix<N3, N3> ErrorJacobian = MatBuilder
-        .fill(N3.instance, N3.instance, Eydy, Erdy, Ezdy, Eydp, Erdp, Ezdp, Eyds, Erds, Ezds);
-    Matrix<N3, N1> Parameters = MatBuilder
-        .fill()
   }
 }
