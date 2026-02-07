@@ -163,7 +163,7 @@ public class LocalizationSubsystem extends SubsystemBase {
       if (frame.isTracking()) {
         Pose3d questPose = frame.questPose3d();
         Pose3d robotPose = questPose.transformBy(ROBOT_TO_QUEST.inverse());
-        questPublisher.accept(robotPose);
+        questPublisher.set(robotPose);
 
         double error = (bestEstimate != null)
             ? robotPose.toPose2d().getTranslation().getDistance(bestEstimate.pose.getTranslation())
@@ -171,12 +171,12 @@ public class LocalizationSubsystem extends SubsystemBase {
 
         if (error > 0.5 && questNavFaultCounter < QUESTNAV_FAILURE_THRESHOLD) {
           questNavFaultCounter += Math.pow(error, 2);
-          questHealthPublisher.accept(false);
+          questHealthPublisher.set(false);
         } else {
           if (questNavFaultCounter > 0) {
             questNavFaultCounter -= 1;
           }
-          questHealthPublisher.accept(true);
+          questHealthPublisher.set(true);
           // Make sure the pose is inside the field
           if (FieldConstants.isValidFieldPosition(robotPose.getTranslation())
               && questNavFaultCounter < QUESTNAV_FAILURE_THRESHOLD) {
