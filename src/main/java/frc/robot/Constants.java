@@ -169,6 +169,12 @@ public class Constants {
     public static final int DEVICE_ID_CLIMB_LEADER_MOTOR = 30;
     public static final int DEVICE_ID_CLIMB_FOLLOWER_MOTOR = 31;
 
+    public static final SlotConfigs CLIMB_SLOT_CONFIGS = new SlotConfigs().withKP(0.0)
+        .withKD(0.0)
+        .withKS(0.0)
+        .withKV(0.0)
+        .withKA(0.0);
+
     public static final int DEVICE_ID_CANDI_CLIMB_LIMITS = 30;
     public static final int DEVICE_ID_CANDI_CLIMB_STOW = 31;
 
