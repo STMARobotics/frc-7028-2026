@@ -8,6 +8,7 @@ on:
   push:
     paths:
       - 'physics-sim/**'
+      - '.github/workflows/physics-sim-build.yml'
 
 jobs:
   ci-build:
