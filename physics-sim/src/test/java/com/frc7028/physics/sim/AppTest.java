@@ -49,13 +49,13 @@ class AppTest {
         0.1, // delta velocity component
         0.2, // max convergence distance
         2.0, // max velocity component
-        20 // max iterations
+        100 // max iterations
     );
 
     IntegratorResolution intRes = new IntegratorResolution(
         0.01, // dt initial
         0.01, // epsilon
-        100 // max steps
+        1000 // max steps
     );
 
     BallisticEnvironmentProfile env = new BallisticEnvironmentProfile(

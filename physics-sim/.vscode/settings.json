@@ -80,4 +80,5 @@
   },
   "java.saveActions.organizeImports": false,
   "files.trimTrailingWhitespaceInRegexAndStrings": false,
+  "java.debug.settings.onBuildFailureProceed": true,
 }

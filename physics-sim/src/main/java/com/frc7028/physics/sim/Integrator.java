@@ -7,7 +7,6 @@
 package com.frc7028.physics.sim;
 
 import static java.lang.Math.abs;
-import static java.lang.Math.pow;
 
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation3d;
@@ -61,7 +60,7 @@ public class Integrator {
   // K Weights
   private static final double[][] W = {
       { 25 / 216d, 0, 1408 / 2565d, 2197 / 4104d, -1 / 5 },
-      { 16 / 135d, 0, 6656 / 12825d, 28561 / 56430d, 9 / 50d, 2 / 55d } };
+      { 16 / 135d, 0, 6656 / 12825d, 28561 / 56430d, -9 / 50d, 2 / 55d } };
 
   public Integrator(
       VectorState vectorState,
@@ -85,32 +84,32 @@ public class Integrator {
 
   public void step() {
     forceInput i = forceInput.from(this.vectorState);
-    double dt = this.vectorState.dt;
     double err = Double.POSITIVE_INFINITY;
 
     int iterations = 0;
 
     // sample each acceleration iteratively, with pre-determined future step scalars for each order
 
-    while (err > this.epsilon && iterations <= this.maxIterations) {
-      Translation3d a1 = f(i).times(dt);
-      Translation3d a2 = f(i.accelerate(a1, dt * C[0][0])).times(dt);
-      Translation3d a3 = f(i.accelerate(a1, dt * C[1][0]).accelerate(a2, dt * C[1][1])).times(dt);
-      Translation3d a4 = f(i.accelerate(a1, dt * C[2][0]).accelerate(a2, dt * C[2][1]).accelerate(a3, dt * C[2][2]))
-          .times(dt);
+    boolean accepted = false;
+
+    while (!accepted && iterations < this.maxIterations) {
+      double dt = this.vectorState.dt;
+
+      Translation3d a1 = f(i);
+      Translation3d a2 = f(i.accelerate(a1, dt * C[0][0]));
+      Translation3d a3 = f(i.accelerate(a1, dt * C[1][0]).accelerate(a2, dt * C[1][1]));
+      Translation3d a4 = f(i.accelerate(a1, dt * C[2][0]).accelerate(a2, dt * C[2][1]).accelerate(a3, dt * C[2][2]));
       Translation3d a5 = f(
           i.accelerate(a1, dt * C[3][0])
               .accelerate(a2, dt * C[3][1])
               .accelerate(a3, dt * C[3][2])
-              .accelerate(a4, dt * C[3][3]))
-          .times(dt);
+              .accelerate(a4, dt * C[3][3]));
       Translation3d a6 = f(
           i.accelerate(a1, dt * C[4][0])
               .accelerate(a2, dt * C[4][1])
               .accelerate(a3, dt * C[4][2])
               .accelerate(a4, dt * C[4][3])
-              .accelerate(a5, dt * C[4][4]))
-          .times(dt);
+              .accelerate(a5, dt * C[4][4]));
 
       Translation3d V1 = i.velocity.plus(a1.times(W[0][0]))
           .plus(a2.times(W[0][1]))
@@ -125,12 +124,21 @@ public class Integrator {
           .plus(a5.times(W[1][4]))
           .plus(a6.times(W[1][5]));
 
-      err = (1 / dt) * abs(V2.getDistance(V1));
-      this.vectorState.velocity = V2;
+      err = abs(V2.getDistance(V1)) / dt;
+      System.out.println("err=" + err + " eps=" + this.epsilon + " dt=" + dt);
+      if (err <= this.epsilon) {
+        this.vectorState.velocity = V2;
+        this.vectorState.stepPosition();
+        accepted = true;
+
+        double dtScalingFactor = 0.84 * Math.pow((epsilon / Math.max(err, 1e-10)), 0.25);
+        this.vectorState.dt = Math.clamp(dt * dtScalingFactor, 1e-6, 1e-2);
+        System.out.println("scale=" + dtScalingFactor + " new_dt=" + (dt * dtScalingFactor));
+      }
+
       iterations++;
     }
 
-    this.vectorState.dt = Math.clamp(1e-6, 0.84 * pow((epsilon / Math.max(err, 1e-4)), 0.25), 1e-2);
-    this.vectorState.stepPosition();
+    // System.out.println(iterations);
   }
 }

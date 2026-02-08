@@ -11,4 +11,4 @@ plugins {
 }
 
 rootProject.name = 'physics-sim'
-include('app')
+//include('app')

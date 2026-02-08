@@ -126,6 +126,7 @@ public class BallisticPrecomputer {
     // Actually step the projectile over time, and stop when it either collides or is out of bounds
     while (simulatedProjectileState.completedTrajectory()) {
       simulatedProjectileState.step();
+      System.out.println(simulatedProjectileState.dt);
     }
 
     Translation3d endPosition = simulatedProjectileState.position;

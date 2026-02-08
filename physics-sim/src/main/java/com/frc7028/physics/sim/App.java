@@ -4,63 +4,32 @@
 package com.frc7028.physics.sim;
 
 import static com.frc7028.physics.sim.BallisticPrecomputer.ShotParameters;
-import static edu.wpi.first.units.Units.Degrees;
-import static edu.wpi.first.units.Units.Grams;
-import static edu.wpi.first.units.Units.Radians;
-import static edu.wpi.first.units.Units.Rotation;
-
-import java.lang.reflect.Field;
-import java.util.function.Function;
 
 import com.frc7028.physics.sim.BallisticPrecomputer.RobotState;
 import com.frc7028.physics.sim.BallisticPrecomputer.ShotParameters;
 import edu.wpi.first.math.geometry.Rotation3d;
-import edu.wpi.first.units.measure.Mass;
+import java.util.function.Function;
 
 public class App {
   public BallisticPrecomputer precomputer;
 
-  public App(SimulatorResolution simulatorResolution, IntegratorResolution integratorResolution, BallisticEnvironmentProfile environmentProfile, FieldMetrics fieldMetrics, Function<Double, Rotation3d> speedToSpin, Function<RobotState, ShotParameters> computeGuessShot) {
-    this.precomputer = new BallisticPrecomputer(simulatorResolution, integratorResolution, environmentProfile, fieldMetrics, speedToSpin, computeGuessShot);
+  public App(
+      SimulatorResolution simulatorResolution,
+      IntegratorResolution integratorResolution,
+      BallisticEnvironmentProfile environmentProfile,
+      FieldMetrics fieldMetrics,
+      Function<Double, Rotation3d> speedToSpin,
+      Function<RobotState, ShotParameters> computeGuessShot) {
+    this.precomputer = new BallisticPrecomputer(
+        simulatorResolution,
+        integratorResolution,
+        environmentProfile,
+        fieldMetrics,
+        speedToSpin,
+        computeGuessShot);
   }
 
   public static void main(String[] args) {
 
-    RebuiltMetrics rebuiltMetrics = new RebuiltMetrics();
-    SimulatorResolution simulatorResolution = new SimulatorResolution(
-        Degrees.of(0.1), //
-        0.1, // delta speed
-        0.1, // delta position compoent, like px or py
-        0.1, // delta velocity component like vy vx
-        0.1,
-        19.2, // https://www.swervedrivespecialties.com/products/mk5n-swerve-module#:~:text=The%20MK5n%20includes%20three%20different%20drive%20gear%20ratios%20that%20provide%20a%20broad%20range%20of%20speeds
-        15 // max iterations to converge
-    );
-
-    IntegratorResolution integratorResolution = new IntegratorResolution(
-        0.1, // initial step size
-        0.1, // step size modulator, epsilon, see RK45
-        1000 // max simulation steps
-    );
-
-    ShotParameters x = new ShotParameters(Radians.of(1), Radians.of(2), 2);
-    BallisticEnvironmentProfile environmentProfile = new BallisticEnvironmentProfile(
-      // grams
-      0,
-      // gravity
-      -9.8,
-      1.204,
-      0,
-      0,
-      0,
-      0
-    );
-    BallisticPrecomputer precomputer = new BallisticPrecomputer(
-      simulatorResolution,
-      integratorResolution,
-      environmentProfile,
-      new FieldMetrics(),
-      (Double speed) -> new Rotation3d(),
-      (RobotState state) -> x
-    );
-}
+  }
+};
