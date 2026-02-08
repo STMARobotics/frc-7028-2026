@@ -172,6 +172,7 @@ public class ClimbSubsystem extends SubsystemBase {
    */
   public void L1Hang() {
     currentAction = ClimbAction.L1_HANG;
+    // periodic() will handle moving to the stow/L1 hang position
   }
 
   /**
@@ -249,16 +250,31 @@ public class ClimbSubsystem extends SubsystemBase {
     return currentAction;
   }
 
+  /**
+   * Checks if the climb is at the top limit.
+   * 
+   * @return true if the climb is at the top limit
+   */
   @Logged
   public boolean isAtTopLimit() {
     return topLimitSwitchSignal.refresh().getValue();
   }
 
+  /**
+   * Checks if the climb is at the bottom limit.
+   * 
+   * @return true if the climb is at the bottom limit
+   */
   @Logged
   public boolean isAtBottomLimit() {
     return bottomLimitSwitchSignal.refresh().getValue();
   }
 
+  /**
+   * Checks if the climb is at the stowed position.
+   * 
+   * @return true if the climb is at the stowed position
+   */
   @Logged
   public boolean isStowed() {
     return stowSensorSignal.refresh().getValue();
