@@ -15,8 +15,11 @@ import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.commands.FollowPathCommand;
+import com.pathplanner.lib.commands.PathPlannerAuto;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -37,7 +40,7 @@ import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.IntakeSubsytem;
 import frc.robot.subsystems.LEDSubsystem;
-import frc.robot.subsystems.QuestNavSubsystem;
+import frc.robot.subsystems.LocalizationSubsystem;
 import frc.robot.subsystems.SpindexerSubsystem;
 import frc.robot.subsystems.TransferSubsystem;
 
@@ -65,7 +68,11 @@ public class RobotContainer {
       TunerConstants.BackLeft,
       TunerConstants.BackRight);
 
-  private final QuestNavSubsystem questNavSubsystem = new QuestNavSubsystem(drivetrain::addVisionMeasurement);
+  private final LocalizationSubsystem localizationSubsystem = new LocalizationSubsystem(
+      drivetrain::addVisionMeasurement,
+      drivetrain::resetPose,
+      drivetrain::getYawData,
+      () -> drivetrain.getState().Speeds.omegaRadiansPerSecond);
   @Logged
   private final TransferSubsystem transferSubsystem = new TransferSubsystem();
   @Logged
@@ -91,6 +98,7 @@ public class RobotContainer {
     configurePathPlannerCommands();
     autoChooser = AutoBuilder.buildAutoChooser();
     SmartDashboard.putData("Auto Mode", autoChooser);
+    autoChooser.onChange(this::setStartingPose);
 
     configureBindings();
 
@@ -119,7 +127,7 @@ public class RobotContainer {
     controlBindings.seedFieldCentric().ifPresent(trigger -> trigger.onTrue(Commands.runOnce(() -> {
       Pose2d robotCurrentPose = drivetrain.getState().Pose;
       Pose2d robotNewPose = new Pose2d(robotCurrentPose.getTranslation(), drivetrain.getOperatorForwardDirection());
-      questNavSubsystem.setPose(robotNewPose);
+      localizationSubsystem.setQuestNavPose(robotNewPose);
       drivetrain.resetPose(robotNewPose);
     })));
 
@@ -129,6 +137,14 @@ public class RobotContainer {
     RobotModeTriggers.disabled().whileTrue(drivetrain.applyRequest(() -> idle).ignoringDisable(true));
 
     drivetrain.registerTelemetry(drivetrainTelemetry::telemeterize);
+  }
+
+  public void setStartingPose(Command auto) {
+    if (auto instanceof PathPlannerAuto ppAuto) {
+      localizationSubsystem.setInitialPose(ppAuto.getStartingPose());
+    } else {
+      localizationSubsystem.setInitialPose(new Pose2d(new Translation2d(), new Rotation2d(0)));
+    }
   }
 
   private void configurePathPlannerCommands() {
