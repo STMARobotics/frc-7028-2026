@@ -8,26 +8,30 @@ import java.util.function.Function;
 public class BallisticProjectileState extends VectorState {
 
   BallisticPrecomputer simulator;
-  BoundryState boundryState;
+  BoundaryState boundaryState;
   CollisionStatus collisionStatus;
   Translation3d error;
   Integrator ballisticIntegrator;
 
   public BallisticProjectileState(
+      BallisticPrecomputer simulator,
       IntegratorResolution integratorResolution,
       Function<forceInput, Translation3d> forceFunction) {
     super(integratorResolution, forceFunction);
+    this.simulator = simulator;
   }
 
   public void launch(Translation3d position, Translation3d velocity, Rotation3d spin) {
     this.integrator.reset();
-
+    this.timeElapsed = 0;
+    this.collisionStatus = CollisionStatus.NA;
+    this.boundaryState = BoundaryState.IN_BOUNDS;
     this.position = position;
     this.velocity = velocity;
     this.spin = spin;
   }
 
-  public enum BoundryState {
+  public enum BoundaryState {
     OUT_OF_BOUNDS, // It left the bounds of the match
     IN_BOUNDS, // It remains in the bounds of the match
     FAIL // It entered rejected bounds or obstacle bounds
@@ -40,8 +44,8 @@ public class BallisticProjectileState extends VectorState {
     OBSTACLE // Ball collided with obstacle
   }
 
-  private BoundryState resolveBoundryState(BoundryState state) {
-    this.boundryState = state;
+  private BoundaryState resolveBoundaryState(BoundaryState state) {
+    this.boundaryState = state;
     return state;
   }
 
@@ -52,17 +56,17 @@ public class BallisticProjectileState extends VectorState {
 
   private boolean testOutOfBounds() {
     if (!this.simulator.fieldMetrics.fieldBounds().testPosition(position)) {
-      resolveBoundryState(BoundryState.OUT_OF_BOUNDS);
+      resolveBoundaryState(BoundaryState.OUT_OF_BOUNDS);
       resolveCollision(CollisionStatus.FAILURE);
       return true;
     }
     return false;
   }
 
-  private boolean testRejectedBoundries() {
+  private boolean testRejectedBoundaries() {
     for (Region3d region : this.simulator.fieldMetrics.rejectRegions()) {
       if (region.testPosition(position)) {
-        resolveBoundryState(BoundryState.OUT_OF_BOUNDS);
+        resolveBoundaryState(BoundaryState.OUT_OF_BOUNDS);
         resolveCollision(CollisionStatus.FAILURE);
         return true;
       }
@@ -72,7 +76,7 @@ public class BallisticProjectileState extends VectorState {
 
   private boolean testTarget() {
     if (this.simulator.fieldMetrics.targetRegion().testPosition(position)) {
-      resolveBoundryState(BoundryState.IN_BOUNDS);
+      resolveBoundaryState(BoundaryState.IN_BOUNDS);
       resolveCollision(CollisionStatus.TARGET);
       return true;
     }
@@ -82,7 +86,7 @@ public class BallisticProjectileState extends VectorState {
   private boolean testObstacles() {
     for (Region3d obstacle : this.simulator.fieldMetrics.obstacles()) {
       if (obstacle.testPosition(position)) {
-        resolveBoundryState(BoundryState.FAIL);
+        resolveBoundaryState(BoundaryState.FAIL);
         resolveCollision(CollisionStatus.OBSTACLE);
         return true;
       }
@@ -90,8 +94,8 @@ public class BallisticProjectileState extends VectorState {
     return false;
   }
 
-  public boolean testPosition() {
-    return this.testOutOfBounds() || this.testRejectedBoundries() || this.testObstacles() || !this.testTarget();
+  public boolean completedTrajectory() {
+    return !(this.testOutOfBounds() || this.testRejectedBoundaries() || this.testObstacles() || this.testTarget());
   }
 
 }

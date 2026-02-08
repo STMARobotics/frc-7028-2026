@@ -79,6 +79,8 @@ public class BallisticPrecomputer {
     this.environmentProfile = environmentProfile;
     this.fieldMetrics = fieldMetrics;
 
+    this.speedToSpin = speedToSpin;
+
     this.forceFunction = (forceInput projectileState) -> {
       Translation3d acceleration = Translation3d.kZero; // <0, 0, 0>
       Translation3d stateVel = projectileState.velocity();
@@ -86,7 +88,7 @@ public class BallisticPrecomputer {
 
       Translation3d spinAxis = new Translation3d(stateSpin.getAxis()).times(stateSpin.getAngle());
 
-      Translation3d unitDirection = stateVel.div(stateVel.getNorm());
+      Translation3d unitDirection = stateVel.div(Math.max(stateVel.getNorm(), 1e-4));
 
       double dynamicPressure = 0.5d * environmentProfile.airDensity * stateVel.getSquaredNorm();
 
@@ -104,7 +106,7 @@ public class BallisticPrecomputer {
 
     this.computeShotGuess = computeShotGuess;
 
-    this.projectileState = new BallisticProjectileState(integratorResolution, forceFunction);
+    this.projectileState = new BallisticProjectileState(this, integratorResolution, forceFunction);
   }
 
   private SimulationResult simulateBall(
@@ -115,14 +117,14 @@ public class BallisticPrecomputer {
         state.position.getX(),
         state.position.getY(),
         this.fieldMetrics.startingHeight());
-    Translation3d initialVelocity = new Translation3d(state.position.getX(), state.position.getY(), 0)
+    Translation3d initialVelocity = new Translation3d(state.velocity.getX(), state.velocity.getY(), 0)
         .plus(anglesToUnitVec(parameters.yaw, parameters.pitch).times(parameters.speed));
 
     // Launch the projectile
     simulatedProjectileState.launch(initialPosition, initialVelocity, this.speedToSpin.apply(parameters.speed()));
 
     // Actually step the projectile over time, and stop when it either collides or is out of bounds
-    while (simulatedProjectileState.testPosition()) {
+    while (simulatedProjectileState.completedTrajectory()) {
       simulatedProjectileState.step();
     }
 
@@ -132,12 +134,12 @@ public class BallisticPrecomputer {
 
     return new SimulationResult(
         errorDisplacement,
-        atan2(errorDisplacement2D.getY(), errorDisplacement.getX()),
+        atan2(errorDisplacement2D.getY(), errorDisplacement2D.getX()),
         errorDisplacement2D.getNorm(),
         errorDisplacement.getZ());
   }
 
-  private ShotParameters convergeSolution(
+  public ShotParameters convergeSolution(
       BallisticProjectileState simulatedProjectileState,
       RobotState state,
       ShotParameters parameters) {

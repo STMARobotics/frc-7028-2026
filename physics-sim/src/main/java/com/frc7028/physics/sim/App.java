@@ -9,12 +9,20 @@ import static edu.wpi.first.units.Units.Grams;
 import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.Rotation;
 
+import java.lang.reflect.Field;
+import java.util.function.Function;
+
 import com.frc7028.physics.sim.BallisticPrecomputer.RobotState;
 import com.frc7028.physics.sim.BallisticPrecomputer.ShotParameters;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.units.measure.Mass;
 
 public class App {
+  public BallisticPrecomputer precomputer;
+
+  public App(SimulatorResolution simulatorResolution, IntegratorResolution integratorResolution, BallisticEnvironmentProfile environmentProfile, FieldMetrics fieldMetrics, Function<Double, Rotation3d> speedToSpin, Function<RobotState, ShotParameters> computeGuessShot) {
+    this.precomputer = new BallisticPrecomputer(simulatorResolution, integratorResolution, environmentProfile, fieldMetrics, speedToSpin, computeGuessShot);
+  }
 
   public static void main(String[] args) {
 

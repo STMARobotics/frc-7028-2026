@@ -70,6 +70,9 @@ public class Integrator {
     this.vectorState = vectorState;
     this.integratorResolution = integratorResolution;
     this.forceFunction = forceFunction;
+
+    this.epsilon = integratorResolution.epsilon();
+    this.maxIterations = integratorResolution.maxIterations();
   }
 
   public void reset() {
@@ -89,7 +92,7 @@ public class Integrator {
 
     // sample each acceleration iteratively, with pre-determined future step scalars for each order
 
-    while (err > this.epsilon || iterations <= maxIterations) {
+    while (err > this.epsilon && iterations <= this.maxIterations) {
       Translation3d a1 = f(i).times(dt);
       Translation3d a2 = f(i.accelerate(a1, dt * C[0][0])).times(dt);
       Translation3d a3 = f(i.accelerate(a1, dt * C[1][0]).accelerate(a2, dt * C[1][1])).times(dt);
@@ -127,7 +130,7 @@ public class Integrator {
       iterations++;
     }
 
-    this.vectorState.dt = 0.84 * pow((epsilon / err), 0.25);
+    this.vectorState.dt = Math.clamp(1e-6, 0.84 * pow((epsilon / Math.max(err, 1e-4)), 0.25), 1e-2);
     this.vectorState.stepPosition();
   }
 }

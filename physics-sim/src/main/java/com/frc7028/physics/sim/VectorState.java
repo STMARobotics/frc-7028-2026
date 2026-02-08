@@ -9,9 +9,9 @@ import java.util.function.Function;
 public class VectorState {
 
   public Translation3d position;
-  Translation3d velocity;
-  Rotation3d spin;
-  Integrator integrator;
+  public Translation3d velocity;
+  public Rotation3d spin;
+  public Integrator integrator;
   double dt;
   double timeElapsed;
 

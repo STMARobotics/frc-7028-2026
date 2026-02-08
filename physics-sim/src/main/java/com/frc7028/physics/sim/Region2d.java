@@ -6,13 +6,22 @@ public class Region2d {
   Translation2d min;
   Translation2d max;
 
+  double minX;
+  double maxX;
+
+  double minY;
+  double maxY;
+
   public Region2d(Translation2d min, Translation2d max) {
-    this.min = min;
-    this.max = max;
+    this.minX = min.getX();
+    this.maxX = max.getX();
+    this.minY = min.getY();
+    this.maxY = max.getY();
   }
 
   public boolean testPosition(Translation2d position) {
-    Translation2d offset = position.minus(this.min);
-    return offset.getX() <= this.max.getX() && offset.getY() <= this.max.getY();
+    double X = position.getX();
+    double Y = position.getY();
+    return minX <= X && X <= maxX && minY <= Y && Y <= maxY;
   }
 }
