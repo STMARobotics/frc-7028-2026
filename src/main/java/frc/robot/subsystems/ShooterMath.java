@@ -6,11 +6,29 @@ final class ShooterMath {
   private ShooterMath() {
   }
 
+  /**
+   * Wraps any rotation value into a heading range of [0, 1) rotations.
+   *
+   * @param rotations input heading in rotations (continuous or wrapped)
+   * @return equivalent wrapped heading in [0, 1) rotations
+   */
   static double wrapToUnitRotation(double rotations) {
     double wrapped = MathUtil.inputModulus(rotations, 0.0, 1.0);
     return wrapped >= 1.0 ? 0.0 : wrapped;
   }
 
+  /**
+   * Selects the legal equivalent of a wrapped heading that requires the least turret motion.
+   *
+   * <p>The desired heading is treated as circular (desired + N turns), then the nearest equivalent
+   * within soft limits is chosen relative to current continuous position.
+   *
+   * @param wrappedDesiredRotation desired heading in [0, 1) rotations
+   * @param currentContinuousRotation current turret angle in continuous rotations
+   * @param minSoftLimitRotation reverse soft limit in continuous rotations
+   * @param maxSoftLimitRotation forward soft limit in continuous rotations
+   * @return continuous target rotation to command
+   */
   static double chooseYawShortestDistance(
       double wrappedDesiredRotation,
       double currentContinuousRotation,

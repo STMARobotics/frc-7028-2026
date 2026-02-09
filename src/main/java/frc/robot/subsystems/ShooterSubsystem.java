@@ -3,7 +3,6 @@ package frc.robot.subsystems;
 import static com.ctre.phoenix6.signals.FeedbackSensorSourceValue.FusedCANcoder;
 import static com.ctre.phoenix6.signals.NeutralModeValue.Brake;
 import static com.ctre.phoenix6.signals.NeutralModeValue.Coast;
-import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static edu.wpi.first.units.Units.Second;
@@ -145,18 +144,17 @@ public class ShooterSubsystem extends SubsystemBase {
   }
 
   private void configureYaw() {
-    var yawCanCoderConfig = new CANcoderConfiguration();
+    CANcoderConfiguration yawCanCoderConfig = new CANcoderConfiguration();
     yawCanCoderConfig.MagnetSensor.withMagnetOffset(YAW_MAGNETIC_OFFSET)
         .withSensorDirection(SensorDirectionValue.Clockwise_Positive);
     yawEncoder.getConfigurator().apply(yawCanCoderConfig);
 
-    var yawTalonConfig = new TalonFXConfiguration();
+    TalonFXConfiguration yawTalonConfig = new TalonFXConfiguration();
     yawTalonConfig.MotorOutput.withNeutralMode(Brake);
-    yawTalonConfig.ClosedLoopGeneral.ContinuousWrap = YAW_CONTINUOUS_WRAP;
 
-    yawTalonConfig.CurrentLimits.withSupplyCurrentLimit(YAW_SUPPLY_CURRENT_LIMIT.in(Amps))
+    yawTalonConfig.CurrentLimits.withSupplyCurrentLimit(YAW_SUPPLY_CURRENT_LIMIT)
         .withSupplyCurrentLimitEnable(true)
-        .withStatorCurrentLimit(YAW_STATOR_CURRENT_LIMIT.in(Amps))
+        .withStatorCurrentLimit(YAW_STATOR_CURRENT_LIMIT)
         .withStatorCurrentLimitEnable(true);
 
     yawTalonConfig.Feedback.withRotorToSensorRatio(YAW_ROTOR_TO_SENSOR_RATIO)
@@ -167,25 +165,25 @@ public class ShooterSubsystem extends SubsystemBase {
     yawTalonConfig.withMotionMagic(YAW_MOTION_MAGIC_CONFIGS);
 
     yawTalonConfig.SoftwareLimitSwitch.withForwardSoftLimitEnable(true)
-        .withForwardSoftLimitThreshold(YAW_SOFT_LIMIT_FORWARD.in(Rotations))
+        .withForwardSoftLimitThreshold(YAW_SOFT_LIMIT_FORWARD)
         .withReverseSoftLimitEnable(true)
-        .withReverseSoftLimitThreshold(YAW_SOFT_LIMIT_REVERSE.in(Rotations));
+        .withReverseSoftLimitThreshold(YAW_SOFT_LIMIT_REVERSE);
 
     yawMotor.getConfigurator().apply(yawTalonConfig);
   }
 
   private void configurePitch() {
-    var pitchCanCoderConfig = new CANcoderConfiguration();
+    CANcoderConfiguration pitchCanCoderConfig = new CANcoderConfiguration();
     pitchCanCoderConfig.MagnetSensor.withMagnetOffset(PITCH_MAGNETIC_OFFSET)
         .withSensorDirection(SensorDirectionValue.Clockwise_Positive);
     pitchEncoder.getConfigurator().apply(pitchCanCoderConfig);
 
-    var pitchTalonConfig = new TalonFXConfiguration();
+    TalonFXConfiguration pitchTalonConfig = new TalonFXConfiguration();
     pitchTalonConfig.MotorOutput.withNeutralMode(Brake);
 
-    pitchTalonConfig.CurrentLimits.withStatorCurrentLimit(PITCH_STATOR_CURRENT_LIMIT.in(Amps))
+    pitchTalonConfig.CurrentLimits.withStatorCurrentLimit(PITCH_STATOR_CURRENT_LIMIT)
         .withStatorCurrentLimitEnable(true)
-        .withSupplyCurrentLimit(PITCH_SUPPLY_CURRENT_LIMIT.in(Amps))
+        .withSupplyCurrentLimit(PITCH_SUPPLY_CURRENT_LIMIT)
         .withSupplyCurrentLimitEnable(true);
 
     pitchTalonConfig.Feedback.withRotorToSensorRatio(PITCH_ROTOR_TO_SENSOR_RATIO)
@@ -196,23 +194,22 @@ public class ShooterSubsystem extends SubsystemBase {
     pitchTalonConfig.withMotionMagic(PITCH_MOTION_MAGIC_CONFIGS);
 
     pitchTalonConfig.SoftwareLimitSwitch.withForwardSoftLimitEnable(true)
-        .withForwardSoftLimitThreshold(PITCH_SOFT_LIMIT_FORWARD.in(Rotations))
+        .withForwardSoftLimitThreshold(PITCH_SOFT_LIMIT_FORWARD)
         .withReverseSoftLimitEnable(true)
-        .withReverseSoftLimitThreshold(PITCH_SOFT_LIMIT_REVERSE.in(Rotations));
+        .withReverseSoftLimitThreshold(PITCH_SOFT_LIMIT_REVERSE);
 
     pitchMotor.getConfigurator().apply(pitchTalonConfig);
   }
 
   private void configureFlywheels() {
-    var flywheelConfig = new TalonFXConfiguration();
+    TalonFXConfiguration flywheelConfig = new TalonFXConfiguration();
     flywheelConfig.MotorOutput.withNeutralMode(Coast);
-    flywheelConfig.CurrentLimits.withStatorCurrentLimit(FLYWHEEL_STATOR_CURRENT_LIMIT.in(Amps))
+    flywheelConfig.CurrentLimits.withStatorCurrentLimit(FLYWHEEL_STATOR_CURRENT_LIMIT)
         .withStatorCurrentLimitEnable(true)
-        .withSupplyCurrentLimit(FLYWHEEL_SUPPLY_CURRENT_LIMIT.in(Amps))
+        .withSupplyCurrentLimit(FLYWHEEL_SUPPLY_CURRENT_LIMIT)
         .withSupplyCurrentLimitEnable(true);
     flywheelConfig.withSlot0(Slot0Configs.from(FLYWHEEL_SLOT_CONFIGS));
 
-    // Preserve existing behavior where one side is physically mirrored.
     flywheelConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
     flywheelLeaderMotor.getConfigurator().apply(flywheelConfig);
 
@@ -230,7 +227,6 @@ public class ShooterSubsystem extends SubsystemBase {
     flywheelVelocity.setUpdateFrequency(FLYWHEEL_STATUS_UPDATE_RATE_HZ);
     flywheelAcceleration.setUpdateFrequency(FLYWHEEL_STATUS_UPDATE_RATE_HZ);
 
-    // Keep bulk refresh and explicit frequencies so control loops consume consistent snapshots.
     yawMotor.optimizeBusUtilization();
     pitchMotor.optimizeBusUtilization();
     flywheelLeaderMotor.optimizeBusUtilization();
@@ -273,6 +269,14 @@ public class ShooterSubsystem extends SubsystemBase {
         .refreshAll(yawPosition, yawVelocity, pitchPosition, pitchVelocity, flywheelVelocity, flywheelAcceleration);
   }
 
+  /**
+   * Commands yaw to the nearest legal equivalent of the requested heading.
+   *
+   * <p>Input heading is treated as wrapped (0 to 1 rotation), but the commanded target remains
+   * continuous so the turret can use multiple turns while obeying soft limits.
+   *
+   * @param targetYaw requested wrapped heading
+   */
   public void setYawAngle(Angle targetYaw) {
     double currentRot = BaseStatusSignal.getLatencyCompensatedValue(yawPosition, yawVelocity).in(Rotations);
     double wrappedDesiredRot = ShooterMath.wrapToUnitRotation(targetYaw.in(Rotations));
@@ -285,6 +289,11 @@ public class ShooterSubsystem extends SubsystemBase {
     yawMotor.setControl(yawPositionRequest.withPosition(targetRot));
   }
 
+  /**
+   * Commands pitch angle clamped to configured software limits.
+   *
+   * @param targetPitch requested pitch angle
+   */
   public void setPitchAngle(Angle targetPitch) {
     double targetRot = MathUtil.clamp(
         targetPitch.in(Rotations),
@@ -294,6 +303,13 @@ public class ShooterSubsystem extends SubsystemBase {
     pitchMotor.setControl(pitchPositionRequest.withPosition(targetRot));
   }
 
+  /**
+   * Commands flywheel speed on the leader motor, clamped to legal range.
+   *
+   * <p>The follower motor is configured once in follower mode and is not directly commanded here.
+   *
+   * @param targetSpeed desired flywheel speed
+   */
   public void setFlywheelSpeed(AngularVelocity targetSpeed) {
     double targetSpeedRps = MathUtil
         .clamp(targetSpeed.in(RotationsPerSecond), 0.0, FLYWHEEL_MAX_SPEED.in(RotationsPerSecond));
@@ -301,7 +317,11 @@ public class ShooterSubsystem extends SubsystemBase {
     flywheelLeaderMotor.setControl(flywheelVelocityRequest.withVelocity(targetSpeedRps));
   }
 
-  /** Applies a precomputed shooter setpoint bundle. */
+  /**
+   * Applies yaw, pitch, and flywheel setpoints as a single command bundle.
+   *
+   * @param target grouped shooter setpoints
+   */
   public void applySetpoints(ShooterTarget target) {
     setYawAngle(target.targetYaw());
     setPitchAngle(target.targetPitch());
@@ -364,6 +384,7 @@ public class ShooterSubsystem extends SubsystemBase {
     return BaseStatusSignal.getLatencyCompensatedValue(flywheelVelocity, flywheelAcceleration);
   }
 
+  /** Returns whether current yaw is within tolerance of the active yaw request. */
   public boolean isYawAtSetpoint() {
     Angle currentYaw = BaseStatusSignal.getLatencyCompensatedValue(yawPosition, yawVelocity);
     return currentYaw.isNear(Rotations.of(yawPositionRequest.Position), YAW_POSITION_TOLERANCE);
@@ -379,6 +400,7 @@ public class ShooterSubsystem extends SubsystemBase {
     return currentSpeed.isNear(RotationsPerSecond.of(flywheelVelocityRequest.Velocity), FLYWHEEL_VELOCITY_TOLERANCE);
   }
 
+  /** Returns a single-cycle readiness snapshot without any internal debouncing/filtering. */
   @Logged(name = "Shooter Ready Snapshot")
   public boolean isReadyToShoot() {
     return isYawAtSetpoint() && isPitchAtSetpoint() && isFlywheelAtSpeed();
