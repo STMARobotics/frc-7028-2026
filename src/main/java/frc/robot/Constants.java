@@ -125,7 +125,6 @@ public final class Constants {
 
     public static final Angle YAW_SOFT_LIMIT_FORWARD = Rotations.of(0.5); // placeholder (~180deg)
     public static final Angle YAW_SOFT_LIMIT_REVERSE = Rotations.of(-0.5); // placeholder
-    public static final Boolean YAW_CONTINUOUS_WRAP = false; // false?
     public static final Angle YAW_HOME_ANGLE = Rotations.of(0.0); // placeholder
     public static final Angle YAW_POSITION_TOLERANCE = Rotations.of(0.01); // placeholder (~3.6deg)
     public static final Angle PITCH_SOFT_LIMIT_FORWARD = Rotations.of(0.2); // placeholder

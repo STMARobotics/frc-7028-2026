@@ -20,7 +20,8 @@ final class ShooterMath {
   /**
    * Selects the legal equivalent of a wrapped heading that requires the least turret motion.
    *
-   * <p>The desired heading is treated as circular (desired + N turns), then the nearest equivalent
+   * <p>
+   * The desired heading is treated as circular (desired + N turns), then the nearest equivalent
    * within soft limits is chosen relative to current continuous position.
    *
    * @param wrappedDesiredRotation desired heading in [0, 1) rotations

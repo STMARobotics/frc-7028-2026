@@ -31,7 +31,6 @@ import static frc.robot.Constants.ShooterConstants.PITCH_SOFT_LIMIT_REVERSE;
 import static frc.robot.Constants.ShooterConstants.PITCH_STATOR_CURRENT_LIMIT;
 import static frc.robot.Constants.ShooterConstants.PITCH_STATUS_UPDATE_RATE_HZ;
 import static frc.robot.Constants.ShooterConstants.PITCH_SUPPLY_CURRENT_LIMIT;
-import static frc.robot.Constants.ShooterConstants.YAW_CONTINUOUS_WRAP;
 import static frc.robot.Constants.ShooterConstants.YAW_ENCODER_ID;
 import static frc.robot.Constants.ShooterConstants.YAW_HOME_ANGLE;
 import static frc.robot.Constants.ShooterConstants.YAW_MAGNETIC_OFFSET;
@@ -272,7 +271,8 @@ public class ShooterSubsystem extends SubsystemBase {
   /**
    * Commands yaw to the nearest legal equivalent of the requested heading.
    *
-   * <p>Input heading is treated as wrapped (0 to 1 rotation), but the commanded target remains
+   * <p>
+   * Input heading is treated as wrapped (0 to 1 rotation), but the commanded target remains
    * continuous so the turret can use multiple turns while obeying soft limits.
    *
    * @param targetYaw requested wrapped heading
@@ -306,7 +306,8 @@ public class ShooterSubsystem extends SubsystemBase {
   /**
    * Commands flywheel speed on the leader motor, clamped to legal range.
    *
-   * <p>The follower motor is configured once in follower mode and is not directly commanded here.
+   * <p>
+   * The follower motor is configured once in follower mode and is not directly commanded here.
    *
    * @param targetSpeed desired flywheel speed
    */
