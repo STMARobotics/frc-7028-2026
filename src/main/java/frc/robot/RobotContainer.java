@@ -29,9 +29,12 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import frc.robot.Constants.OdometryConstants;
 import frc.robot.Constants.QuestNavConstants;
+import frc.robot.Constants.ShootingConstants;
+import frc.robot.Constants.TeleopDriveConstants;
 import frc.robot.commands.ClimbToL1Command;
 import frc.robot.commands.DeployIntakeCommand;
 import frc.robot.commands.IntakeCommand;
+import frc.robot.commands.TeleopShootCommand;
 import frc.robot.commands.led.DefaultLEDCommand;
 import frc.robot.commands.led.LEDBootAnimationCommand;
 import frc.robot.controls.ControlBindings;
@@ -43,6 +46,7 @@ import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.IntakeSubsytem;
 import frc.robot.subsystems.LEDSubsystem;
 import frc.robot.subsystems.LocalizationSubsystem;
+import frc.robot.subsystems.ShooterSubsystem;
 import frc.robot.subsystems.SpindexerSubsystem;
 import frc.robot.subsystems.TransferSubsystem;
 
@@ -83,6 +87,8 @@ public class RobotContainer {
   private final ClimbSubsystem climbSubsystem = new ClimbSubsystem();
   @Logged
   private final IntakeSubsytem intakeSubsystem = new IntakeSubsytem();
+  @Logged
+  private final ShooterSubsystem shooterSubsystem = new ShooterSubsystem();
   private final LEDSubsystem ledSubsystem = new LEDSubsystem();
 
   /* Path follower */
@@ -134,6 +140,23 @@ public class RobotContainer {
       localizationSubsystem.setQuestNavPose(robotNewPose);
       drivetrain.resetPose(robotNewPose);
     })));
+
+    controlBindings.shoot()
+        .ifPresent(
+            trigger -> trigger.whileTrue(
+                new TeleopShootCommand(
+                    drivetrain,
+                    shooterSubsystem,
+                    transferSubsystem,
+                    spindexerSubsystem,
+                    ledSubsystem,
+                    controlBindings.translationX(),
+                    controlBindings.translationY(),
+                    () -> drivetrain.getState().Pose,
+                    ShootingConstants.TARGET_RED,
+                    ShootingConstants.TARGET_BLUE,
+                    ShootingConstants.SHOOTER_TARGETS_BY_DISTANCE_METERS,
+                    TeleopDriveConstants.SHOOT_VELOCITY_MULTIPLIER)));
 
     // Idle while the robot is disabled. This ensures the configured
     // neutral mode is applied to the drive motors while disabled.

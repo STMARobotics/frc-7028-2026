@@ -97,7 +97,7 @@ public class TeleopShootCommand extends Command {
     var alliance = DriverStation.getAlliance();
     targetTranslation = (alliance.isEmpty() || alliance.get() == Blue) ? targetBlue : targetRed;
     ledSubsystem.off();
-    spindexerSubsystem.feedShooter();
+    transferSubsystem.unjam();
   }
 
   @Override
@@ -184,12 +184,15 @@ public class TeleopShootCommand extends Command {
     var isYawReady = shooterSubsystem.isYawAtSetpoint();
     if (isShooterReady && isPitchReady && isYawReady && isDrivetrainReady) {
       // Shooter is spun up, robot is slowed, and the turret is aimed - shoot and start timer
+      spindexerSubsystem.feedShooter();
       transferSubsystem.feedShooter();
       ledSubsystem.runPattern(LEDPattern.solid(kGreen));
     } else {
       ledSubsystem.runPattern(
           LEDSubsystem
               .ledSegments(kBlue, () -> isShooterReady, () -> isPitchReady, () -> isYawReady, () -> isDrivetrainReady));
+      spindexerSubsystem.stop();
+      transferSubsystem.stop();
     }
   }
 

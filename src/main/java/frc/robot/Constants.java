@@ -81,6 +81,7 @@ public final class Constants {
     public static final LinearVelocity MAX_TELEOP_VELOCITY = TunerConstants.kSpeedAt12Volts;
     /** Max angular velicity the driver can request */
     public static final AngularVelocity MAX_TELEOP_ANGULAR_VELOCITY = RotationsPerSecond.of(1.25);
+    public static final double SHOOT_VELOCITY_MULTIPLIER = 0.5;
   }
 
   /**
@@ -358,5 +359,11 @@ public final class Constants {
     public static final InterpolatingTreeMap<Double, ShooterSubsystem.ShooterTarget> SHOOTER_TARGETS_BY_DISTANCE_METERS = createShooterInterpolator();
     /** A constant used applied to estimate the fuel's time of flight */
     public static final double FLYWHEEL_TO_FUEL_VELOCITY_MULTIPLIER = 4;
+
+    /** Translation of the hub on the blue side */
+    public static final Translation2d TARGET_BLUE = new Translation2d(Inches.of(182), Inches.of(158.8125));
+
+    /** Translation of the hub on the red side */
+    public static final Translation2d TARGET_RED = new Translation2d(Inches.of(433.25), Inches.of(158.8125));
   }
 }

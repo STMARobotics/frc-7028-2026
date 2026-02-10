@@ -59,4 +59,9 @@ public class XBoxControlBindings extends ControlBindings {
     return Optional.of(driverController.start());
   }
 
+  @Override
+  public Optional<Trigger> shoot() {
+    return Optional.of(driverController.rightTrigger());
+  }
+
 }

@@ -54,4 +54,8 @@ public abstract class ControlBindings {
     return Optional.empty();
   }
 
+  public Optional<Trigger> shoot() {
+    return Optional.empty();
+  }
+
 }
