@@ -3,6 +3,7 @@ package frc.robot;
 import static edu.wpi.first.math.util.Units.degreesToRadians;
 import static edu.wpi.first.math.util.Units.inchesToMeters;
 import static edu.wpi.first.units.Units.Amps;
+import static edu.wpi.first.units.Units.DegreesPerSecond;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.Rotations;
@@ -118,7 +119,20 @@ public class Constants {
     public static final double APRILTAG_STD_DEVS = 0.1;
     public static final double QUESTNAV_ACTIVE_APRILTAG_STD_DEVS = 1.5;
 
+    /** The max average distance for AprilTag measurements to be considered valid */
     public static final Distance TAG_DISTANCE_THRESHOLD = Meters.of(3.5);
+
+    /** The max distance from the starting pose for AprilTag measurements to be considered valid */
+    public static final Distance STARTING_DISTANCE_THRESHOLD = Meters.of(3.0);
+
+    /** The robot angular velocity threshold for accepting vision measurements */
+    public static final AngularVelocity ANGULAR_VELOCITY_THRESHOLD = DegreesPerSecond.of(720);
+
+    /**
+     * The threshold for the error between the best AprilTag pose estimate and the QuestNav pose measurements for the
+     * QuestNav pose to be considered valid
+     */
+    public static final Distance QUESTNAV_APRILTAG_ERROR_THRESHOLD = Meters.of(0.5);
   }
 
   public static class IntakeConstants {

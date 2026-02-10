@@ -397,22 +397,22 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
   }
 
   /**
-   * Gets the current yaw angle of the drivetrain, latency-compensated using the yaw and yaw velocity signals.
+   * Gets the current yaw angle of the drivetrain from the IMU (not from the pose estimator).
    *
-   * @return The current yaw angle as an {@link Angle}.
+   * @return current yaw angle
    */
-  public Angle getYawData() {
+  public Angle getIMUYaw() {
     BaseStatusSignal.refreshAll(yaw, yawVelocity);
     return BaseStatusSignal.getLatencyCompensatedValue(yaw, yawVelocity);
   }
 
   /**
-   * Gets the angular velocity of the drivetrain in radians per second.
+   * Gets the yaw angular velocity of the drivetrain from the IMU (not from the pose estimator).
    *
-   * @return The drivetrain's angular velocity as an {@link AngularVelocity}.
+   * @return current yaw angular velocity
    */
-  public AngularVelocity getDrivetrainAngularVelocity() {
-    return RadiansPerSecond.of(this.getState().Speeds.omegaRadiansPerSecond);
+  public AngularVelocity getIMUYawVelocity() {
+    return yawVelocity.refresh().getValue();
   }
 
 }
