@@ -9,7 +9,6 @@ import static edu.wpi.first.units.Units.RotationsPerSecond;
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.SlotConfigs;
-import com.ctre.phoenix6.signals.GravityTypeValue;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Rotation3d;
@@ -105,11 +104,6 @@ public final class Constants {
     public static final int FLYWHEEL_LEADER_MOTOR_ID = 27;
     public static final int FLYWHEEL_FOLLOWER_MOTOR_ID = 28;
 
-    public static final int YAW_STATUS_UPDATE_RATE_HZ = 50; // 50 hz is typical for periodic() and execute() loops, so
-                                                            // >50 is wasted can traffic
-    public static final int PITCH_STATUS_UPDATE_RATE_HZ = 50;
-    public static final int FLYWHEEL_STATUS_UPDATE_RATE_HZ = 50;
-
     public static final Current YAW_STATOR_CURRENT_LIMIT = Amps.of(100);
     public static final Current YAW_SUPPLY_CURRENT_LIMIT = Amps.of(40);
     public static final Current PITCH_STATOR_CURRENT_LIMIT = Amps.of(40);
@@ -154,11 +148,7 @@ public final class Constants {
     public static final SlotConfigs PITCH_SLOT_CONFIGS = new SlotConfigs().withKP(0.0)
         .withKI(0.0)
         .withKD(0.0)
-        .withKS(0.0)
-        .withKV(0.0)
-        .withKA(0.0)
-        .withKG(0.0)
-        .withGravityType(GravityTypeValue.Elevator_Static);
+        .withKS(0.0);
 
     public static final MotionMagicConfigs PITCH_MOTION_MAGIC_CONFIGS = new MotionMagicConfigs()
         .withMotionMagicAcceleration(1.0) // placeholder

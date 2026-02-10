@@ -15,7 +15,6 @@ import static frc.robot.Constants.ShooterConstants.FLYWHEEL_LEADER_MOTOR_ID;
 import static frc.robot.Constants.ShooterConstants.FLYWHEEL_MAX_SPEED;
 import static frc.robot.Constants.ShooterConstants.FLYWHEEL_SLOT_CONFIGS;
 import static frc.robot.Constants.ShooterConstants.FLYWHEEL_STATOR_CURRENT_LIMIT;
-import static frc.robot.Constants.ShooterConstants.FLYWHEEL_STATUS_UPDATE_RATE_HZ;
 import static frc.robot.Constants.ShooterConstants.FLYWHEEL_SUPPLY_CURRENT_LIMIT;
 import static frc.robot.Constants.ShooterConstants.FLYWHEEL_VELOCITY_TOLERANCE;
 import static frc.robot.Constants.ShooterConstants.PITCH_ENCODER_ID;
@@ -29,7 +28,6 @@ import static frc.robot.Constants.ShooterConstants.PITCH_SLOT_CONFIGS;
 import static frc.robot.Constants.ShooterConstants.PITCH_SOFT_LIMIT_FORWARD;
 import static frc.robot.Constants.ShooterConstants.PITCH_SOFT_LIMIT_REVERSE;
 import static frc.robot.Constants.ShooterConstants.PITCH_STATOR_CURRENT_LIMIT;
-import static frc.robot.Constants.ShooterConstants.PITCH_STATUS_UPDATE_RATE_HZ;
 import static frc.robot.Constants.ShooterConstants.PITCH_SUPPLY_CURRENT_LIMIT;
 import static frc.robot.Constants.ShooterConstants.YAW_ENCODER_ID;
 import static frc.robot.Constants.ShooterConstants.YAW_HOME_ANGLE;
@@ -42,7 +40,6 @@ import static frc.robot.Constants.ShooterConstants.YAW_SLOT_CONFIGS;
 import static frc.robot.Constants.ShooterConstants.YAW_SOFT_LIMIT_FORWARD;
 import static frc.robot.Constants.ShooterConstants.YAW_SOFT_LIMIT_REVERSE;
 import static frc.robot.Constants.ShooterConstants.YAW_STATOR_CURRENT_LIMIT;
-import static frc.robot.Constants.ShooterConstants.YAW_STATUS_UPDATE_RATE_HZ;
 import static frc.robot.Constants.ShooterConstants.YAW_SUPPLY_CURRENT_LIMIT;
 
 import com.ctre.phoenix6.BaseStatusSignal;
@@ -67,6 +64,7 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularAcceleration;
 import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.MutAngle;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
@@ -99,6 +97,7 @@ public class ShooterSubsystem extends SubsystemBase {
   private final StatusSignal<AngularVelocity> pitchVelocity = pitchMotor.getVelocity();
   private final StatusSignal<AngularVelocity> flywheelVelocity = flywheelLeaderMotor.getVelocity();
   private final StatusSignal<AngularAcceleration> flywheelAcceleration = flywheelLeaderMotor.getAcceleration();
+  private final MutAngle yawWrappedAngle = Rotations.mutable(0);
 
   // SysId routines
   private final SysIdRoutine yawSysIdRoutine = new SysIdRoutine(
@@ -138,7 +137,7 @@ public class ShooterSubsystem extends SubsystemBase {
   public ShooterSubsystem() {
     configureYaw();
     configurePitch();
-    configureFlywheels();
+    configureFlywheel();
     configureStatusSignals();
   }
 
@@ -200,7 +199,7 @@ public class ShooterSubsystem extends SubsystemBase {
     pitchMotor.getConfigurator().apply(pitchTalonConfig);
   }
 
-  private void configureFlywheels() {
+  private void configureFlywheel() {
     TalonFXConfiguration flywheelConfig = new TalonFXConfiguration();
     flywheelConfig.MotorOutput.withNeutralMode(Coast);
     flywheelConfig.CurrentLimits.withStatorCurrentLimit(FLYWHEEL_STATOR_CURRENT_LIMIT)
@@ -219,13 +218,6 @@ public class ShooterSubsystem extends SubsystemBase {
   }
 
   private void configureStatusSignals() {
-    yawPosition.setUpdateFrequency(YAW_STATUS_UPDATE_RATE_HZ);
-    yawVelocity.setUpdateFrequency(YAW_STATUS_UPDATE_RATE_HZ);
-    pitchPosition.setUpdateFrequency(PITCH_STATUS_UPDATE_RATE_HZ);
-    pitchVelocity.setUpdateFrequency(PITCH_STATUS_UPDATE_RATE_HZ);
-    flywheelVelocity.setUpdateFrequency(FLYWHEEL_STATUS_UPDATE_RATE_HZ);
-    flywheelAcceleration.setUpdateFrequency(FLYWHEEL_STATUS_UPDATE_RATE_HZ);
-
     yawMotor.optimizeBusUtilization();
     pitchMotor.optimizeBusUtilization();
     flywheelLeaderMotor.optimizeBusUtilization();
@@ -279,8 +271,8 @@ public class ShooterSubsystem extends SubsystemBase {
    */
   public void setYawAngle(Angle targetYaw) {
     double currentRot = BaseStatusSignal.getLatencyCompensatedValue(yawPosition, yawVelocity).in(Rotations);
-    double wrappedDesiredRot = ShooterMath.wrapToUnitRotation(targetYaw.in(Rotations));
-    double targetRot = ShooterMath.chooseYawShortestDistance(
+    double wrappedDesiredRot = wrapToUnitRotation(targetYaw.in(Rotations));
+    double targetRot = chooseYawShortestDistance(
         wrappedDesiredRot,
           currentRot,
           YAW_SOFT_LIMIT_REVERSE.in(Rotations),
@@ -333,17 +325,7 @@ public class ShooterSubsystem extends SubsystemBase {
   public void stow() {
     setYawAngle(YAW_HOME_ANGLE);
     setPitchAngle(PITCH_HOME_ANGLE);
-    idleFlywheel();
-  }
-
-  private void idleFlywheel() {
-    AngularVelocity currentSpeed = BaseStatusSignal.getLatencyCompensatedValue(flywheelVelocity, flywheelAcceleration);
-    if (currentSpeed.gt(FLYWHEEL_IDLE_SPEED)) {
-      flywheelLeaderMotor.setControl(flywheelNeutral);
-      return;
-    }
-
-    setFlywheelSpeed(FLYWHEEL_IDLE_SPEED);
+    flywheelLeaderMotor.setControl(flywheelNeutral);
   }
 
   public void stopYaw() {
@@ -367,7 +349,7 @@ public class ShooterSubsystem extends SubsystemBase {
   @Logged(name = "Turret Yaw Angle")
   public Angle getYawAngle() {
     double rot = BaseStatusSignal.getLatencyCompensatedValue(yawPosition, yawVelocity).in(Rotations);
-    return Rotations.of(ShooterMath.wrapToUnitRotation(rot));
+    return yawWrappedAngle.mut_replace(wrapToUnitRotation(rot), Rotations);
   }
 
   @Logged(name = "Turret Yaw Continuous Angle")
@@ -405,6 +387,59 @@ public class ShooterSubsystem extends SubsystemBase {
   @Logged(name = "Shooter Ready Snapshot")
   public boolean isReadyToShoot() {
     return isYawAtSetpoint() && isPitchAtSetpoint() && isFlywheelAtSpeed();
+  }
+
+  /**
+   * Wraps any rotation value into a heading range of [-0.5, 0.5) rotations.
+   *
+   * @param rotations input heading in rotations (continuous or wrapped)
+   * @return equivalent wrapped heading in [-0.5, 0.5) rotations
+   */
+  static double wrapToUnitRotation(double rotations) {
+    double wrapped = MathUtil.inputModulus(rotations, -0.5, 0.5);
+    return wrapped >= 0.5 ? -0.5 : wrapped;
+  }
+
+  /**
+   * Selects the legal equivalent of a wrapped heading that requires the least turret motion.
+   *
+   * <p>
+   * The desired heading is treated as circular (desired + N turns), then the nearest equivalent
+   * within soft limits is chosen relative to current continuous position.
+   *
+   * @param wrappedDesiredRotation desired heading in rotations (wrapped or continuous)
+   * @param currentContinuousRotation current turret angle in continuous rotations
+   * @param minSoftLimitRotation reverse soft limit in continuous rotations
+   * @param maxSoftLimitRotation forward soft limit in continuous rotations
+   * @return continuous target rotation to command
+   */
+  static double chooseYawShortestDistance(
+      double wrappedDesiredRotation,
+      double currentContinuousRotation,
+      double minSoftLimitRotation,
+      double maxSoftLimitRotation) {
+    double normalizedDesired = wrapToUnitRotation(wrappedDesiredRotation);
+    int minEquivalentIndex = (int) Math.floor(minSoftLimitRotation - normalizedDesired);
+    int maxEquivalentIndex = (int) Math.ceil(maxSoftLimitRotation - normalizedDesired);
+    int nearestEquivalentIndex = (int) Math.rint(currentContinuousRotation - normalizedDesired);
+    double bestCandidate = MathUtil
+        .clamp(normalizedDesired + nearestEquivalentIndex, minSoftLimitRotation, maxSoftLimitRotation);
+    double bestDistance = Double.POSITIVE_INFINITY;
+
+    // Turret range is < 2 turns, so this scan has at most three legal equivalent candidates.
+    for (int equivalentIndex = minEquivalentIndex; equivalentIndex <= maxEquivalentIndex; equivalentIndex++) {
+      double candidateRotation = normalizedDesired + equivalentIndex;
+      if (candidateRotation < minSoftLimitRotation || candidateRotation > maxSoftLimitRotation) {
+        continue;
+      }
+
+      double distance = Math.abs(candidateRotation - currentContinuousRotation);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        bestCandidate = candidateRotation;
+      }
+    }
+    return bestCandidate;
   }
 
   /**
