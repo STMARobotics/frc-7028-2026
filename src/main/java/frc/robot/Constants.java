@@ -3,6 +3,7 @@ package frc.robot;
 import static edu.wpi.first.math.util.Units.degreesToRadians;
 import static edu.wpi.first.math.util.Units.inchesToMeters;
 import static edu.wpi.first.units.Units.Amps;
+import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.Rotations;
@@ -20,6 +21,8 @@ import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.math.interpolation.InterpolatingTreeMap;
+import edu.wpi.first.math.interpolation.InverseInterpolator;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.units.measure.Angle;
@@ -30,6 +33,8 @@ import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.units.measure.Voltage;
 import frc.robot.generated.TunerConstants;
+import frc.robot.subsystems.ShooterSubsystem;
+import frc.robot.subsystems.ShooterSubsystem.ShooterTarget;
 
 public final class Constants {
 
@@ -75,6 +80,20 @@ public final class Constants {
     public static final LinearVelocity MAX_TELEOP_VELOCITY = TunerConstants.kSpeedAt12Volts;
     /** Max angular velicity the driver can request */
     public static final AngularVelocity MAX_TELEOP_ANGULAR_VELOCITY = RotationsPerSecond.of(1.25);
+  }
+
+  /**
+   * Constants for autonomous driving
+   */
+  public static class AutoDriveConstants {
+
+    public static final double THETA_kP = 4.0;
+    public static final double THETA_kI = 0.001;
+    public static final double THETA_kD = 0.0;
+
+    public static final double TRANSLATION_kP = 5.0;
+    public static final double TRANSLATION_kI = 0.0;
+    public static final double TRANSLATION_kD = 0.0;
   }
 
   /**
@@ -306,5 +325,24 @@ public final class Constants {
         .withKS(0.0)
         .withKV(0.0)
         .withKA(0.0);
+
+    public static final Translation2d ROBOT_TO_SHOOTER = new Translation2d(Inches.of(-5.508), Inches.zero());
+    // Distance from turret center to where the fuel launches
+    public static final Distance MUZZLE_RADIUS = Inches.of(8);
+  }
+
+  public static class ShootingConstants {
+    public static final Angle AIM_TOLERANCE = Degrees.of(1.5);
+
+    private static InterpolatingTreeMap<Double, ShooterSubsystem.ShooterTarget> createShooterInterpolator() {
+      var map = new InterpolatingTreeMap<>(InverseInterpolator.forDouble(), ShooterTarget::interpolate);
+      // TODO: Populate with real data
+      map.put(1.0, new ShooterTarget(Rotations.zero(), Rotations.zero(), RotationsPerSecond.zero()));
+      return map;
+    }
+
+    public static final InterpolatingTreeMap<Double, ShooterSubsystem.ShooterTarget> SHOOTER_TARGETS_BY_DISTANCE_METERS = createShooterInterpolator();
+    /** A constant used applied to estimate the fuel's time of flight */
+    public static final double FLYWHEEL_TO_FUEL_VELOCITY_MULTIPLIER = 4;
   }
 }

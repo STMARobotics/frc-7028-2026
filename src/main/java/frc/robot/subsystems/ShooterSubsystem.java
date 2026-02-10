@@ -3,6 +3,8 @@ package frc.robot.subsystems;
 import static com.ctre.phoenix6.signals.FeedbackSensorSourceValue.FusedCANcoder;
 import static com.ctre.phoenix6.signals.NeutralModeValue.Brake;
 import static com.ctre.phoenix6.signals.NeutralModeValue.Coast;
+import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static edu.wpi.first.units.Units.Second;
@@ -18,6 +20,7 @@ import static frc.robot.Constants.ShooterConstants.FLYWHEEL_STATOR_CURRENT_LIMIT
 import static frc.robot.Constants.ShooterConstants.FLYWHEEL_STATUS_UPDATE_RATE_HZ;
 import static frc.robot.Constants.ShooterConstants.FLYWHEEL_SUPPLY_CURRENT_LIMIT;
 import static frc.robot.Constants.ShooterConstants.FLYWHEEL_VELOCITY_TOLERANCE;
+import static frc.robot.Constants.ShooterConstants.MUZZLE_RADIUS;
 import static frc.robot.Constants.ShooterConstants.PITCH_ENCODER_ID;
 import static frc.robot.Constants.ShooterConstants.PITCH_HOME_ANGLE;
 import static frc.robot.Constants.ShooterConstants.PITCH_MAGNETIC_OFFSET;
@@ -31,6 +34,7 @@ import static frc.robot.Constants.ShooterConstants.PITCH_SOFT_LIMIT_REVERSE;
 import static frc.robot.Constants.ShooterConstants.PITCH_STATOR_CURRENT_LIMIT;
 import static frc.robot.Constants.ShooterConstants.PITCH_STATUS_UPDATE_RATE_HZ;
 import static frc.robot.Constants.ShooterConstants.PITCH_SUPPLY_CURRENT_LIMIT;
+import static frc.robot.Constants.ShooterConstants.ROBOT_TO_SHOOTER;
 import static frc.robot.Constants.ShooterConstants.YAW_ENCODER_ID;
 import static frc.robot.Constants.ShooterConstants.YAW_HOME_ANGLE;
 import static frc.robot.Constants.ShooterConstants.YAW_MAGNETIC_OFFSET;
@@ -64,6 +68,9 @@ import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularAcceleration;
 import edu.wpi.first.units.measure.AngularVelocity;
@@ -375,6 +382,15 @@ public class ShooterSubsystem extends SubsystemBase {
     return BaseStatusSignal.getLatencyCompensatedValue(yawPosition, yawVelocity);
   }
 
+  /**
+   * Gets the shooter's yaw angular velocity.
+   * 
+   * @return yaw angular velocity
+   */
+  public AngularVelocity getYawVelocity() {
+    return yawVelocity.getValue();
+  }
+
   @Logged(name = "Turret Pitch Angle")
   public Angle getPitchAngle() {
     return BaseStatusSignal.getLatencyCompensatedValue(pitchPosition, pitchVelocity);
@@ -408,6 +424,30 @@ public class ShooterSubsystem extends SubsystemBase {
   }
 
   /**
+   * Gets the translation of the turret center in field coordinates.
+   * 
+   * @param robotPose the current pose of the robot
+   * @return the translation of the turret center in field coordinates
+   */
+  public static Translation2d getShooterTranslation(Pose2d robotPose) {
+    return robotPose.getTranslation().plus(ROBOT_TO_SHOOTER.rotateBy(robotPose.getRotation()));
+  }
+
+  /**
+   * Gets the translation of the muzzle in field coordinates.
+   * 
+   * @param robotPose the current pose of the robot
+   * @param turretYaw the current yaw angle of the turret relative to the robot
+   * @return the translation of the muzzle in field coordinates
+   */
+  public static Translation2d getMuzzleTranslation(Pose2d robotPose, Angle turretYaw) {
+    var turretCenter = getShooterTranslation(robotPose);
+    var turretFieldRotation = robotPose.getRotation().plus(Rotation2d.fromRotations(turretYaw.in(Rotations)));
+    var turretToMuzzle = new Translation2d(MUZZLE_RADIUS.in(Meters), turretFieldRotation);
+    return turretCenter.plus(turretToMuzzle);
+  }
+
+  /**
    * Input target bundle for the shooter subsystem.
    * `targetYaw` is expected as a wrapped heading in [0, 1) rotations.
    */
@@ -422,6 +462,25 @@ public class ShooterSubsystem extends SubsystemBase {
       if (targetFlywheelSpeed == null) {
         targetFlywheelSpeed = FLYWHEEL_IDLE_SPEED;
       }
+    }
+
+    /**
+     * Interpolates between this and another ShootingSettings.
+     *
+     * @param endValue the end value
+     * @param t the interpolation parameter [0, 1]
+     * @return interpolated ShootingSettings
+     */
+    public ShooterTarget interpolate(ShooterTarget endValue, double t) {
+      ShooterTarget result = new ShooterTarget(
+          Rotations.of(MathUtil.interpolate(targetYaw.in(Rotations), endValue.targetYaw.in(Rotations), t)),
+          Radians.of(MathUtil.interpolate(targetPitch.in(Radians), endValue.targetPitch.in(Radians), t)),
+          RotationsPerSecond.of(
+              MathUtil.interpolate(
+                  targetFlywheelSpeed.in(RotationsPerSecond),
+                    endValue.targetFlywheelSpeed.in(RotationsPerSecond),
+                    t)));
+      return result;
     }
   }
 }
