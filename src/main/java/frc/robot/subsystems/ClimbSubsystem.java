@@ -15,6 +15,7 @@ import static frc.robot.Constants.ClimbConstants.DEVICE_ID_CLIMB_LEADER_MOTOR;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.CANdiConfiguration;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
+import com.ctre.phoenix6.configs.DigitalInputsConfigs;
 import com.ctre.phoenix6.configs.HardwareLimitSwitchConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.Follower;
@@ -27,62 +28,60 @@ import com.ctre.phoenix6.signals.S2CloseStateValue;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
+/**
+ * subsystem for the climb
+ */
 @Logged(strategy = Logged.Strategy.OPT_IN)
 public class ClimbSubsystem extends SubsystemBase {
-  /*
-   * climb motor 1 = #30
-   * climb motor 2 = #31
-   * CANdi #30 S1 forward, S2 reverse
-   * #31 CANdi stow sensor (S1)
-   */
 
   // keep track of states
-  private enum ClimbState {
+  public enum ClimbState {
     IDLE,
-    PREPARETOL1,
+    PREPARE_TO_L1,
     L1,
-    PREPARETOL2,
+    PREPARE_TO_L2,
     L2,
-    PREPARETOL3,
+    PREPARE_TO_L3,
     L3,
-    PREPARETOSTOW,
-    MOVETOSTOW,
-    GOTOFLOOR
+    PREPARE_TO_STOW,
+    MOVE_TO_STOW,
+    GO_TO_FLOOR
   }
-
-  private ClimbState currentClimbState = ClimbState.IDLE;
 
   private final TalonFX climbMotorLeader = new TalonFX(DEVICE_ID_CLIMB_LEADER_MOTOR, CANIVORE_BUS);
   private final TalonFX climbMotorFollower = new TalonFX(DEVICE_ID_CLIMB_FOLLOWER_MOTOR, CANIVORE_BUS);
-  private final CANdi limmitCANdi = new CANdi(DEVICE_ID_CANDI_CLIMB_LIMITS, CANIVORE_BUS);
+  private final CANdi limitCANdi = new CANdi(DEVICE_ID_CANDI_CLIMB_LIMITS, CANIVORE_BUS);
   private final CANdi stowCANdi = new CANdi(DEVICE_ID_CANDI_CLIMB_STOW, CANIVORE_BUS);
 
   private final VoltageOut voltageOut = new VoltageOut(0).withEnableFOC(true);
-  private final StatusSignal<Boolean> topLimitSwitchSignal = limmitCANdi.getS1Closed();
-  private final StatusSignal<Boolean> bottomLimitSwitchSignal = limmitCANdi.getS2Closed();
+  private final StatusSignal<Boolean> topLimitSwitchSignal = limitCANdi.getS1Closed();
+  private final StatusSignal<Boolean> bottomLimitSwitchSignal = limitCANdi.getS2Closed();
   private final StatusSignal<Boolean> stowSensorSignal = stowCANdi.getS1Closed();
 
+  private ClimbState currentClimbState = ClimbState.IDLE;
+
   /**
-   * subsystem for the climb
+   * creates a new climb subsystem
    */
   public ClimbSubsystem() {
     // create CANdi config
     CANdiConfiguration climbCANdiLimmitsConfig = new CANdiConfiguration();
-    climbCANdiLimmitsConfig.DigitalInputs.withS1CloseState(S1CloseStateValue.CloseWhenLow)
-        .withS2CloseState(S2CloseStateValue.CloseWhenLow);
+    climbCANdiLimmitsConfig.withDigitalInputs(
+        new DigitalInputsConfigs().withS1CloseState(S1CloseStateValue.CloseWhenLow)
+            .withS2CloseState(S2CloseStateValue.CloseWhenLow));
 
     // apply CANdi config
-    limmitCANdi.getConfigurator().apply(climbCANdiLimmitsConfig);
+    limitCANdi.getConfigurator().apply(climbCANdiLimmitsConfig);
 
     // create motor config
     TalonFXConfiguration climbMotorConfig = new TalonFXConfiguration();
     climbMotorConfig
         .withHardwareLimitSwitch(
-            new HardwareLimitSwitchConfigs().withForwardLimitRemoteCANdiS1(limmitCANdi)
+            new HardwareLimitSwitchConfigs().withForwardLimitRemoteCANdiS1(limitCANdi)
                 .withForwardLimitEnable(true)
                 .withForwardLimitAutosetPositionValue(CLIMB_FORWARD_LIMIT)
                 .withForwardLimitAutosetPositionEnable(true)
-                .withReverseLimitRemoteCANdiS2(limmitCANdi)
+                .withReverseLimitRemoteCANdiS2(limitCANdi)
                 .withReverseLimitEnable(true)
                 .withReverseLimitAutosetPositionValue(CLIMB_REVERSE_LIMIT)
                 .withReverseLimitAutosetPositionEnable(true))
@@ -98,16 +97,31 @@ public class ClimbSubsystem extends SubsystemBase {
     climbMotorFollower.setControl(new Follower(DEVICE_ID_CLIMB_LEADER_MOTOR, MotorAlignmentValue.Aligned));
   }
 
+  /**
+   * returns True if at the top limit
+   * 
+   * @return True if at the top limit
+   */
   @Logged
   public boolean isAtTopLimit() {
     return topLimitSwitchSignal.refresh().getValue();
   }
 
+  /**
+   * returns True if at the bottom limit
+   * 
+   * @return True if at the bottom limit
+   */
   @Logged
   public boolean isAtBottomLimit() {
     return bottomLimitSwitchSignal.refresh().getValue();
   }
 
+  /**
+   * returns True if the climb is stowed
+   * 
+   * @return True if the climb is stowed
+   */
   @Logged
   public boolean isStowed() {
     return stowSensorSignal.refresh().getValue();
@@ -128,15 +142,15 @@ public class ClimbSubsystem extends SubsystemBase {
   }
 
   /**
-   * moves the upper hook up
+   * reaches for L1 from floor
    */
   public void prepareToL1() {
-    currentClimbState = ClimbState.PREPARETOL1;
+    currentClimbState = ClimbState.PREPARE_TO_L1;
     expand();
   }
 
   /**
-   * moves the upper hook down
+   * moves robot from floor to L1 given robot is at prepareToL1
    */
   public void L1() {
     currentClimbState = ClimbState.L1;
@@ -144,15 +158,15 @@ public class ClimbSubsystem extends SubsystemBase {
   }
 
   /**
-   * moves the upper hook up
+   * reaches for L2 from L1
    */
   public void prepareToL2() {
-    currentClimbState = ClimbState.PREPARETOL2;
+    currentClimbState = ClimbState.PREPARE_TO_L2;
     expand();
   }
 
   /**
-   * moves the upper hook down
+   * moves robot from L1 to L2 given robot is at prepareToL2
    */
   public void L2() {
     currentClimbState = ClimbState.L2;
@@ -160,15 +174,15 @@ public class ClimbSubsystem extends SubsystemBase {
   }
 
   /**
-   * moves the upper hook up
+   * reaches for L3 from L2
    */
   public void prepareToL3() {
-    currentClimbState = ClimbState.PREPARETOL3;
+    currentClimbState = ClimbState.PREPARE_TO_L3;
     expand();
   }
 
   /**
-   * moves the upper hook down
+   * moves robot from L2 to L3 given robot is at prepareToL3
    */
   public void L3() {
     currentClimbState = ClimbState.L3;
@@ -176,27 +190,27 @@ public class ClimbSubsystem extends SubsystemBase {
   }
 
   /**
-   * moves the lower hook to the bottom passed the latch
+   * moves the lower hook to the bottom past the latch
    */
   public void prepareToStow() {
-    currentClimbState = ClimbState.PREPARETOSTOW;
+    currentClimbState = ClimbState.PREPARE_TO_STOW;
     expand();
   }
 
   /**
    * moves the lower hook to the stow position
-   * IT WILL NOT STOP IT AT THE STOW POSITION
+   * <p>
+   * the lower hook has to be below the latch in order to work
    */
   public void moveToStow() {
-    currentClimbState = ClimbState.MOVETOSTOW;
-    contract();
+    currentClimbState = ClimbState.MOVE_TO_STOW;
   }
 
   /**
    * moves the upper hook up
    */
   public void goToFloor() {
-    currentClimbState = ClimbState.GOTOFLOOR;
+    currentClimbState = ClimbState.GO_TO_FLOOR;
     expand();
   }
 
@@ -207,20 +221,31 @@ public class ClimbSubsystem extends SubsystemBase {
    */
   public boolean isActionComplete() {
     switch (currentClimbState) {
-      case PREPARETOL1:
-      case PREPARETOL2:
-      case PREPARETOL3:
-      case PREPARETOSTOW:
+      case PREPARE_TO_L1:
+      case PREPARE_TO_L2:
+      case PREPARE_TO_L3:
+      case PREPARE_TO_STOW:
         return bottomLimitSwitchSignal.refresh().getValue();
       case L1:
       case L2:
       case L3:
         return topLimitSwitchSignal.refresh().getValue();
-      case MOVETOSTOW:
+      case MOVE_TO_STOW:
         return stowSensorSignal.refresh().getValue();
-      default:
+      case IDLE:
         return false;
+      default:
+        return true;
     }
+  }
+
+  /**
+   * returns the current state of the climb
+   * 
+   * @return current state of the climb
+   */
+  public ClimbState getCurrentState() {
+    return currentClimbState;
   }
 
   /**
@@ -229,6 +254,15 @@ public class ClimbSubsystem extends SubsystemBase {
   public void stop() {
     currentClimbState = ClimbState.IDLE;
     climbMotorLeader.stopMotor();
+  }
+
+  @Override
+  public void periodic() {
+    if (currentClimbState == ClimbState.PREPARE_TO_STOW && !isStowed()) {
+      contract();
+    } else if (currentClimbState == ClimbState.PREPARE_TO_STOW && isStowed()) {
+      stop();
+    }
   }
 
 }
