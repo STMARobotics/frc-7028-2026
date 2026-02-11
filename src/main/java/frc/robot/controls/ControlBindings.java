@@ -54,6 +54,11 @@ public abstract class ControlBindings {
     return Optional.empty();
   }
 
+  /**
+   * Trigger to shoot fuel into the hub.
+   * 
+   * @return optional trigger
+   */
   public Optional<Trigger> shoot() {
     return Optional.empty();
   }
