@@ -29,7 +29,7 @@ import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 /**
- * subsystem for the climb
+ * Subsystem for the climb
  */
 @Logged(strategy = Logged.Strategy.OPT_IN)
 public class ClimbSubsystem extends SubsystemBase {
@@ -61,7 +61,7 @@ public class ClimbSubsystem extends SubsystemBase {
   private ClimbState currentClimbState = ClimbState.IDLE;
 
   /**
-   * creates a new climb subsystem
+   * Creates a new climb subsystem
    */
   public ClimbSubsystem() {
     // create CANdi config
@@ -98,7 +98,7 @@ public class ClimbSubsystem extends SubsystemBase {
   }
 
   /**
-   * returns True if at the top limit
+   * Returns True if at the top limit
    * 
    * @return True if at the top limit
    */
@@ -108,7 +108,7 @@ public class ClimbSubsystem extends SubsystemBase {
   }
 
   /**
-   * returns True if at the bottom limit
+   * Returns True if at the bottom limit
    * 
    * @return True if at the bottom limit
    */
@@ -118,7 +118,7 @@ public class ClimbSubsystem extends SubsystemBase {
   }
 
   /**
-   * returns True if the climb is stowed
+   * Returns True if the climb is stowed
    * 
    * @return True if the climb is stowed
    */
@@ -128,21 +128,21 @@ public class ClimbSubsystem extends SubsystemBase {
   }
 
   /**
-   * moves the upper hook up and the lower hook down
+   * Moves the upper hook up and the lower hook down
    */
   private void expand() {
     climbMotorLeader.setControl(voltageOut.withOutput(CLIMB_OUTPUT_FORWARD_VOLTAGE));
   }
 
   /*
-   * moves the upper hook down and the lower hook up
+   * Moves the upper hook down and the lower hook up
    */
   private void contract() {
     climbMotorLeader.setControl(voltageOut.withOutput(CLIMB_OUTPUT_REVERSE_VOLTAGE));
   }
 
   /**
-   * reaches for L1 from floor
+   * Reaches for L1 from floor
    */
   public void prepareToL1() {
     currentClimbState = ClimbState.PREPARE_TO_L1;
@@ -150,7 +150,7 @@ public class ClimbSubsystem extends SubsystemBase {
   }
 
   /**
-   * moves robot from floor to L1 given robot is at prepareToL1
+   * Moves robot from floor to L1 given robot is at prepareToL1
    */
   public void L1() {
     currentClimbState = ClimbState.L1;
@@ -158,7 +158,7 @@ public class ClimbSubsystem extends SubsystemBase {
   }
 
   /**
-   * reaches for L2 from L1
+   * Reaches for L2 from L1
    */
   public void prepareToL2() {
     currentClimbState = ClimbState.PREPARE_TO_L2;
@@ -166,7 +166,7 @@ public class ClimbSubsystem extends SubsystemBase {
   }
 
   /**
-   * moves robot from L1 to L2 given robot is at prepareToL2
+   * Moves robot from L1 to L2 given robot is at prepareToL2
    */
   public void L2() {
     currentClimbState = ClimbState.L2;
@@ -174,7 +174,7 @@ public class ClimbSubsystem extends SubsystemBase {
   }
 
   /**
-   * reaches for L3 from L2
+   * Reaches for L3 from L2
    */
   public void prepareToL3() {
     currentClimbState = ClimbState.PREPARE_TO_L3;
@@ -182,7 +182,7 @@ public class ClimbSubsystem extends SubsystemBase {
   }
 
   /**
-   * moves robot from L2 to L3 given robot is at prepareToL3
+   * Moves robot from L2 to L3 given robot is at prepareToL3
    */
   public void L3() {
     currentClimbState = ClimbState.L3;
@@ -190,7 +190,7 @@ public class ClimbSubsystem extends SubsystemBase {
   }
 
   /**
-   * moves the lower hook to the bottom past the latch
+   * Moves the lower hook to the bottom past the latch
    */
   public void prepareToStow() {
     currentClimbState = ClimbState.PREPARE_TO_STOW;
@@ -198,16 +198,16 @@ public class ClimbSubsystem extends SubsystemBase {
   }
 
   /**
-   * moves the lower hook to the stow position
+   * Moves the lower hook to the stow position
    * <p>
-   * the lower hook has to be below the latch in order to work
+   * The lower hook has to be below the latch in order to work
    */
   public void moveToStow() {
     currentClimbState = ClimbState.MOVE_TO_STOW;
   }
 
   /**
-   * moves the upper hook up
+   * Moves the upper hook up
    */
   public void goToFloor() {
     currentClimbState = ClimbState.GO_TO_FLOOR;
@@ -215,9 +215,9 @@ public class ClimbSubsystem extends SubsystemBase {
   }
 
   /**
-   * returns true if the current requrest was completed
+   * Returns true if the current requrest was completed
    * 
-   * @return true/false
+   * @return True if the current action has completed
    */
   public boolean isActionComplete() {
     switch (currentClimbState) {
@@ -240,16 +240,16 @@ public class ClimbSubsystem extends SubsystemBase {
   }
 
   /**
-   * returns the current state of the climb
+   * Returns the current state of the climb
    * 
-   * @return current state of the climb
+   * @return Current state of the climb
    */
   public ClimbState getCurrentState() {
     return currentClimbState;
   }
 
   /**
-   * stops the climb if it is moving
+   * Stops the climb if it is moving
    */
   public void stop() {
     currentClimbState = ClimbState.IDLE;
