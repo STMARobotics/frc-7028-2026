@@ -4,12 +4,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
 
-class ShooterMathTest {
+class ShooterSubsystemTest {
   @Test
-  void wrapToUnitRotationWrapsNegativeAndLargeValues() {
-    assertEquals(-0.25, ShooterSubsystem.wrapToUnitRotation(-0.25), 1e-9);
-    assertEquals(0.2, ShooterSubsystem.wrapToUnitRotation(2.2), 1e-9);
-    assertEquals(0.0, ShooterSubsystem.wrapToUnitRotation(1.0), 1e-9);
+  void normalizeToHalfTurnWrapsNegativeAndLargeValues() {
+    assertEquals(-0.25, ShooterSubsystem.normalizeToHalfTurn(-0.25), 1e-9);
+    assertEquals(0.2, ShooterSubsystem.normalizeToHalfTurn(2.2), 1e-9);
+    assertEquals(0.0, ShooterSubsystem.normalizeToHalfTurn(1.0), 1e-9);
   }
 
   @Test

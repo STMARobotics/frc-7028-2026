@@ -1,7 +1,6 @@
 package frc.robot;
 
 import static edu.wpi.first.units.Units.Amps;
-import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
@@ -93,7 +92,7 @@ public final class Constants {
   }
 
   /**
-   * Constants for the turret subsystem
+   * Constants for the shooter subsystem
    */
   public static class ShooterConstants {
     // TODO: Replace placeholder values and confirm ID assignments
@@ -125,11 +124,7 @@ public final class Constants {
     public static final Angle PITCH_SOFT_LIMIT_REVERSE = Rotations.of(-0.1); // placeholder
     public static final Angle PITCH_HOME_ANGLE = Rotations.of(0.0); // placeholder
     public static final Angle PITCH_POSITION_TOLERANCE = Rotations.of(0.01); // placeholder (~3.6deg)
-
-    public static final double FLYWHEEL_GEAR_RATIO = 1.0; // placeholder
-    public static final Distance FLYWHEEL_WHEEL_RADIUS = Inches.of(99); // placeholder
     public static final AngularVelocity FLYWHEEL_MAX_SPEED = RotationsPerSecond.of(1.0); // placeholder
-    public static final AngularVelocity FLYWHEEL_IDLE_SPEED = RotationsPerSecond.of(0.2); // placeholder
     public static final AngularVelocity FLYWHEEL_VELOCITY_TOLERANCE = RotationsPerSecond.of(0.05); // placeholder
 
     // TODO: Tune PID values

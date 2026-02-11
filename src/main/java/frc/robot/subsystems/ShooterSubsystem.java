@@ -10,7 +10,6 @@ import static edu.wpi.first.units.Units.Seconds;
 import static edu.wpi.first.units.Units.Volts;
 import static frc.robot.Constants.CANIVORE_BUS;
 import static frc.robot.Constants.ShooterConstants.FLYWHEEL_FOLLOWER_MOTOR_ID;
-import static frc.robot.Constants.ShooterConstants.FLYWHEEL_IDLE_SPEED;
 import static frc.robot.Constants.ShooterConstants.FLYWHEEL_LEADER_MOTOR_ID;
 import static frc.robot.Constants.ShooterConstants.FLYWHEEL_MAX_SPEED;
 import static frc.robot.Constants.ShooterConstants.FLYWHEEL_SLOT_CONFIGS;
@@ -102,7 +101,7 @@ public class ShooterSubsystem extends SubsystemBase {
   // SysId routines
   private final SysIdRoutine yawSysIdRoutine = new SysIdRoutine(
       new SysIdRoutine.Config(
-          Volts.per(Second).of(.25),
+          Volts.per(Second).of(0.25),
           Volts.of(1),
           Seconds.of(10),
           state -> SignalLogger.writeString("Yaw Motor SysId", state.toString())),
@@ -113,7 +112,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
   private final SysIdRoutine pitchSysIdRoutine = new SysIdRoutine(
       new SysIdRoutine.Config(
-          Volts.per(Second).of(.25),
+          Volts.per(Second).of(0.25),
           Volts.of(1),
           Seconds.of(10),
           state -> SignalLogger.writeString("Pitch Motor SysId", state.toString())),
@@ -124,7 +123,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
   private final SysIdRoutine flywheelSysIdRoutine = new SysIdRoutine(
       new SysIdRoutine.Config(
-          Volts.per(Second).of(.25),
+          Volts.per(Second).of(0.25),
           Volts.of(10),
           Seconds.of(10),
           state -> SignalLogger.writeString("Flywheel SysId", state.toString())),
@@ -224,30 +223,66 @@ public class ShooterSubsystem extends SubsystemBase {
     flywheelFollowerMotor.optimizeBusUtilization();
   }
 
+  /**
+   * Builds a command that runs yaw SysId in quasistatic mode.
+   *
+   * @param direction direction for the SysId sweep
+   * @return command that runs yaw quasistatic SysId and stops yaw on exit
+   */
   public Command sysIdYawQuasistaticCommand(Direction direction) {
     return yawSysIdRoutine.quasistatic(direction).withName("SysId yaw quasi " + direction).finallyDo(this::stopYaw);
   }
 
+  /**
+   * Builds a command that runs yaw SysId in dynamic mode.
+   *
+   * @param direction direction for the SysId sweep
+   * @return command that runs yaw dynamic SysId and stops yaw on exit
+   */
   public Command sysIdYawDynamicCommand(Direction direction) {
     return yawSysIdRoutine.dynamic(direction).withName("SysId yaw dynamic " + direction).finallyDo(this::stopYaw);
   }
 
+  /**
+   * Builds a command that runs pitch SysId in quasistatic mode.
+   *
+   * @param direction direction for the SysId sweep
+   * @return command that runs pitch quasistatic SysId and stops pitch on exit
+   */
   public Command sysIdPitchQuasistaticCommand(Direction direction) {
     return pitchSysIdRoutine.quasistatic(direction)
         .withName("SysId pitch quasi " + direction)
         .finallyDo(this::stopPitch);
   }
 
+  /**
+   * Builds a command that runs pitch SysId in dynamic mode.
+   *
+   * @param direction direction for the SysId sweep
+   * @return command that runs pitch dynamic SysId and stops pitch on exit
+   */
   public Command sysIdPitchDynamicCommand(Direction direction) {
     return pitchSysIdRoutine.dynamic(direction).withName("SysId pitch dynamic " + direction).finallyDo(this::stopPitch);
   }
 
+  /**
+   * Builds a command that runs flywheel SysId in quasistatic mode.
+   *
+   * @param direction direction for the SysId sweep
+   * @return command that runs flywheel quasistatic SysId and stops flywheel on exit
+   */
   public Command sysIdFlywheelQuasistaticCommand(Direction direction) {
     return flywheelSysIdRoutine.quasistatic(direction)
         .withName("SysId flywheel quasi " + direction)
         .finallyDo(this::stopFlywheel);
   }
 
+  /**
+   * Builds a command that runs flywheel SysId in dynamic mode.
+   *
+   * @param direction direction for the SysId sweep
+   * @return command that runs flywheel dynamic SysId and stops flywheel on exit
+   */
   public Command sysIdFlywheelDynamicCommand(Direction direction) {
     return flywheelSysIdRoutine.dynamic(direction)
         .withName("SysId flywheel dynamic " + direction)
@@ -264,16 +299,17 @@ public class ShooterSubsystem extends SubsystemBase {
    * Commands yaw to the nearest legal equivalent of the requested heading.
    *
    * <p>
-   * Input heading is treated as wrapped (0 to 1 rotation), but the commanded target remains
-   * continuous so the turret can use multiple turns while obeying soft limits.
+   * Input heading may be wrapped or continuous. The request is normalized to a principal heading
+   * in (-0.5, 0.5] rotations and then converted to the nearest legal continuous equivalent, so the
+   * turret can use multiple turns while obeying soft limits.
    *
-   * @param targetYaw requested wrapped heading
+   * @param targetYaw requested yaw heading
    */
   public void setYawAngle(Angle targetYaw) {
     double currentRot = BaseStatusSignal.getLatencyCompensatedValue(yawPosition, yawVelocity).in(Rotations);
-    double wrappedDesiredRot = wrapToUnitRotation(targetYaw.in(Rotations));
+    double normalizedDesiredRot = normalizeToHalfTurn(targetYaw.in(Rotations));
     double targetRot = chooseYawShortestDistance(
-        wrappedDesiredRot,
+        normalizedDesiredRot,
           currentRot,
           YAW_SOFT_LIMIT_REVERSE.in(Rotations),
           YAW_SOFT_LIMIT_FORWARD.in(Rotations));
@@ -321,47 +357,71 @@ public class ShooterSubsystem extends SubsystemBase {
     setFlywheelSpeed(target.targetFlywheelSpeed());
   }
 
-  /** Parks yaw/pitch and then applies idle flywheel behavior. */
+  /** Moves yaw/pitch to home angles and commands the flywheel output to neutral. */
   public void stow() {
     setYawAngle(YAW_HOME_ANGLE);
     setPitchAngle(PITCH_HOME_ANGLE);
     flywheelLeaderMotor.setControl(flywheelNeutral);
   }
 
+  /** Stops yaw motor output immediately. */
   public void stopYaw() {
     yawMotor.stopMotor();
   }
 
+  /** Stops pitch motor output immediately. */
   public void stopPitch() {
     pitchMotor.stopMotor();
   }
 
+  /** Stops flywheel leader output immediately. */
   public void stopFlywheel() {
     flywheelLeaderMotor.stopMotor();
   }
 
+  /** Stops yaw, pitch, and flywheel outputs immediately. */
   public void stopAll() {
     stopYaw();
     stopPitch();
     stopFlywheel();
   }
 
+  /**
+   * Returns turret yaw normalized to (-0.5, 0.5] rotations.
+   *
+   * @return normalized yaw angle
+   */
   @Logged(name = "Turret Yaw Angle")
   public Angle getYawAngle() {
     double rot = BaseStatusSignal.getLatencyCompensatedValue(yawPosition, yawVelocity).in(Rotations);
-    return yawWrappedAngle.mut_replace(wrapToUnitRotation(rot), Rotations);
+    return yawWrappedAngle.mut_replace(normalizeToHalfTurn(rot), Rotations);
   }
 
+  /**
+   * Returns unwrapped turret yaw in continuous rotations.
+   *
+   * @return continuous yaw angle
+   */
   @Logged(name = "Turret Yaw Continuous Angle")
   public Angle getYawContinuousAngle() {
     return BaseStatusSignal.getLatencyCompensatedValue(yawPosition, yawVelocity);
   }
 
+  /**
+   * Returns current turret pitch angle.
+   *
+   * @return pitch angle
+   */
   @Logged(name = "Turret Pitch Angle")
   public Angle getPitchAngle() {
     return BaseStatusSignal.getLatencyCompensatedValue(pitchPosition, pitchVelocity);
   }
 
+  /**
+   * Returns current flywheel speed from the leader motor.
+   *
+   * @return flywheel angular velocity
+   */
   @Logged(name = "Flywheel Speed")
   public AngularVelocity getFlywheelSpeed() {
     return BaseStatusSignal.getLatencyCompensatedValue(flywheelVelocity, flywheelAcceleration);
@@ -373,11 +433,13 @@ public class ShooterSubsystem extends SubsystemBase {
     return currentYaw.isNear(Rotations.of(yawPositionRequest.Position), YAW_POSITION_TOLERANCE);
   }
 
+  /** Returns whether pitch is within configured tolerance of the active request. */
   public boolean isPitchAtSetpoint() {
     Angle currentPitch = BaseStatusSignal.getLatencyCompensatedValue(pitchPosition, pitchVelocity);
     return currentPitch.isNear(Rotations.of(pitchPositionRequest.Position), PITCH_POSITION_TOLERANCE);
   }
 
+  /** Returns whether flywheel speed is within configured tolerance of the active request. */
   public boolean isFlywheelAtSpeed() {
     AngularVelocity currentSpeed = BaseStatusSignal.getLatencyCompensatedValue(flywheelVelocity, flywheelAcceleration);
     return currentSpeed.isNear(RotationsPerSecond.of(flywheelVelocityRequest.Velocity), FLYWHEEL_VELOCITY_TOLERANCE);
@@ -390,45 +452,44 @@ public class ShooterSubsystem extends SubsystemBase {
   }
 
   /**
-   * Wraps any rotation value into a heading range of [-0.5, 0.5) rotations.
-   *
-   * @param rotations input heading in rotations (continuous or wrapped)
-   * @return equivalent wrapped heading in [-0.5, 0.5) rotations
+   * Wraps any rotation value into (-0.5, 0.5] rotations (equivalent to (-180, 180] degrees).
    */
-  static double wrapToUnitRotation(double rotations) {
-    double wrapped = MathUtil.inputModulus(rotations, -0.5, 0.5);
-    return wrapped >= 0.5 ? -0.5 : wrapped;
+  static double normalizeToHalfTurn(double rotations) {
+    double wrapped = Math.IEEEremainder(rotations, 1.0);
+    return wrapped <= -0.5 ? 0.5 : wrapped;
   }
 
   /**
-   * Selects the legal equivalent of a wrapped heading that requires the least turret motion.
+   * Selects the legal equivalent of a heading that requires the least turret motion.
    *
    * <p>
    * The desired heading is treated as circular (desired + N turns), then the nearest equivalent
    * within soft limits is chosen relative to current continuous position.
    *
-   * @param wrappedDesiredRotation desired heading in rotations (wrapped or continuous)
+   * @param desiredRotation desired heading in rotations (wrapped or continuous)
    * @param currentContinuousRotation current turret angle in continuous rotations
    * @param minSoftLimitRotation reverse soft limit in continuous rotations
    * @param maxSoftLimitRotation forward soft limit in continuous rotations
    * @return continuous target rotation to command
    */
   static double chooseYawShortestDistance(
-      double wrappedDesiredRotation,
+      double desiredRotation,
       double currentContinuousRotation,
       double minSoftLimitRotation,
       double maxSoftLimitRotation) {
-    double normalizedDesired = wrapToUnitRotation(wrappedDesiredRotation);
-    int minEquivalentIndex = (int) Math.floor(minSoftLimitRotation - normalizedDesired);
-    int maxEquivalentIndex = (int) Math.ceil(maxSoftLimitRotation - normalizedDesired);
-    int nearestEquivalentIndex = (int) Math.rint(currentContinuousRotation - normalizedDesired);
-    double bestCandidate = MathUtil
-        .clamp(normalizedDesired + nearestEquivalentIndex, minSoftLimitRotation, maxSoftLimitRotation);
+    double normalizedDesired = normalizeToHalfTurn(desiredRotation);
+    int minLegalTurn = (int) Math.ceil(minSoftLimitRotation - normalizedDesired);
+    int maxLegalTurn = (int) Math.floor(maxSoftLimitRotation - normalizedDesired);
+    int nearestEquivalentTurn = (int) Math.rint(currentContinuousRotation - normalizedDesired);
+    int baseTurn = MathUtil.clamp(nearestEquivalentTurn, minLegalTurn, maxLegalTurn);
+    double bestCandidate = MathUtil.clamp(normalizedDesired + baseTurn, minSoftLimitRotation, maxSoftLimitRotation);
     double bestDistance = Double.POSITIVE_INFINITY;
 
-    // Turret range is < 2 turns, so this scan has at most three legal equivalent candidates.
-    for (int equivalentIndex = minEquivalentIndex; equivalentIndex <= maxEquivalentIndex; equivalentIndex++) {
-      double candidateRotation = normalizedDesired + equivalentIndex;
+    // Clamp the nearest equivalent turn to the legal turn-index window, then only check
+    // base - 1, base, and base + 1. With < 2 rotations of travel, this covers all legal
+    // equivalents that can be closest.
+    for (int turnOffset = -1; turnOffset <= 1; turnOffset++) {
+      double candidateRotation = normalizedDesired + baseTurn + turnOffset;
       if (candidateRotation < minSoftLimitRotation || candidateRotation > maxSoftLimitRotation) {
         continue;
       }
@@ -444,7 +505,8 @@ public class ShooterSubsystem extends SubsystemBase {
 
   /**
    * Input target bundle for the shooter subsystem.
-   * `targetYaw` is expected as a wrapped heading in [0, 1) rotations.
+   * `targetYaw` may be wrapped or continuous; yaw control normalizes it to (-0.5, 0.5] rotations
+   * before selecting the nearest legal continuous equivalent.
    */
   public static record ShooterTarget(Angle targetYaw, Angle targetPitch, AngularVelocity targetFlywheelSpeed) {
     public ShooterTarget {
@@ -455,7 +517,7 @@ public class ShooterSubsystem extends SubsystemBase {
         targetPitch = PITCH_HOME_ANGLE;
       }
       if (targetFlywheelSpeed == null) {
-        targetFlywheelSpeed = FLYWHEEL_IDLE_SPEED;
+        targetFlywheelSpeed = RotationsPerSecond.of(0.0);
       }
     }
   }
