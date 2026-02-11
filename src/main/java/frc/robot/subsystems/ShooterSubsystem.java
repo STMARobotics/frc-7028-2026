@@ -50,7 +50,6 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.NeutralOut;
-import com.ctre.phoenix6.controls.TorqueCurrentFOC;
 import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.CANcoder;
@@ -88,7 +87,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
   private final VoltageOut sysIdYawVoltage = new VoltageOut(0.0).withEnableFOC(true);
   private final VoltageOut sysIdPitchVoltage = new VoltageOut(0.0).withEnableFOC(true);
-  private final TorqueCurrentFOC sysIdFlywheelCurrent = new TorqueCurrentFOC(0.0);
+  private final VoltageOut sysIdFlywheelVoltage = new VoltageOut(0.0).withEnableFOC(true);
 
   private final StatusSignal<Angle> yawPosition = yawMotor.getPosition();
   private final StatusSignal<AngularVelocity> yawVelocity = yawMotor.getVelocity();
@@ -128,8 +127,7 @@ public class ShooterSubsystem extends SubsystemBase {
           Seconds.of(10),
           state -> SignalLogger.writeString("Flywheel SysId", state.toString())),
       new SysIdRoutine.Mechanism(
-          // SysIdRoutine uses a Voltage parameter, but here we intentionally interpret it as current (amps).
-          amps -> flywheelLeaderMotor.setControl(sysIdFlywheelCurrent.withOutput(amps.in(Volts))),
+          volts -> flywheelLeaderMotor.setControl(sysIdFlywheelVoltage.withOutput(volts.in(Volts))),
           null,
           this));
 
@@ -364,22 +362,22 @@ public class ShooterSubsystem extends SubsystemBase {
     flywheelLeaderMotor.setControl(flywheelNeutral);
   }
 
-  /** Stops yaw motor output immediately. */
+  /** Stops yaw motor output. */
   public void stopYaw() {
     yawMotor.stopMotor();
   }
 
-  /** Stops pitch motor output immediately. */
+  /** Stops pitch motor output. */
   public void stopPitch() {
     pitchMotor.stopMotor();
   }
 
-  /** Stops flywheel leader output immediately. */
+  /** Stops flywheel leader output. */
   public void stopFlywheel() {
     flywheelLeaderMotor.stopMotor();
   }
 
-  /** Stops yaw, pitch, and flywheel outputs immediately. */
+  /** Stops yaw, pitch, and flywheel outputs. */
   public void stopAll() {
     stopYaw();
     stopPitch();
@@ -387,24 +385,24 @@ public class ShooterSubsystem extends SubsystemBase {
   }
 
   /**
-   * Returns turret yaw normalized to (-0.5, 0.5] rotations.
-   *
-   * @return normalized yaw angle
-   */
-  @Logged(name = "Turret Yaw Angle")
-  public Angle getYawAngle() {
-    double rot = BaseStatusSignal.getLatencyCompensatedValue(yawPosition, yawVelocity).in(Rotations);
-    return yawWrappedAngle.mut_replace(normalizeToHalfTurn(rot), Rotations);
-  }
-
-  /**
    * Returns unwrapped turret yaw in continuous rotations.
    *
    * @return continuous yaw angle
    */
-  @Logged(name = "Turret Yaw Continuous Angle")
-  public Angle getYawContinuousAngle() {
+  @Logged(name = "Turret Yaw Angle")
+  public Angle getYawAngle() {
     return BaseStatusSignal.getLatencyCompensatedValue(yawPosition, yawVelocity);
+  }
+
+  /**
+   * Returns turret yaw normalized to (-0.5, 0.5] rotations. (-180, 180 degrees)
+   *
+   * @return normalized yaw heading
+   */
+  @Logged(name = "Turret Yaw Heading Normalized")
+  public Angle getYawHeadingNormalized() {
+    double rot = BaseStatusSignal.getLatencyCompensatedValue(yawPosition, yawVelocity).in(Rotations);
+    return yawWrappedAngle.mut_replace(normalizeToHalfTurn(rot), Rotations);
   }
 
   /**
@@ -507,6 +505,8 @@ public class ShooterSubsystem extends SubsystemBase {
    * Input target bundle for the shooter subsystem.
    * `targetYaw` may be wrapped or continuous; yaw control normalizes it to (-0.5, 0.5] rotations
    * before selecting the nearest legal continuous equivalent.
+   * 
+   * This is going to go away because it will be done in Bens math classes.
    */
   public static record ShooterTarget(Angle targetYaw, Angle targetPitch, AngularVelocity targetFlywheelSpeed) {
     public ShooterTarget {
