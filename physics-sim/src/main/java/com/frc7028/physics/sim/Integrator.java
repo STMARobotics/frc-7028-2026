@@ -8,6 +8,7 @@ package com.frc7028.physics.sim;
 
 import static java.lang.Math.abs;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation3d;
 import java.util.function.Function;
@@ -95,21 +96,19 @@ public class Integrator {
     while (!accepted && iterations < this.maxIterations) {
       double dt = this.vectorState.dt;
 
-      Translation3d a1 = f(i);
-      Translation3d a2 = f(i.accelerate(a1, dt * C[0][0]));
-      Translation3d a3 = f(i.accelerate(a1, dt * C[1][0]).accelerate(a2, dt * C[1][1]));
-      Translation3d a4 = f(i.accelerate(a1, dt * C[2][0]).accelerate(a2, dt * C[2][1]).accelerate(a3, dt * C[2][2]));
+      Translation3d a1 = f(i).times(dt);
+      Translation3d a2 = f(i.accelerate(a1, C[0][0])).times(dt);
+      Translation3d a3 = f(i.accelerate(a1, C[1][0]).accelerate(a2, C[1][1])).times(dt);
+      Translation3d a4 = f(i.accelerate(a1, C[2][0]).accelerate(a2, C[2][1]).accelerate(a3, C[2][2])).times(dt);
       Translation3d a5 = f(
-          i.accelerate(a1, dt * C[3][0])
-              .accelerate(a2, dt * C[3][1])
-              .accelerate(a3, dt * C[3][2])
-              .accelerate(a4, dt * C[3][3]));
+          i.accelerate(a1, C[3][0]).accelerate(a2, C[3][1]).accelerate(a3, C[3][2]).accelerate(a4, C[3][3])).times(dt);
       Translation3d a6 = f(
-          i.accelerate(a1, dt * C[4][0])
-              .accelerate(a2, dt * C[4][1])
-              .accelerate(a3, dt * C[4][2])
-              .accelerate(a4, dt * C[4][3])
-              .accelerate(a5, dt * C[4][4]));
+          i.accelerate(a1, C[4][0])
+              .accelerate(a2, C[4][1])
+              .accelerate(a3, C[4][2])
+              .accelerate(a4, C[4][3])
+              .accelerate(a5, C[4][4]))
+          .times(dt);
 
       Translation3d V1 = i.velocity.plus(a1.times(W[0][0]))
           .plus(a2.times(W[0][1]))
@@ -124,18 +123,16 @@ public class Integrator {
           .plus(a5.times(W[1][4]))
           .plus(a6.times(W[1][5]));
 
-      err = abs(V2.getDistance(V1)) / dt;
-      System.out.println("err=" + err + " eps=" + this.epsilon + " dt=" + dt);
+      err = abs(V2.getDistance(V1));
       if (err <= this.epsilon) {
         this.vectorState.velocity = V2;
         this.vectorState.stepPosition();
         accepted = true;
 
-        double dtScalingFactor = 0.84 * Math.pow((epsilon / Math.max(err, 1e-10)), 0.25);
-        this.vectorState.dt = Math.clamp(dt * dtScalingFactor, 1e-6, 1e-2);
-        System.out.println("scale=" + dtScalingFactor + " new_dt=" + (dt * dtScalingFactor));
       }
 
+      double dtScalingFactor = 0.84 * Math.pow((epsilon / Math.max(err, 1e-10)), 0.25);
+      this.vectorState.dt = MathUtil.clamp(dt * dtScalingFactor, 1e-6, 1e-2);
       iterations++;
     }
 

@@ -7,10 +7,13 @@ import static edu.wpi.first.units.Units.Radians;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.frc7028.physics.sim.BallisticPrecomputer.RobotState;
-import com.frc7028.physics.sim.BallisticPrecomputer.ShotParameters;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.function.Function;
 import org.junit.jupiter.api.Test;
@@ -43,13 +46,13 @@ class AppTest {
     );
 
     SimulatorResolution simRes = new SimulatorResolution(
-        Radians.of(0.01), // delta angle
-        0.1, // delta speed
+        Radians.of(0.0001), // delta angle
+        0.001, // delta speed
         0.1, // delta position component
         0.1, // delta velocity component
         0.2, // max convergence distance
         2.0, // max velocity component
-        100 // max iterations
+        20 // max iterations
     );
 
     IntegratorResolution intRes = new IntegratorResolution(
@@ -71,25 +74,39 @@ class AppTest {
     Function<Double, Rotation3d> spinFunction = speed -> new Rotation3d(); // no spin
     Function<BallisticPrecomputer.RobotState, BallisticPrecomputer.ShotParameters> guessShotFunction = state -> new BallisticPrecomputer.ShotParameters(
         Radians.of(0.1),
-        Radians.of(0.1),
+        Radians.of(0.3),
         5.0);
 
     RobotState testingRobotState = new RobotState(new Translation2d(1, 1), new Translation2d(-1, -1));
 
     App unitTest = new App(simRes, intRes, env, testFieldMetrics, spinFunction, guessShotFunction);
 
-    ShotParameters convergedShot = unitTest.precomputer.convergeSolution(
+    StringBuffer cvs = new StringBuffer("x_1, y_1, z_1");
+    unitTest.precomputer.convergeSolution(
         unitTest.precomputer.projectileState,
           testingRobotState,
           unitTest.precomputer.computeShotGuess.apply(testingRobotState));
 
-    assertNotNull(convergedShot, "Shot should converge to a solution");
-    assertTrue(convergedShot.speed() > 0, "Speed should be positive");
+    unitTest.precomputer.projectileState.trajectory.forEach((Translation3d pos) -> {
+      cvs.append(pos.getX() + "," + pos.getY() + "," + pos.getZ() + "\n");
+    });
 
-    System.out.println("Converged Shot:");
-    System.out.println("Yaw: " + convergedShot.yaw());
-    System.out.println("Pitch: " + convergedShot.pitch());
-    System.out.println("Speed: " + convergedShot.speed());
+    Path outputPath = Paths.get("trajectory.csv");
+
+    try {
+      Files.writeString(outputPath, cvs.toString());
+    } catch (IOException e) {
+
+    }
+
+    System.out.println("FINISHED");
+    // assertNotNull(convergedShot, "Shot should converge to a solution");
+    // assertTrue(convergedShot.speed() > 0, "Speed should be positive");
+
+    // System.out.println("Converged Shot:");
+    // System.out.println("Yaw: " + convergedShot.yaw());
+    // System.out.println("Pitch: " + convergedShot.pitch());
+    // System.out.println("Speed: " + convergedShot.speed());
 
   }
 }

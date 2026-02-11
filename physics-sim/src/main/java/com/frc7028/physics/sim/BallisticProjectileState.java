@@ -8,8 +8,8 @@ import java.util.function.Function;
 public class BallisticProjectileState extends VectorState {
 
   BallisticPrecomputer simulator;
-  BoundaryState boundaryState;
-  CollisionStatus collisionStatus;
+  public BoundaryState boundaryState;
+  public CollisionStatus collisionStatus;
   Translation3d error;
   Integrator ballisticIntegrator;
 
