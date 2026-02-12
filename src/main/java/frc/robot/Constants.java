@@ -126,12 +126,12 @@ public final class Constants {
     public static final Angle YAW_MAGNETIC_OFFSET = Rotations.of(0.0); // placeholder
     public static final Angle PITCH_MAGNETIC_OFFSET = Rotations.of(0.0); // placeholder
 
-    public static final Angle YAW_SOFT_LIMIT_FORWARD = Rotations.of(0.5); // placeholder (~180deg)
-    public static final Angle YAW_SOFT_LIMIT_REVERSE = Rotations.of(-0.5); // placeholder
+    public static final Angle YAW_LIMIT_FORWARD = Rotations.of(0.7); // placeholder (~180deg)
+    public static final Angle YAW_LIMIT_REVERSE = Rotations.of(-0.7); // placeholder
     public static final Angle YAW_HOME_ANGLE = Rotations.of(0.0); // placeholder
     public static final Angle YAW_POSITION_TOLERANCE = Rotations.of(0.01); // placeholder (~3.6deg)
-    public static final Angle PITCH_SOFT_LIMIT_FORWARD = Rotations.of(0.2); // placeholder
-    public static final Angle PITCH_SOFT_LIMIT_REVERSE = Rotations.of(-0.1); // placeholder
+    public static final Angle PITCH_LIMIT_FORWARD = Rotations.of(0.2); // placeholder
+    public static final Angle PITCH_LIMIT_REVERSE = Rotations.of(-0.1); // placeholder
     public static final Angle PITCH_HOME_ANGLE = Rotations.of(0.0); // placeholder
     public static final Angle PITCH_POSITION_TOLERANCE = Rotations.of(0.01); // placeholder (~3.6deg)
     public static final AngularVelocity FLYWHEEL_MAX_SPEED = RotationsPerSecond.of(1.0); // placeholder

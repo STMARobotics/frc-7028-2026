@@ -18,26 +18,26 @@ import static frc.robot.Constants.ShooterConstants.FLYWHEEL_SUPPLY_CURRENT_LIMIT
 import static frc.robot.Constants.ShooterConstants.FLYWHEEL_VELOCITY_TOLERANCE;
 import static frc.robot.Constants.ShooterConstants.PITCH_ENCODER_ID;
 import static frc.robot.Constants.ShooterConstants.PITCH_HOME_ANGLE;
+import static frc.robot.Constants.ShooterConstants.PITCH_LIMIT_FORWARD;
+import static frc.robot.Constants.ShooterConstants.PITCH_LIMIT_REVERSE;
 import static frc.robot.Constants.ShooterConstants.PITCH_MAGNETIC_OFFSET;
 import static frc.robot.Constants.ShooterConstants.PITCH_MOTION_MAGIC_CONFIGS;
 import static frc.robot.Constants.ShooterConstants.PITCH_MOTOR_ID;
 import static frc.robot.Constants.ShooterConstants.PITCH_POSITION_TOLERANCE;
 import static frc.robot.Constants.ShooterConstants.PITCH_ROTOR_TO_SENSOR_RATIO;
 import static frc.robot.Constants.ShooterConstants.PITCH_SLOT_CONFIGS;
-import static frc.robot.Constants.ShooterConstants.PITCH_SOFT_LIMIT_FORWARD;
-import static frc.robot.Constants.ShooterConstants.PITCH_SOFT_LIMIT_REVERSE;
 import static frc.robot.Constants.ShooterConstants.PITCH_STATOR_CURRENT_LIMIT;
 import static frc.robot.Constants.ShooterConstants.PITCH_SUPPLY_CURRENT_LIMIT;
 import static frc.robot.Constants.ShooterConstants.YAW_ENCODER_ID;
 import static frc.robot.Constants.ShooterConstants.YAW_HOME_ANGLE;
+import static frc.robot.Constants.ShooterConstants.YAW_LIMIT_FORWARD;
+import static frc.robot.Constants.ShooterConstants.YAW_LIMIT_REVERSE;
 import static frc.robot.Constants.ShooterConstants.YAW_MAGNETIC_OFFSET;
 import static frc.robot.Constants.ShooterConstants.YAW_MOTION_MAGIC_CONFIGS;
 import static frc.robot.Constants.ShooterConstants.YAW_MOTOR_ID;
 import static frc.robot.Constants.ShooterConstants.YAW_POSITION_TOLERANCE;
 import static frc.robot.Constants.ShooterConstants.YAW_ROTOR_TO_SENSOR_RATIO;
 import static frc.robot.Constants.ShooterConstants.YAW_SLOT_CONFIGS;
-import static frc.robot.Constants.ShooterConstants.YAW_SOFT_LIMIT_FORWARD;
-import static frc.robot.Constants.ShooterConstants.YAW_SOFT_LIMIT_REVERSE;
 import static frc.robot.Constants.ShooterConstants.YAW_STATOR_CURRENT_LIMIT;
 import static frc.robot.Constants.ShooterConstants.YAW_SUPPLY_CURRENT_LIMIT;
 
@@ -72,6 +72,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
+import frc.robot.Constants.ShooterConstants;
 
 /** Shooter subsystem: turret yaw + pitch + flywheel. */
 @Logged(strategy = Logged.Strategy.OPT_IN)
@@ -144,7 +145,6 @@ public class ShooterSubsystem extends SubsystemBase {
     configureYaw();
     configurePitch();
     configureFlywheel();
-    configureStatusSignals();
   }
 
   private void configureYaw() {
@@ -168,9 +168,9 @@ public class ShooterSubsystem extends SubsystemBase {
         .withMotionMagic(YAW_MOTION_MAGIC_CONFIGS)
         .withSoftwareLimitSwitch(
             new SoftwareLimitSwitchConfigs().withForwardSoftLimitEnable(true)
-                .withForwardSoftLimitThreshold(YAW_SOFT_LIMIT_FORWARD)
+                .withForwardSoftLimitThreshold(YAW_LIMIT_FORWARD)
                 .withReverseSoftLimitEnable(true)
-                .withReverseSoftLimitThreshold(YAW_SOFT_LIMIT_REVERSE));
+                .withReverseSoftLimitThreshold(YAW_LIMIT_REVERSE));
 
     yawMotor.getConfigurator().apply(yawTalonConfig);
   }
@@ -196,37 +196,28 @@ public class ShooterSubsystem extends SubsystemBase {
         .withMotionMagic(PITCH_MOTION_MAGIC_CONFIGS)
         .withSoftwareLimitSwitch(
             new SoftwareLimitSwitchConfigs().withForwardSoftLimitEnable(true)
-                .withForwardSoftLimitThreshold(PITCH_SOFT_LIMIT_FORWARD)
+                .withForwardSoftLimitThreshold(PITCH_LIMIT_FORWARD)
                 .withReverseSoftLimitEnable(true)
-                .withReverseSoftLimitThreshold(PITCH_SOFT_LIMIT_REVERSE));
+                .withReverseSoftLimitThreshold(PITCH_LIMIT_REVERSE));
 
     pitchMotor.getConfigurator().apply(pitchTalonConfig);
   }
 
   private void configureFlywheel() {
     TalonFXConfiguration flywheelConfig = new TalonFXConfiguration()
-        .withMotorOutput(new MotorOutputConfigs().withNeutralMode(Coast))
+        .withMotorOutput(
+            new MotorOutputConfigs().withNeutralMode(Coast).withInverted(InvertedValue.CounterClockwise_Positive))
         .withCurrentLimits(
             new CurrentLimitsConfigs().withStatorCurrentLimit(FLYWHEEL_STATOR_CURRENT_LIMIT)
                 .withStatorCurrentLimitEnable(true)
                 .withSupplyCurrentLimit(FLYWHEEL_SUPPLY_CURRENT_LIMIT)
                 .withSupplyCurrentLimitEnable(true))
-        .withSlot0(Slot0Configs.from(FLYWHEEL_SLOT_CONFIGS))
-        .withMotorOutput(new MotorOutputConfigs().withInverted(InvertedValue.CounterClockwise_Positive));
+        .withSlot0(Slot0Configs.from(FLYWHEEL_SLOT_CONFIGS));
 
     flywheelLeaderMotor.getConfigurator().apply(flywheelConfig);
-
-    flywheelConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
     flywheelFollowerMotor.getConfigurator().apply(flywheelConfig);
 
     flywheelFollowerMotor.setControl(new Follower(flywheelLeaderMotor.getDeviceID(), MotorAlignmentValue.Opposed));
-  }
-
-  private void configureStatusSignals() {
-    yawMotor.optimizeBusUtilization();
-    pitchMotor.optimizeBusUtilization();
-    flywheelLeaderMotor.optimizeBusUtilization();
-    flywheelFollowerMotor.optimizeBusUtilization();
   }
 
   /**
@@ -295,12 +286,6 @@ public class ShooterSubsystem extends SubsystemBase {
         .finallyDo(this::stopFlywheel);
   }
 
-  @Override
-  public void periodic() {
-    BaseStatusSignal
-        .refreshAll(yawPosition, yawVelocity, pitchPosition, pitchVelocity, flywheelVelocity, flywheelAcceleration);
-  }
-
   /**
    * Commands yaw to an angle
    *
@@ -311,12 +296,9 @@ public class ShooterSubsystem extends SubsystemBase {
    * @param targetYaw requested yaw
    */
   public void setYawAngle(Angle targetYaw) {
+    BaseStatusSignal.refreshAll(yawPosition, yawVelocity);
     Angle currentYaw = BaseStatusSignal.getLatencyCompensatedValue(yawPosition, yawVelocity);
-    double targetYawRotations = chooseYawShortestDistance(
-        targetYaw,
-          currentYaw,
-          YAW_SOFT_LIMIT_REVERSE,
-          YAW_SOFT_LIMIT_FORWARD);
+    double targetYawRotations = chooseYawShortestDistance(targetYaw, currentYaw);
     yawMotor.setControl(yawPositionRequest.withPosition(targetYawRotations));
   }
 
@@ -326,10 +308,8 @@ public class ShooterSubsystem extends SubsystemBase {
    * @param targetPitch requested pitch
    */
   public void setPitchAngle(Angle targetPitch) {
-    double targetPitchRotations = MathUtil.clamp(
-        targetPitch.in(Rotations),
-          PITCH_SOFT_LIMIT_REVERSE.in(Rotations),
-          PITCH_SOFT_LIMIT_FORWARD.in(Rotations));
+    double targetPitchRotations = MathUtil
+        .clamp(targetPitch.in(Rotations), PITCH_LIMIT_REVERSE.in(Rotations), PITCH_LIMIT_FORWARD.in(Rotations));
 
     pitchMotor.setControl(pitchPositionRequest.withPosition(targetPitchRotations));
   }
@@ -393,6 +373,7 @@ public class ShooterSubsystem extends SubsystemBase {
    */
   @Logged(name = "Yaw")
   public Angle getYaw() {
+    BaseStatusSignal.refreshAll(yawPosition, yawVelocity);
     return BaseStatusSignal.getLatencyCompensatedValue(yawPosition, yawVelocity);
   }
 
@@ -403,6 +384,7 @@ public class ShooterSubsystem extends SubsystemBase {
    */
   @Logged(name = "Yaw Normalized")
   public Angle getYawHeadingNormalized() {
+    BaseStatusSignal.refreshAll(yawPosition, yawVelocity);
     Angle rot = BaseStatusSignal.getLatencyCompensatedValue(yawPosition, yawVelocity);
     return yawWrappedAngle.mut_replace(normalizeYaw(rot), Rotations);
   }
@@ -414,6 +396,7 @@ public class ShooterSubsystem extends SubsystemBase {
    */
   @Logged(name = "Pitch")
   public Angle getPitch() {
+    BaseStatusSignal.refreshAll(pitchPosition, pitchVelocity);
     return BaseStatusSignal.getLatencyCompensatedValue(pitchPosition, pitchVelocity);
   }
 
@@ -424,12 +407,14 @@ public class ShooterSubsystem extends SubsystemBase {
    */
   @Logged(name = "Flywheel Velocity")
   public AngularVelocity getFlywheelVelocity() {
+    BaseStatusSignal.refreshAll(flywheelVelocity, flywheelAcceleration);
     return BaseStatusSignal.getLatencyCompensatedValue(flywheelVelocity, flywheelAcceleration);
   }
 
   /** Returns whether current yaw is within tolerance of the active yaw request. */
   @Logged
   public boolean isYawAtSetpoint() {
+    BaseStatusSignal.refreshAll(yawPosition, yawVelocity);
     Angle currentYaw = BaseStatusSignal.getLatencyCompensatedValue(yawPosition, yawVelocity);
     return MathUtil.isNear(yawPositionRequest.Position, currentYaw.in(Rotations), YAW_POSITION_TOLERANCE.in(Rotations));
   }
@@ -437,6 +422,7 @@ public class ShooterSubsystem extends SubsystemBase {
   /** Returns whether pitch is within configured tolerance of the active request. */
   @Logged
   public boolean isPitchAtSetpoint() {
+    BaseStatusSignal.refreshAll(pitchPosition, pitchVelocity);
     Angle currentPitch = BaseStatusSignal.getLatencyCompensatedValue(pitchPosition, pitchVelocity);
     return MathUtil
         .isNear(pitchPositionRequest.Position, currentPitch.in(Rotations), PITCH_POSITION_TOLERANCE.in(Rotations));
@@ -445,6 +431,7 @@ public class ShooterSubsystem extends SubsystemBase {
   /** Returns whether flywheel speed is within configured tolerance of the active request. */
   @Logged
   public boolean isFlywheelAtSpeed() {
+    BaseStatusSignal.refreshAll(flywheelVelocity, flywheelAcceleration);
     AngularVelocity currentSpeed = BaseStatusSignal.getLatencyCompensatedValue(flywheelVelocity, flywheelAcceleration);
     return MathUtil.isNear(
         flywheelVelocityRequest.Velocity,
@@ -477,19 +464,12 @@ public class ShooterSubsystem extends SubsystemBase {
    * 360 degrees, there are multiple equivalent angles that achieve the same heading. This method selects the one
    * closest to the current angle to minimize motion.
    *
-   * @param desiredRotation desired heading
-   * @param currentContinuousRotation current turret angle (continuous not wrapped)
-   * @param minSoftLimitRotation reverse soft limit (continuous not wrapped)
-   * @param maxSoftLimitRotation forward soft limit (continuous not wrapped)
+   * @param desiredYaw desired heading
+   * @param currentYaw current turret angle (continuous not wrapped)
    * @return nearest equivalent angle in rotations
    */
-  static double chooseYawShortestDistance(
-      Angle wrappedDesiredRotation,
-      Angle currentContinuousRotation,
-      Angle minSoftLimitRotation,
-      Angle maxSoftLimitRotation) {
-
-    double normalizedDesired = normalizeYaw(wrappedDesiredRotation);
+  static double chooseYawShortestDistance(Angle desiredYaw, Angle currentYaw) {
+    double normalizedDesired = normalizeYaw(desiredYaw);
     double bestCandidate = normalizedDesired;
     double bestDistance = Double.POSITIVE_INFINITY;
 
@@ -497,9 +477,9 @@ public class ShooterSubsystem extends SubsystemBase {
     double[] offsets = { -1.0, 0.0, 1.0 };
     for (double offset : offsets) {
       double candidate = normalizedDesired + offset;
-      double distance = Math.abs(candidate - currentContinuousRotation.in(Rotations));
-      if (candidate >= minSoftLimitRotation.in(Rotations) && candidate <= maxSoftLimitRotation.in(Rotations)
-          && distance < bestDistance) {
+      double distance = Math.abs(candidate - currentYaw.in(Rotations));
+      if (candidate >= ShooterConstants.YAW_LIMIT_REVERSE.in(Rotations)
+          && candidate <= ShooterConstants.YAW_LIMIT_FORWARD.in(Rotations) && distance < bestDistance) {
         bestDistance = distance;
         bestCandidate = candidate;
       }
