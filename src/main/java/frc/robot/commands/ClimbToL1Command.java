@@ -26,6 +26,11 @@ public class ClimbToL1Command extends Command {
   @Override
   public void initialize() {
     climbSubsystem.prepareToL1();
+    climbSubsystem.run(climbSubsystem::prepareToL1)
+        .until(climbSubsystem::isActionComplete)
+        .andThen(climbSubsystem::L1)
+        .until(climbSubsystem::isActionComplete)
+        .finallyDo(climbSubsystem::stop);
   }
 
   @Override

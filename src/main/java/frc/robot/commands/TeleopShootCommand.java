@@ -42,8 +42,8 @@ public class TeleopShootCommand extends Command {
   private final SpindexerSubsystem spindexerSubsystem;
   private final LEDSubsystem ledSubsystem;
 
-  private final Supplier<LinearVelocity> xSupplier;
-  private final Supplier<LinearVelocity> ySupplier;
+  private final Supplier<LinearVelocity> xVelocitySupplier;
+  private final Supplier<LinearVelocity> yVelocitySupplier;
 
   private final Supplier<Pose2d> robotPoseSupplier;
 
@@ -68,8 +68,8 @@ public class TeleopShootCommand extends Command {
       TransferSubsystem transferSubsystem,
       SpindexerSubsystem spindexerSubsystem,
       LEDSubsystem ledSubsystem,
-      Supplier<LinearVelocity> xSupplier,
-      Supplier<LinearVelocity> ySupplier,
+      Supplier<LinearVelocity> xVelocitySupplier,
+      Supplier<LinearVelocity> yVelocitySupplier,
       Supplier<Pose2d> robotPoseSupplier,
       Translation2d targetRed,
       Translation2d targetBlue,
@@ -80,8 +80,8 @@ public class TeleopShootCommand extends Command {
     this.transferSubsystem = transferSubsystem;
     this.spindexerSubsystem = spindexerSubsystem;
     this.ledSubsystem = ledSubsystem;
-    this.xSupplier = xSupplier;
-    this.ySupplier = ySupplier;
+    this.xVelocitySupplier = xVelocitySupplier;
+    this.yVelocitySupplier = yVelocitySupplier;
     this.robotPoseSupplier = robotPoseSupplier;
     this.targetRed = targetRed;
     this.targetBlue = targetBlue;
@@ -134,7 +134,7 @@ public class TeleopShootCommand extends Command {
     var predictedTargetTranslation = targetTranslation;
 
     // Iterate 4 times to converge on the intersection of trajectory and target
-    ShooterSetpoints shootingSettings = null;
+    ShooterSetpoints shootingSettings;
     for (int i = 0; i < 4; i++) {
       var dist = predictedTargetTranslation.getDistance(muzzleTranslation);
       shootingSettings = lookupTable.get(dist);
@@ -158,6 +158,8 @@ public class TeleopShootCommand extends Command {
       predictedTargetTranslation = targetTranslation.minus(targetPredictedOffset);
     }
 
+    shootingSettings = lookupTable.get(predictedTargetTranslation.getDistance(muzzleTranslation));
+
     // Calculate the angle to the target
     var angleToTarget = predictedTargetTranslation.minus(muzzleTranslation).getAngle();
 
@@ -171,8 +173,8 @@ public class TeleopShootCommand extends Command {
 
     // Let the driver translate
     drivetrain.setControl(
-        swerveRequestRotation.withVelocityX(xSupplier.get().in(MetersPerSecond) * velocityMultiplier)
-            .withVelocityY(ySupplier.get().in(MetersPerSecond) * velocityMultiplier)
+        swerveRequestRotation.withVelocityX(xVelocitySupplier.get().in(MetersPerSecond) * velocityMultiplier)
+            .withVelocityY(yVelocitySupplier.get().in(MetersPerSecond) * velocityMultiplier)
             .withRotationalRate(0.0));
 
     // We might want to debounce some of the ready states, we'll see
