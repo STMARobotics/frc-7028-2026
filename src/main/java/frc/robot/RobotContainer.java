@@ -67,12 +67,12 @@ public class RobotContainer {
       TunerConstants.FrontRight,
       TunerConstants.BackLeft,
       TunerConstants.BackRight);
-
+  @Logged
   private final LocalizationSubsystem localizationSubsystem = new LocalizationSubsystem(
       drivetrain::addVisionMeasurement,
       drivetrain::resetPose,
-      drivetrain::getYawData,
-      () -> drivetrain.getState().Speeds.omegaRadiansPerSecond);
+      drivetrain::getIMUYaw,
+      drivetrain::getIMUYawVelocity);
   @Logged
   private final TransferSubsystem transferSubsystem = new TransferSubsystem();
   @Logged
