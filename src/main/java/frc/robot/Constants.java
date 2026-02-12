@@ -32,7 +32,10 @@ import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.units.measure.Voltage;
 import frc.robot.generated.TunerConstants;
 
-public class Constants {
+public final class Constants {
+
+  private Constants() {
+  } // prevent instantiation
 
   public static final CANBus CANIVORE_BUS = new CANBus("canivore");
 
@@ -96,6 +99,72 @@ public class Constants {
           0.03, // Y: Trust Quest to within 3cm
           0.5 // Theta: Trust Quest rotation LESS than Gyro (Trust Pigeon more)
     );
+  }
+
+  /**
+   * Constants for the shooter subsystem
+   */
+  public static class ShooterConstants {
+    // TODO: Replace placeholder values and confirm ID assignments
+    public static final int YAW_MOTOR_ID = 25;
+    public static final int YAW_ENCODER_ID = 29;
+    public static final int PITCH_MOTOR_ID = 26;
+    public static final int PITCH_ENCODER_ID = 30;
+    public static final int FLYWHEEL_LEADER_MOTOR_ID = 27;
+    public static final int FLYWHEEL_FOLLOWER_MOTOR_ID = 28;
+
+    public static final Current YAW_STATOR_CURRENT_LIMIT = Amps.of(100);
+    public static final Current YAW_SUPPLY_CURRENT_LIMIT = Amps.of(40);
+    public static final Current PITCH_STATOR_CURRENT_LIMIT = Amps.of(40);
+    public static final Current PITCH_SUPPLY_CURRENT_LIMIT = Amps.of(30);
+    public static final Current FLYWHEEL_STATOR_CURRENT_LIMIT = Amps.of(40);
+    public static final Current FLYWHEEL_SUPPLY_CURRENT_LIMIT = Amps.of(30);
+
+    public static final double YAW_ROTOR_TO_SENSOR_RATIO = 1.0; // placeholder
+    public static final double PITCH_ROTOR_TO_SENSOR_RATIO = 1.0; // placeholder
+
+    public static final Angle YAW_MAGNETIC_OFFSET = Rotations.of(0.0); // placeholder
+    public static final Angle PITCH_MAGNETIC_OFFSET = Rotations.of(0.0); // placeholder
+
+    public static final Angle YAW_LIMIT_FORWARD = Rotations.of(0.7); // placeholder (~180deg)
+    public static final Angle YAW_LIMIT_REVERSE = Rotations.of(-0.7); // placeholder
+    public static final Angle YAW_HOME_ANGLE = Rotations.of(0.0); // placeholder
+    public static final Angle YAW_POSITION_TOLERANCE = Rotations.of(0.01); // placeholder (~3.6deg)
+    public static final Angle PITCH_LIMIT_FORWARD = Rotations.of(0.2); // placeholder
+    public static final Angle PITCH_LIMIT_REVERSE = Rotations.of(-0.1); // placeholder
+    public static final Angle PITCH_HOME_ANGLE = Rotations.of(0.0); // placeholder
+    public static final Angle PITCH_POSITION_TOLERANCE = Rotations.of(0.01); // placeholder (~3.6deg)
+    public static final AngularVelocity FLYWHEEL_MAX_SPEED = RotationsPerSecond.of(1.0); // placeholder
+    public static final AngularVelocity FLYWHEEL_VELOCITY_TOLERANCE = RotationsPerSecond.of(0.05); // placeholder
+
+    // TODO: Tune PID values
+    public static final SlotConfigs YAW_SLOT_CONFIGS = new SlotConfigs().withKP(0.0)
+        .withKI(0.0)
+        .withKD(0.0)
+        .withKS(0.0)
+        .withKV(0.5)
+        .withKA(0.0);
+
+    public static final MotionMagicConfigs YAW_MOTION_MAGIC_CONFIGS = new MotionMagicConfigs()
+        .withMotionMagicAcceleration(1.0) // placeholder
+        .withMotionMagicCruiseVelocity(1.0); // placeholder
+
+    // TODO: Tune PID values
+    public static final SlotConfigs PITCH_SLOT_CONFIGS = new SlotConfigs().withKP(0.0)
+        .withKI(0.0)
+        .withKD(0.0)
+        .withKS(0.0);
+
+    public static final MotionMagicConfigs PITCH_MOTION_MAGIC_CONFIGS = new MotionMagicConfigs()
+        .withMotionMagicAcceleration(1.0) // placeholder
+        .withMotionMagicCruiseVelocity(1.0); // placeholder
+
+    public static final SlotConfigs FLYWHEEL_SLOT_CONFIGS = new SlotConfigs().withKP(0.0)
+        .withKI(0.0)
+        .withKD(0.0)
+        .withKS(0.0)
+        .withKV(0.0)
+        .withKA(0.0);
   }
 
   /**
