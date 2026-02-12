@@ -27,7 +27,7 @@ public class ShootCommand extends Command {
     shooterSubsystem.applySetpoints(null);
     if (shooterSubsystem.isFlywheelAtSpeed()) {
       spindexerSubsystem.feedShooter();
-    transferSubsystem.feedShooter();
+      transferSubsystem.feedShooter();
     }
   }
 
