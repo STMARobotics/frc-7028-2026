@@ -25,7 +25,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.LEDSubsystem;
 import frc.robot.subsystems.ShooterSubsystem;
-import frc.robot.subsystems.ShooterSubsystem.ShooterTarget;
+import frc.robot.subsystems.ShooterSubsystem.ShooterSetpoints;
 import frc.robot.subsystems.SpindexerSubsystem;
 import frc.robot.subsystems.TransferSubsystem;
 import java.util.function.Supplier;
@@ -52,7 +52,7 @@ public class TeleopShootCommand extends Command {
 
   private final Translation2d targetRed;
   private final Translation2d targetBlue;
-  private final InterpolatingTreeMap<Double, ShooterTarget> lookupTable;
+  private final InterpolatingTreeMap<Double, ShooterSetpoints> lookupTable;
   private final double velocityMultiplier;
   private final double maxVelocity;
 
@@ -73,7 +73,7 @@ public class TeleopShootCommand extends Command {
       Supplier<Pose2d> robotPoseSupplier,
       Translation2d targetRed,
       Translation2d targetBlue,
-      InterpolatingTreeMap<Double, ShooterTarget> lookupTable,
+      InterpolatingTreeMap<Double, ShooterSetpoints> lookupTable,
       double velocityMultiplier) {
     this.drivetrain = drivetrain;
     this.shooterSubsystem = shooter;
@@ -104,7 +104,7 @@ public class TeleopShootCommand extends Command {
   public void execute() {
     var robotPose = robotPoseSupplier.get();
     var currentChassisSpeeds = drivetrain.getCurrentFieldChassisSpeeds();
-    var currentTurretYaw = shooterSubsystem.getYawAngle();
+    var currentTurretYaw = shooterSubsystem.getYaw();
 
     // Translation to the muzzle (exit point of the fuel)
     var muzzleTranslation = ShooterSubsystem.getMuzzleTranslation(robotPose, currentTurretYaw);
@@ -134,7 +134,7 @@ public class TeleopShootCommand extends Command {
     var predictedTargetTranslation = targetTranslation;
 
     // Iterate 4 times to converge on the intersection of trajectory and target
-    ShooterTarget shootingSettings = null;
+    ShooterSetpoints shootingSettings = null;
     for (int i = 0; i < 4; i++) {
       var dist = predictedTargetTranslation.getDistance(muzzleTranslation);
       shootingSettings = lookupTable.get(dist);
