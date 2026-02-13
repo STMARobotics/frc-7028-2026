@@ -37,6 +37,7 @@ import frc.robot.controls.ControlBindings;
 import frc.robot.controls.JoystickControlBindings;
 import frc.robot.controls.XBoxControlBindings;
 import frc.robot.generated.TunerConstants;
+import frc.robot.subsystems.ClimbSubsystem;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.IntakeSubsytem;
 import frc.robot.subsystems.LEDSubsystem;
@@ -79,6 +80,8 @@ public class RobotContainer {
   private final SpindexerSubsystem spindexerSubsystem = new SpindexerSubsystem();
   @Logged
   private final IntakeSubsytem intakeSubsystem = new IntakeSubsytem();
+  @Logged
+  private final ClimbSubsystem climbSubsystem = new ClimbSubsystem();
   private final LEDSubsystem ledSubsystem = new LEDSubsystem();
 
   /* Path follower */
@@ -130,6 +133,15 @@ public class RobotContainer {
       localizationSubsystem.setQuestNavPose(robotNewPose);
       drivetrain.resetPose(robotNewPose);
     })));
+
+    controlBindings.expandClimb()
+        .ifPresent(
+            trigger -> trigger
+                .whileTrue(Commands.runEnd(climbSubsystem::expand, climbSubsystem::stop, climbSubsystem)));
+    controlBindings.contractClimb()
+        .ifPresent(
+            trigger -> trigger
+                .whileTrue(Commands.runEnd(climbSubsystem::contract, climbSubsystem::stop, climbSubsystem)));
 
     // Idle while the robot is disabled. This ensures the configured
     // neutral mode is applied to the drive motors while disabled.
