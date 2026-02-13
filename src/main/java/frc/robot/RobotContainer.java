@@ -158,6 +158,15 @@ public class RobotContainer {
                     ShootingConstants.SHOOTER_TARGETS_BY_DISTANCE_METERS,
                     TeleopDriveConstants.SHOOT_VELOCITY_MULTIPLIER)));
 
+    controlBindings.expandClimb()
+        .ifPresent(
+            trigger -> trigger
+                .whileTrue(Commands.runEnd(climbSubsystem::expand, climbSubsystem::stop, climbSubsystem)));
+    controlBindings.contractClimb()
+        .ifPresent(
+            trigger -> trigger
+                .whileTrue(Commands.runEnd(climbSubsystem::contract, climbSubsystem::stop, climbSubsystem)));
+
     // Idle while the robot is disabled. This ensures the configured
     // neutral mode is applied to the drive motors while disabled.
     final SwerveRequest idle = new SwerveRequest.Idle();

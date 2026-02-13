@@ -63,4 +63,22 @@ public abstract class ControlBindings {
     return Optional.empty();
   }
 
+  /**
+   * Trigger for expanding the climb
+   * 
+   * @return optional trigger
+   */
+  public Optional<Trigger> expandClimb() {
+    return Optional.empty();
+  }
+
+  /**
+   * Trigger for contracting the climb
+   * 
+   * @return optional trigger
+   */
+  public Optional<Trigger> contractClimb() {
+    return Optional.empty();
+  }
+
 }
