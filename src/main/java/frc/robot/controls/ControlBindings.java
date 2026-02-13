@@ -81,4 +81,31 @@ public abstract class ControlBindings {
     return Optional.empty();
   }
 
+  /**
+   * Trigger to intake fuel from the floor. This includes deploying the intake.
+   * 
+   * @return optional trigger
+   */
+  public Optional<Trigger> intake() {
+    return Optional.empty();
+  }
+
+  /**
+   * Trigger to stop the intake rollers.
+   * 
+   * @return optional trigger
+   */
+  public Optional<Trigger> stopIntake() {
+    return Optional.empty();
+  }
+
+  /**
+   * Trigger to retract the intake.
+   * 
+   * @return optional trigger
+   */
+  public Optional<Trigger> retractIntake() {
+    return Optional.empty();
+  }
+
 }

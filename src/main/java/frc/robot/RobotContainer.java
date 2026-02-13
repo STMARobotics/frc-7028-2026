@@ -34,6 +34,7 @@ import frc.robot.Constants.TeleopDriveConstants;
 import frc.robot.commands.ClimbToL1Command;
 import frc.robot.commands.DeployIntakeCommand;
 import frc.robot.commands.IntakeCommand;
+import frc.robot.commands.RetractIntakeCommand;
 import frc.robot.commands.TeleopShootCommand;
 import frc.robot.commands.led.DefaultLEDCommand;
 import frc.robot.commands.led.LEDBootAnimationCommand;
@@ -141,6 +142,7 @@ public class RobotContainer {
       drivetrain.resetPose(robotNewPose);
     })));
 
+    // Shooting
     controlBindings.shoot()
         .ifPresent(
             trigger -> trigger.whileTrue(
@@ -158,6 +160,7 @@ public class RobotContainer {
                     ShootingConstants.SHOOTER_TARGETS_BY_DISTANCE_METERS,
                     TeleopDriveConstants.SHOOT_VELOCITY_MULTIPLIER)));
 
+    // Climb
     controlBindings.expandClimb()
         .ifPresent(
             trigger -> trigger
@@ -166,6 +169,12 @@ public class RobotContainer {
         .ifPresent(
             trigger -> trigger
                 .whileTrue(Commands.runEnd(climbSubsystem::contract, climbSubsystem::stop, climbSubsystem)));
+
+    // Intake
+    controlBindings.intake()
+        .ifPresent(trigger -> trigger.onTrue(new IntakeCommand(intakeSubsystem, spindexerSubsystem)));
+    controlBindings.retractIntake().ifPresent(trigger -> trigger.onTrue(new RetractIntakeCommand(intakeSubsystem)));
+    controlBindings.stopIntake().ifPresent(trigger -> trigger.onTrue(intakeSubsystem.runOnce(intakeSubsystem::stop)));
 
     // Idle while the robot is disabled. This ensures the configured
     // neutral mode is applied to the drive motors while disabled.
