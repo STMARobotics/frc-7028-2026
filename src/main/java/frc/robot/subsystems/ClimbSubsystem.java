@@ -130,14 +130,14 @@ public class ClimbSubsystem extends SubsystemBase {
   /**
    * Moves the upper hook up and the lower hook down
    */
-  private void expand() {
+  public void expand() {
     climbMotorLeader.setControl(voltageOut.withOutput(CLIMB_OUTPUT_FORWARD_VOLTAGE));
   }
 
   /*
    * Moves the upper hook down and the lower hook up
    */
-  private void contract() {
+  public void contract() {
     climbMotorLeader.setControl(voltageOut.withOutput(CLIMB_OUTPUT_REVERSE_VOLTAGE));
   }
 
