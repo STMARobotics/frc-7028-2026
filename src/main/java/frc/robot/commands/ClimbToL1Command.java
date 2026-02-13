@@ -36,7 +36,7 @@ public class ClimbToL1Command extends Command {
   @Override
   public void execute() {
     // Wait until the prepare action is complete, then move to L1
-    if (climbSubsystem.getCurrentState() == ClimbSubsystem.ClimbState.PREPARE_TO_L1
+    if (climbSubsystem.getCurrentState() == ClimbSubsystem.ClimbAction.PREPARE_TO_L1
         && climbSubsystem.isActionComplete()) {
       climbSubsystem.L1();
     }
@@ -50,6 +50,6 @@ public class ClimbToL1Command extends Command {
   @Override
   public boolean isFinished() {
     // Finished when we're at L1 and the action is complete
-    return climbSubsystem.getCurrentState() == ClimbSubsystem.ClimbState.L1 && climbSubsystem.isActionComplete();
+    return climbSubsystem.getCurrentState() == ClimbSubsystem.ClimbAction.L1 && climbSubsystem.isActionComplete();
   }
 }

@@ -34,19 +34,31 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 @Logged(strategy = Logged.Strategy.OPT_IN)
 public class ClimbSubsystem extends SubsystemBase {
 
-  // keep track of states
-  public enum ClimbState {
+  /**
+   * Enum for different climb actions
+   */
+  public enum ClimbAction {
+    /** Idle state, no action being performed */
     IDLE,
+    /** Prepare to climb to Level 1 */
     PREPARE_TO_L1,
+    /** Climb to Level 1 */
     L1,
     /** L1 hang position, not all the way handing off to L1 */
     L1_HANG,
+    /** Prepare to climb to Level 2 */
     PREPARE_TO_L2,
+    /** Climb to Level 2 */
     L2,
+    /** Prepare to climb to Level 3 */
     PREPARE_TO_L3,
+    /** Climb to Level 3 */
     L3,
+    /** Prepare to stow the climb */
     PREPARE_TO_STOW,
+    /** Move to the stow position */
     MOVE_TO_STOW,
+    /** Move to the floor position */
     GO_TO_FLOOR
   }
 
@@ -60,7 +72,7 @@ public class ClimbSubsystem extends SubsystemBase {
   private final StatusSignal<Boolean> bottomLimitSwitchSignal = limitCANdi.getS2Closed();
   private final StatusSignal<Boolean> stowSensorSignal = stowCANdi.getS1Closed();
 
-  private ClimbState currentClimbState = ClimbState.IDLE;
+  private ClimbAction currentClimbAction = ClimbAction.IDLE;
 
   /**
    * Creates a new climb subsystem
@@ -147,7 +159,7 @@ public class ClimbSubsystem extends SubsystemBase {
    * Reaches for L1 from floor
    */
   public void prepareToL1() {
-    currentClimbState = ClimbState.PREPARE_TO_L1;
+    currentClimbAction = ClimbAction.PREPARE_TO_L1;
     expand();
   }
 
@@ -155,7 +167,7 @@ public class ClimbSubsystem extends SubsystemBase {
    * Moves robot from floor to L1 given robot is at prepareToL1
    */
   public void L1() {
-    currentClimbState = ClimbState.L1;
+    currentClimbAction = ClimbAction.L1;
     contract();
   }
 
@@ -163,7 +175,7 @@ public class ClimbSubsystem extends SubsystemBase {
    * Moves to the L1 hang position, which is not fully hanging on L1 so the robot can descend.
    */
   public void L1Hang() {
-    currentClimbState = ClimbState.L1_HANG;
+    currentClimbAction = ClimbAction.L1_HANG;
     // periodic() will handle moving to the stow/L1 hang position
   }
 
@@ -171,7 +183,7 @@ public class ClimbSubsystem extends SubsystemBase {
    * Reaches for L2 from L1
    */
   public void prepareToL2() {
-    currentClimbState = ClimbState.PREPARE_TO_L2;
+    currentClimbAction = ClimbAction.PREPARE_TO_L2;
     expand();
   }
 
@@ -179,7 +191,7 @@ public class ClimbSubsystem extends SubsystemBase {
    * Moves robot from L1 to L2 given robot is at prepareToL2
    */
   public void L2() {
-    currentClimbState = ClimbState.L2;
+    currentClimbAction = ClimbAction.L2;
     contract();
   }
 
@@ -187,7 +199,7 @@ public class ClimbSubsystem extends SubsystemBase {
    * Reaches for L3 from L2
    */
   public void prepareToL3() {
-    currentClimbState = ClimbState.PREPARE_TO_L3;
+    currentClimbAction = ClimbAction.PREPARE_TO_L3;
     expand();
   }
 
@@ -195,7 +207,7 @@ public class ClimbSubsystem extends SubsystemBase {
    * Moves robot from L2 to L3 given robot is at prepareToL3
    */
   public void L3() {
-    currentClimbState = ClimbState.L3;
+    currentClimbAction = ClimbAction.L3;
     contract();
   }
 
@@ -203,7 +215,7 @@ public class ClimbSubsystem extends SubsystemBase {
    * Moves the lower hook to the bottom past the latch
    */
   public void prepareToStow() {
-    currentClimbState = ClimbState.PREPARE_TO_STOW;
+    currentClimbAction = ClimbAction.PREPARE_TO_STOW;
     expand();
   }
 
@@ -213,14 +225,14 @@ public class ClimbSubsystem extends SubsystemBase {
    * The lower hook has to be below the latch in order to work
    */
   public void moveToStow() {
-    currentClimbState = ClimbState.MOVE_TO_STOW;
+    currentClimbAction = ClimbAction.MOVE_TO_STOW;
   }
 
   /**
    * Moves the upper hook up
    */
   public void goToFloor() {
-    currentClimbState = ClimbState.GO_TO_FLOOR;
+    currentClimbAction = ClimbAction.GO_TO_FLOOR;
     expand();
   }
 
@@ -230,7 +242,7 @@ public class ClimbSubsystem extends SubsystemBase {
    * @return True if the current action has completed
    */
   public boolean isActionComplete() {
-    switch (currentClimbState) {
+    switch (currentClimbAction) {
       case PREPARE_TO_L1:
       case PREPARE_TO_L2:
       case PREPARE_TO_L3:
@@ -255,24 +267,24 @@ public class ClimbSubsystem extends SubsystemBase {
    * 
    * @return Current state of the climb
    */
-  public ClimbState getCurrentState() {
-    return currentClimbState;
+  public ClimbAction getCurrentState() {
+    return currentClimbAction;
   }
 
   /**
    * Stops the climb if it is moving
    */
   public void stop() {
-    currentClimbState = ClimbState.IDLE;
+    currentClimbAction = ClimbAction.IDLE;
     climbMotorLeader.stopMotor();
   }
 
   @Override
   public void periodic() {
-    if (currentClimbState == ClimbState.PREPARE_TO_STOW || currentClimbState == ClimbState.L1_HANG && !isStowed()) {
+    if (currentClimbAction == ClimbAction.PREPARE_TO_STOW || currentClimbAction == ClimbAction.L1_HANG && !isStowed()) {
       contract();
-    } else if (currentClimbState == ClimbState.PREPARE_TO_STOW
-        || currentClimbState == ClimbState.L1_HANG && isStowed()) {
+    } else if (currentClimbAction == ClimbAction.PREPARE_TO_STOW
+        || currentClimbAction == ClimbAction.L1_HANG && isStowed()) {
       stop();
     }
   }
