@@ -9,7 +9,7 @@ import frc.robot.subsystems.SpindexerSubsystem;
 import frc.robot.subsystems.TransferSubsystem;
 
 /*
- * Command to shoot balls from the Spindexer
+ * Command to aim and shoot balls
  */
 
 public class ShootCommand extends Command {
@@ -30,7 +30,6 @@ public class ShootCommand extends Command {
 
   @Override
   public void execute() {
-    shooterSubsystem.isReadyToShoot();
     /*
      * sets the Yaw, Pitch, and Angle
      */
