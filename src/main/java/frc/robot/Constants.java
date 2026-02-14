@@ -280,8 +280,8 @@ public final class Constants {
     public static final int DEVICE_ID_CLIMB_LEADER_MOTOR = 30;
     public static final int DEVICE_ID_CLIMB_FOLLOWER_MOTOR = 31;
 
-    public static final int DEVICE_ID_CANDI_CLIMB_LIMITS = 30;
-    public static final int DEVICE_ID_CANDI_CLIMB_STOW = 31;
+    public static final int DEVICE_ID_CANDI_CLIMB_BOTTOM = 30;
+    public static final int DEVICE_ID_CANDI_CLIMB_TOP = 31;
 
     public static final Current CLIMB_STATOR_CURRENT_LIMIT = Amps.of(100);
     public static final Current CLIMB_SUPPLY_CURRENT_LIMIT = Amps.of(40);
