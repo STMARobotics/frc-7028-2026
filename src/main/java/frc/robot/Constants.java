@@ -32,7 +32,10 @@ import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.units.measure.Voltage;
 import frc.robot.generated.TunerConstants;
 
-public class Constants {
+public final class Constants {
+
+  private Constants() {
+  } // prevent instantiation
 
   public static final CANBus CANIVORE_BUS = new CANBus("canivore");
 
