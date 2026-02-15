@@ -7,8 +7,8 @@ import static frc.robot.Constants.ClimbConstants.CLIMB_OUTPUT_REVERSE_VOLTAGE;
 import static frc.robot.Constants.ClimbConstants.CLIMB_REVERSE_LIMIT;
 import static frc.robot.Constants.ClimbConstants.CLIMB_STATOR_CURRENT_LIMIT;
 import static frc.robot.Constants.ClimbConstants.CLIMB_SUPPLY_CURRENT_LIMIT;
-import static frc.robot.Constants.ClimbConstants.DEVICE_ID_CANDI_CLIMB_LIMITS;
-import static frc.robot.Constants.ClimbConstants.DEVICE_ID_CANDI_CLIMB_STOW;
+import static frc.robot.Constants.ClimbConstants.DEVICE_ID_CANDI_CLIMB_BOTTOM;
+import static frc.robot.Constants.ClimbConstants.DEVICE_ID_CANDI_CLIMB_TOP;
 import static frc.robot.Constants.ClimbConstants.DEVICE_ID_CLIMB_FOLLOWER_MOTOR;
 import static frc.robot.Constants.ClimbConstants.DEVICE_ID_CLIMB_LEADER_MOTOR;
 
@@ -50,13 +50,13 @@ public class ClimbSubsystem extends SubsystemBase {
 
   private final TalonFX climbMotorLeader = new TalonFX(DEVICE_ID_CLIMB_LEADER_MOTOR, CANIVORE_BUS);
   private final TalonFX climbMotorFollower = new TalonFX(DEVICE_ID_CLIMB_FOLLOWER_MOTOR, CANIVORE_BUS);
-  private final CANdi limitCANdi = new CANdi(DEVICE_ID_CANDI_CLIMB_LIMITS, CANIVORE_BUS);
-  private final CANdi stowCANdi = new CANdi(DEVICE_ID_CANDI_CLIMB_STOW, CANIVORE_BUS);
+  private final CANdi topCanDi = new CANdi(DEVICE_ID_CANDI_CLIMB_TOP, CANIVORE_BUS);
+  private final CANdi bottomCanDi = new CANdi(DEVICE_ID_CANDI_CLIMB_BOTTOM, CANIVORE_BUS);
 
   private final VoltageOut voltageOut = new VoltageOut(0).withEnableFOC(true);
-  private final StatusSignal<Boolean> topLimitSwitchSignal = limitCANdi.getS1Closed();
-  private final StatusSignal<Boolean> bottomLimitSwitchSignal = limitCANdi.getS2Closed();
-  private final StatusSignal<Boolean> stowSensorSignal = stowCANdi.getS1Closed();
+  private final StatusSignal<Boolean> topLimitSwitchSignal = topCanDi.getS1Closed();
+  private final StatusSignal<Boolean> stowSensorSignal = topCanDi.getS2Closed();
+  private final StatusSignal<Boolean> bottomLimitSwitchSignal = bottomCanDi.getS2Closed();
 
   private ClimbState currentClimbState = ClimbState.IDLE;
 
@@ -68,20 +68,22 @@ public class ClimbSubsystem extends SubsystemBase {
     CANdiConfiguration climbCANdiLimmitsConfig = new CANdiConfiguration();
     climbCANdiLimmitsConfig.withDigitalInputs(
         new DigitalInputsConfigs().withS1CloseState(S1CloseStateValue.CloseWhenLow)
-            .withS2CloseState(S2CloseStateValue.CloseWhenLow));
+            .withS2CloseState(S2CloseStateValue.CloseWhenLow)
+            .withS1CloseState(S1CloseStateValue.CloseWhenLow));
 
     // apply CANdi config
-    limitCANdi.getConfigurator().apply(climbCANdiLimmitsConfig);
+    topCanDi.getConfigurator().apply(climbCANdiLimmitsConfig);
+    bottomCanDi.getConfigurator().apply(climbCANdiLimmitsConfig);
 
     // create motor config
     TalonFXConfiguration climbMotorConfig = new TalonFXConfiguration();
     climbMotorConfig
         .withHardwareLimitSwitch(
-            new HardwareLimitSwitchConfigs().withForwardLimitRemoteCANdiS1(limitCANdi)
+            new HardwareLimitSwitchConfigs().withForwardLimitRemoteCANdiS1(topCanDi)
                 .withForwardLimitEnable(true)
                 .withForwardLimitAutosetPositionValue(CLIMB_FORWARD_LIMIT)
                 .withForwardLimitAutosetPositionEnable(true)
-                .withReverseLimitRemoteCANdiS2(limitCANdi)
+                .withReverseLimitRemoteCANdiS2(bottomCanDi)
                 .withReverseLimitEnable(true)
                 .withReverseLimitAutosetPositionValue(CLIMB_REVERSE_LIMIT)
                 .withReverseLimitAutosetPositionEnable(true))
