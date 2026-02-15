@@ -225,6 +225,10 @@ public final class Constants {
     public static final Current DEPLOY_STATOR_CURRENT_LIMIT = Amps.of(80);
     public static final Current DEPLOY_SUPPLY_CURRENT_LIMIT = Amps.of(40);
     public static final double DEPLOY_ROTOR_TO_SENSOR_RATIO = 70656.0 / 2475.0;
+
+    public static final Angle DEPLOY_REVERSE_LIMIT = Rotations.of(0.001);
+    public static final Angle DEPLOY_FORWARD_LIMIT = Rotations.of(0.157);
+
     public static final SlotConfigs DEPLOY_SLOT_CONFIGS = new SlotConfigs().withGravityType(GravityTypeValue.Arm_Cosine)
         .withKP(2)
         .withKS(0.1)
@@ -233,10 +237,10 @@ public final class Constants {
     public static final MotionMagicConfigs DEPLOY_MOTION_MAGIC_CONFIGS = new MotionMagicConfigs()
         .withMotionMagicAcceleration(5)
         .withMotionMagicCruiseVelocity(40);
-    public static final Angle DEPLOY_CANCODER_OFFSET = Rotations.of(0.1);
+    public static final Angle DEPLOY_CANCODER_OFFSET = Rotations.of(-0.468262);
 
-    public static final Angle DEPLOYED_POSITION = Rotations.of(0.25);
-    public static final Angle RETRACTED_POSITION = Rotations.of(0.0);
+    public static final Angle DEPLOYED_POSITION = DEPLOY_FORWARD_LIMIT.minus(Rotations.of(0.01));
+    public static final Angle RETRACTED_POSITION = DEPLOY_REVERSE_LIMIT.plus(Rotations.of(0.01));
     public static final Angle DEPLOY_TOLERANCE = Rotations.of(0.02);
   }
 
