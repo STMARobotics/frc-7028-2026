@@ -124,11 +124,7 @@ public class BallisticPrecomputer {
     // error, error quantifier, input deltas, max iterations, input count, output count
     this.adaptiveBallisticErrorSystem = new AdaptiveSystem<RobotState>(
         (SimpleMatrix input, RobotState currentState) -> {
-          Angle yaw = Radians.ofBaseUnits(input.get(0, 0));
-          Angle pitch = Radians.ofBaseUnits(input.get(1, 0));
-          double speed = input.get(2, 0);
-
-          ShotParameters attemptShotParameters = new ShotParameters(yaw, pitch, speed);
+          ShotParameters attemptShotParameters = MatrixToParameters(input);
 
           SimulationResult simResult = this.simulateBall(this.projectileState, currentState, attemptShotParameters);
 

@@ -61,7 +61,8 @@ public class AdaptiveSystem<context> {
     SimpleMatrix perturbedInputMatrix = inputMatrix.plus(this.deltaMatrix);
 
     for (int inputIndex = 0; inputIndex < this.M; inputIndex++) {
-      outputMatrix.setColumn(inputIndex, this.computeError.apply(perturbedInputMatrix.getRow(inputIndex).transpose()));
+      outputMatrix
+          .setColumn(inputIndex, this.computeError.apply(perturbedInputMatrix.getRow(inputIndex).transpose(), Context));
     }
 
     outputMatrix = outputMatrix.minus(baselineReferenceMatrix);
