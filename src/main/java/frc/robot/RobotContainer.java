@@ -85,9 +85,9 @@ public class RobotContainer {
   @Logged
   private final SpindexerSubsystem spindexerSubsystem = new SpindexerSubsystem();
   @Logged
-  private final ClimbSubsystem climbSubsystem = new ClimbSubsystem();
-  @Logged
   private final IntakeSubsytem intakeSubsystem = new IntakeSubsytem();
+  @Logged
+  private final ClimbSubsystem climbSubsystem = new ClimbSubsystem();
   @Logged
   private final ShooterSubsystem shooterSubsystem = new ShooterSubsystem();
   private final LEDSubsystem ledSubsystem = new LEDSubsystem();

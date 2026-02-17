@@ -140,18 +140,20 @@ public final class Constants {
     public static final Current FLYWHEEL_STATOR_CURRENT_LIMIT = Amps.of(40);
     public static final Current FLYWHEEL_SUPPLY_CURRENT_LIMIT = Amps.of(30);
 
-    public static final double YAW_ROTOR_TO_SENSOR_RATIO = 1.0; // placeholder
-    public static final double PITCH_ROTOR_TO_SENSOR_RATIO = 1.0; // placeholder
+    public static final double YAW_ROTOR_TO_SENSOR_RATIO = (52.0 / 12.0) * (52.0 / 18.0);
+    public static final double YAW_SENSOR_TO_MECHANISM_RATIO = (18.0 / 52.0) * (12.0 / 52.0) * (170.0 / 34.0);
+    public static final double PITCH_ROTOR_TO_SENSOR_RATIO = (40.0 / 10.0) * (40.0 / 18.0);
+    public static final double PITCH_SENSOR_TO_MECHANISM_RATIO = 375.0 / 32.0;
 
-    public static final Angle YAW_MAGNETIC_OFFSET = Rotations.of(0.0); // placeholder
-    public static final Angle PITCH_MAGNETIC_OFFSET = Rotations.of(0.0); // placeholder
+    public static final Angle YAW_MAGNETIC_OFFSET = Rotations.of(0.089844);
+    public static final Angle PITCH_MAGNETIC_OFFSET = Rotations.of(-0.233643);
 
-    public static final Angle YAW_LIMIT_FORWARD = Rotations.of(0.7); // placeholder (~180deg)
-    public static final Angle YAW_LIMIT_REVERSE = Rotations.of(-0.7); // placeholder
+    public static final Angle YAW_LIMIT_FORWARD = Rotations.of(0.55);
+    public static final Angle YAW_LIMIT_REVERSE = Rotations.of(-0.55);
     public static final Angle YAW_HOME_ANGLE = Rotations.of(0.0); // placeholder
     public static final Angle YAW_POSITION_TOLERANCE = Rotations.of(0.01); // placeholder (~3.6deg)
-    public static final Angle PITCH_LIMIT_FORWARD = Rotations.of(0.2); // placeholder
-    public static final Angle PITCH_LIMIT_REVERSE = Rotations.of(-0.1); // placeholder
+    public static final Angle PITCH_LIMIT_FORWARD = Rotations.of(0.08);
+    public static final Angle PITCH_LIMIT_REVERSE = Rotations.of(0.01);
     public static final Angle PITCH_HOME_ANGLE = Rotations.of(0.0); // placeholder
     public static final Angle PITCH_POSITION_TOLERANCE = Rotations.of(0.01); // placeholder (~3.6deg)
     public static final AngularVelocity FLYWHEEL_MAX_SPEED = RotationsPerSecond.of(1.0); // placeholder
@@ -246,20 +248,30 @@ public final class Constants {
     // Deploy constants
     public static final Current DEPLOY_STATOR_CURRENT_LIMIT = Amps.of(80);
     public static final Current DEPLOY_SUPPLY_CURRENT_LIMIT = Amps.of(40);
-    public static final double DEPLOY_ROTOR_TO_SENSOR_RATIO = 1d;
+    public static final double DEPLOY_ROTOR_TO_SENSOR_RATIO = (46.0 / 9.0) * (60.0 / 22.0) * (48.0 / 30.0);
+    public static final double DEPLOY_SENSOR_TO_MECHANISM_RATIO = 64.0 / 50.0;
+
+    public static final Angle DEPLOY_REVERSE_LIMIT = Degrees.of(24.55); // From CAD
+    public static final Angle DEPLOY_FORWARD_LIMIT = Rotations.of(0.225);
+    // Discontinuity point is the center of the unreachable region
+    public static final Angle DEPLOY_DISCONTINUITY_POINT = DEPLOY_REVERSE_LIMIT.plus(DEPLOY_FORWARD_LIMIT)
+        .div(2)
+        .plus(Rotations.of(0.5));
+
     public static final SlotConfigs DEPLOY_SLOT_CONFIGS = new SlotConfigs().withGravityType(GravityTypeValue.Arm_Cosine)
         .withKP(2)
         .withKS(0.1)
         .withKV(0.0)
-        .withKG(1.0);
+        .withKG(0.0)
+        .withGravityType(GravityTypeValue.Arm_Cosine);
     public static final MotionMagicConfigs DEPLOY_MOTION_MAGIC_CONFIGS = new MotionMagicConfigs()
         .withMotionMagicAcceleration(5)
         .withMotionMagicCruiseVelocity(40);
-    public static final Angle DEPLOY_CANCODER_OFFSET = Rotations.of(0.1);
+    public static final Angle DEPLOY_CANCODER_OFFSET = Rotations.of(-0.2333984375);
 
-    public static final Angle DEPLOYED_POSITION = Rotations.of(0.25);
-    public static final Angle RETRACTED_POSITION = Rotations.of(0.0);
-    public static final Angle DEPLOY_TOLERANCE = Rotations.of(0.02);
+    public static final Angle DEPLOYED_POSITION = DEPLOY_FORWARD_LIMIT.minus(Degrees.of(2.0));
+    public static final Angle RETRACTED_POSITION = DEPLOY_REVERSE_LIMIT.plus(Degrees.of(2.0));
+    public static final Angle DEPLOY_TOLERANCE = Degrees.of(2.0);
   }
 
   public static class SpindexerConstants {
@@ -302,8 +314,8 @@ public final class Constants {
     public static final int DEVICE_ID_CLIMB_LEADER_MOTOR = 30;
     public static final int DEVICE_ID_CLIMB_FOLLOWER_MOTOR = 31;
 
-    public static final int DEVICE_ID_CANDI_CLIMB_LIMITS = 30;
-    public static final int DEVICE_ID_CANDI_CLIMB_STOW = 31;
+    public static final int DEVICE_ID_CANDI_CLIMB_BOTTOM = 30;
+    public static final int DEVICE_ID_CANDI_CLIMB_TOP = 31;
 
     public static final Current CLIMB_STATOR_CURRENT_LIMIT = Amps.of(100);
     public static final Current CLIMB_SUPPLY_CURRENT_LIMIT = Amps.of(40);
