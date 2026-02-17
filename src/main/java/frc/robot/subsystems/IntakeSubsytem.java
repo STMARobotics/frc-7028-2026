@@ -9,8 +9,12 @@ import static edu.wpi.first.units.Units.Volts;
 import static frc.robot.Constants.CANIVORE_BUS;
 import static frc.robot.Constants.IntakeConstants.DEPLOYED_POSITION;
 import static frc.robot.Constants.IntakeConstants.DEPLOY_CANCODER_OFFSET;
+import static frc.robot.Constants.IntakeConstants.DEPLOY_DISCONTINUITY_POINT;
+import static frc.robot.Constants.IntakeConstants.DEPLOY_FORWARD_LIMIT;
 import static frc.robot.Constants.IntakeConstants.DEPLOY_MOTION_MAGIC_CONFIGS;
+import static frc.robot.Constants.IntakeConstants.DEPLOY_REVERSE_LIMIT;
 import static frc.robot.Constants.IntakeConstants.DEPLOY_ROTOR_TO_SENSOR_RATIO;
+import static frc.robot.Constants.IntakeConstants.DEPLOY_SENSOR_TO_MECHANISM_RATIO;
 import static frc.robot.Constants.IntakeConstants.DEPLOY_SLOT_CONFIGS;
 import static frc.robot.Constants.IntakeConstants.DEPLOY_STATOR_CURRENT_LIMIT;
 import static frc.robot.Constants.IntakeConstants.DEPLOY_SUPPLY_CURRENT_LIMIT;
@@ -118,20 +122,20 @@ public class IntakeSubsytem extends SubsystemBase {
     rollerMotor.getConfigurator().apply(rollerConfig);
 
     // Configure the CANcoder for the deploy
-    var cancoderConfig = new CANcoderConfiguration();
-    cancoderConfig.withMagnetSensor(
+    var deployCancoderConfig = new CANcoderConfiguration();
+    deployCancoderConfig.withMagnetSensor(
         new MagnetSensorConfigs().withMagnetOffset(DEPLOY_CANCODER_OFFSET)
-            .withSensorDirection(SensorDirectionValue.Clockwise_Positive));
-    deployCANcoder.getConfigurator().apply(cancoderConfig);
+            .withSensorDirection(SensorDirectionValue.CounterClockwise_Positive)
+            .withAbsoluteSensorDiscontinuityPoint(DEPLOY_DISCONTINUITY_POINT));
+    deployCANcoder.getConfigurator().apply(deployCancoderConfig);
 
     // Configure the deploy motor
     var deployConfig = new TalonFXConfiguration();
-    deployConfig
-        .withMotorOutput(
-            new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast)
-                .withInverted(InvertedValue.CounterClockwise_Positive))
+    deployConfig.withMotorOutput(
+        new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast).withInverted(InvertedValue.Clockwise_Positive))
         .withFeedback(
             new FeedbackConfigs().withRotorToSensorRatio(DEPLOY_ROTOR_TO_SENSOR_RATIO)
+                .withSensorToMechanismRatio(DEPLOY_SENSOR_TO_MECHANISM_RATIO)
                 .withFusedCANcoder(deployCANcoder))
         .withSlot0(Slot0Configs.from(DEPLOY_SLOT_CONFIGS))
         .withMotionMagic(DEPLOY_MOTION_MAGIC_CONFIGS)
@@ -142,9 +146,9 @@ public class IntakeSubsytem extends SubsystemBase {
                 .withStatorCurrentLimitEnable(true))
         .withSoftwareLimitSwitch(
             new SoftwareLimitSwitchConfigs().withForwardSoftLimitEnable(true)
-                .withForwardSoftLimitThreshold(DEPLOYED_POSITION)
+                .withForwardSoftLimitThreshold(DEPLOY_FORWARD_LIMIT)
                 .withReverseSoftLimitEnable(true)
-                .withReverseSoftLimitThreshold(RETRACTED_POSITION));
+                .withReverseSoftLimitThreshold(DEPLOY_REVERSE_LIMIT));
     deployMotor.getConfigurator().apply(deployConfig);
   }
 
