@@ -123,7 +123,7 @@ public final class Constants {
 
     public static final double YAW_ROTOR_TO_SENSOR_RATIO = (52.0 / 12.0) * (52.0 / 18.0);
     public static final double YAW_SENSOR_TO_MECHANISM_RATIO = (18.0 / 52.0) * (12.0 / 52.0) * (170.0 / 34.0);
-    public static final double PITCH_ROTOR_TO_SENSOR_RATIO = 80.0 / 9.0;
+    public static final double PITCH_ROTOR_TO_SENSOR_RATIO = (40.0 / 10.0) * (40.0 / 18.0);
     public static final double PITCH_SENSOR_TO_MECHANISM_RATIO = 375.0 / 32.0;
 
     public static final Angle YAW_MAGNETIC_OFFSET = Rotations.of(0.089844);
