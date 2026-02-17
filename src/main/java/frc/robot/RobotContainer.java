@@ -42,6 +42,7 @@ import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.IntakeSubsytem;
 import frc.robot.subsystems.LEDSubsystem;
 import frc.robot.subsystems.LocalizationSubsystem;
+import frc.robot.subsystems.ShooterSubsystem;
 import frc.robot.subsystems.SpindexerSubsystem;
 import frc.robot.subsystems.TransferSubsystem;
 
@@ -82,6 +83,8 @@ public class RobotContainer {
   private final IntakeSubsytem intakeSubsystem = new IntakeSubsytem();
   @Logged
   private final ClimbSubsystem climbSubsystem = new ClimbSubsystem();
+  @Logged
+  private final ShooterSubsystem shooterSubsystem = new ShooterSubsystem();
   private final LEDSubsystem ledSubsystem = new LEDSubsystem();
 
   /* Path follower */

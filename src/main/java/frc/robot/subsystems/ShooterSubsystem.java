@@ -1,6 +1,5 @@
 package frc.robot.subsystems;
 
-import static com.ctre.phoenix6.signals.FeedbackSensorSourceValue.FusedCANcoder;
 import static com.ctre.phoenix6.signals.NeutralModeValue.Brake;
 import static com.ctre.phoenix6.signals.NeutralModeValue.Coast;
 import static edu.wpi.first.units.Units.Rotations;
@@ -25,6 +24,7 @@ import static frc.robot.Constants.ShooterConstants.PITCH_MOTION_MAGIC_CONFIGS;
 import static frc.robot.Constants.ShooterConstants.PITCH_MOTOR_ID;
 import static frc.robot.Constants.ShooterConstants.PITCH_POSITION_TOLERANCE;
 import static frc.robot.Constants.ShooterConstants.PITCH_ROTOR_TO_SENSOR_RATIO;
+import static frc.robot.Constants.ShooterConstants.PITCH_SENSOR_TO_MECHANISM_RATIO;
 import static frc.robot.Constants.ShooterConstants.PITCH_SLOT_CONFIGS;
 import static frc.robot.Constants.ShooterConstants.PITCH_STATOR_CURRENT_LIMIT;
 import static frc.robot.Constants.ShooterConstants.PITCH_SUPPLY_CURRENT_LIMIT;
@@ -37,6 +37,7 @@ import static frc.robot.Constants.ShooterConstants.YAW_MOTION_MAGIC_CONFIGS;
 import static frc.robot.Constants.ShooterConstants.YAW_MOTOR_ID;
 import static frc.robot.Constants.ShooterConstants.YAW_POSITION_TOLERANCE;
 import static frc.robot.Constants.ShooterConstants.YAW_ROTOR_TO_SENSOR_RATIO;
+import static frc.robot.Constants.ShooterConstants.YAW_SENSOR_TO_MECHANISM_RATIO;
 import static frc.robot.Constants.ShooterConstants.YAW_SLOT_CONFIGS;
 import static frc.robot.Constants.ShooterConstants.YAW_STATOR_CURRENT_LIMIT;
 import static frc.robot.Constants.ShooterConstants.YAW_SUPPLY_CURRENT_LIMIT;
@@ -154,7 +155,7 @@ public class ShooterSubsystem extends SubsystemBase {
     yawEncoder.getConfigurator().apply(yawCanCoderConfig);
 
     TalonFXConfiguration yawTalonConfig = new TalonFXConfiguration()
-        .withMotorOutput(new MotorOutputConfigs().withNeutralMode(Brake))
+        .withMotorOutput(new MotorOutputConfigs().withInverted(InvertedValue.Clockwise_Positive).withNeutralMode(Brake))
         .withCurrentLimits(
             new CurrentLimitsConfigs().withSupplyCurrentLimit(YAW_SUPPLY_CURRENT_LIMIT)
                 .withSupplyCurrentLimitEnable(true)
@@ -162,8 +163,8 @@ public class ShooterSubsystem extends SubsystemBase {
                 .withStatorCurrentLimitEnable(true))
         .withFeedback(
             new FeedbackConfigs().withRotorToSensorRatio(YAW_ROTOR_TO_SENSOR_RATIO)
-                .withFeedbackRemoteSensorID(yawEncoder.getDeviceID())
-                .withFeedbackSensorSource(FusedCANcoder))
+                .withFusedCANcoder(yawEncoder)
+                .withSensorToMechanismRatio(YAW_SENSOR_TO_MECHANISM_RATIO))
         .withSlot0(Slot0Configs.from(YAW_SLOT_CONFIGS))
         .withMotionMagic(YAW_MOTION_MAGIC_CONFIGS)
         .withSoftwareLimitSwitch(
@@ -190,8 +191,8 @@ public class ShooterSubsystem extends SubsystemBase {
                 .withSupplyCurrentLimitEnable(true))
         .withFeedback(
             new FeedbackConfigs().withRotorToSensorRatio(PITCH_ROTOR_TO_SENSOR_RATIO)
-                .withFeedbackRemoteSensorID(pitchEncoder.getDeviceID())
-                .withFeedbackSensorSource(FusedCANcoder))
+                .withSensorToMechanismRatio(PITCH_SENSOR_TO_MECHANISM_RATIO)
+                .withFusedCANcoder(pitchEncoder))
         .withSlot0(Slot0Configs.from(PITCH_SLOT_CONFIGS))
         .withMotionMagic(PITCH_MOTION_MAGIC_CONFIGS)
         .withSoftwareLimitSwitch(
