@@ -4,17 +4,15 @@ import static edu.wpi.first.units.Units.Radians;
 import static java.lang.Math.cos;
 import static java.lang.Math.sin;
 
+import com.frc7028.physics.sim.AdaptiveSystem.AdaptiveOutput;
 import com.frc7028.physics.sim.Integrator.forceInput;
-import edu.wpi.first.math.MatBuilder;
-import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
-import edu.wpi.first.math.numbers.N1;
-import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.units.measure.Angle;
 import java.util.HashMap;
 import java.util.function.Function;
+import org.ejml.simple.SimpleMatrix;
 
 public class BallisticPrecomputer {
 
@@ -22,6 +20,7 @@ public class BallisticPrecomputer {
   public IntegratorResolution integratorResolution;
   public BallisticEnvironmentProfile environmentProfile;
   public FieldMetrics fieldMetrics;
+  private AdaptiveSystem<RobotState> adaptiveBallisticErrorSystem;
 
   BallisticProjectileState projectileState;
 
@@ -34,7 +33,21 @@ public class BallisticPrecomputer {
   public record RobotState(Translation2d position, Translation2d velocity) {
   }
 
+  private record SimulationResult(Translation3d endPosition, Translation3d closestPosition, double flightTime) {
+
+  }
+
+  private ShotParameters MatrixToParameters(SimpleMatrix parameters) {
+    return new ShotParameters(Radians.of(parameters.get(0, 0)), Radians.of(parameters.get(1, 0)), parameters.get(2, 0));
+  }
+
   public record ShotParameters(Angle yaw, Angle pitch, double speed) {
+    public ShotParameters(Angle yaw, Angle pitch, double speed) {
+      this.yaw = yaw;
+      this.pitch = pitch;
+      this.speed = speed;
+    }
+
     ShotParameters stepYaw(Angle step) {
       return new ShotParameters(yaw.plus(step), pitch, speed);
     };
@@ -51,10 +64,10 @@ public class BallisticPrecomputer {
       return new ShotParameters(yaw.plus(stepYaw), pitch.plus(stepPitch), speed + stepSpeed);
     }
 
-  }
-
-  private record SimulationResult(Translation3d error, double errorYaw, double errorRadial, double errorHeight) {
-
+    SimpleMatrix getInputMatrix() {
+      double[] input = { this.yaw.baseUnitMagnitude(), this.pitch.baseUnitMagnitude(), this.speed };
+      return new SimpleMatrix(input);
+    }
   }
 
   private Translation3d anglesToUnitVec(Angle yaw, Angle pitch) {
@@ -103,9 +116,37 @@ public class BallisticPrecomputer {
       return acceleration;
     };
 
-    this.computeShotGuess = computeShotGuess;
+    double[] deltas = {
+        simulatorResolution.deltaAngle().baseUnitMagnitude(),
+        simulatorResolution.deltaAngle().baseUnitMagnitude(),
+        simulatorResolution.delta_dSpeed() };
 
-    this.projectileState = new BallisticProjectileState(this, integratorResolution, forceFunction);
+    // error, error quantifier, input deltas, max iterations, input count, output count
+    this.adaptiveBallisticErrorSystem = new AdaptiveSystem<RobotState>(
+        (SimpleMatrix input, RobotState currentState) -> {
+          Angle yaw = Radians.ofBaseUnits(input.get(0, 0));
+          Angle pitch = Radians.ofBaseUnits(input.get(1, 0));
+          double speed = input.get(2, 0);
+
+          ShotParameters attemptShotParameters = new ShotParameters(yaw, pitch, speed);
+
+          SimulationResult simResult = this.simulateBall(this.projectileState, currentState, attemptShotParameters);
+
+          Translation3d closestErrorDisplacement = simResult.closestPosition
+              .minus(this.fieldMetrics.targetRegion().center);
+
+          double[] errorVector = {
+              closestErrorDisplacement.getX(),
+              closestErrorDisplacement.getY(),
+              closestErrorDisplacement.getZ() };
+          return new SimpleMatrix(errorVector);
+        },
+        (SimpleMatrix output) -> (double) output.normF(),
+        new SimpleMatrix(deltas),
+        1d,
+        10,
+        3,
+        3);
   }
 
   public SimulationResult simulateBall(
@@ -122,28 +163,32 @@ public class BallisticPrecomputer {
     // Launch the projectile
     simulatedProjectileState.launch(initialPosition, initialVelocity, this.speedToSpin.apply(parameters.speed()));
 
+    Translation3d targetPosition = this.fieldMetrics.targetRegion().center;
+
+    Translation3d nearestPosition = this.fieldMetrics.targetRegion().center.minus(initialPosition);
+    double nearestDistance = nearestPosition.getDistance(targetPosition);
+
     // Actually step the projectile over time, and stop when it either collides or is out of bounds
     while (simulatedProjectileState.completedTrajectory()) {
       simulatedProjectileState.step();
-      // System.out.println(simulatedProjectileState.dt);
+
+      Translation3d currentPosition = simulatedProjectileState.position;
+      if (currentPosition.getDistance(targetPosition) < nearestDistance) {
+        nearestPosition = currentPosition;
+      }
     }
 
-    Translation3d endPosition = simulatedProjectileState.position;
-    Translation3d errorDisplacement = endPosition.minus(this.fieldMetrics.targetRegion().center);
-    Translation2d errorDisplacement2D = errorDisplacement.toTranslation2d();
-
     return new SimulationResult(
-        errorDisplacement,
-        errorDisplacement.getX(),
-        errorDisplacement.getY(),
-        // atan2(errorDisplacement2D.getY(), errorDisplacement2D.getX()),
-        // errorDisplacement2D.getNorm(),
-        errorDisplacement.getZ());
+        simulatedProjectileState.position,
+        nearestPosition,
+        simulatedProjectileState.timeElapsed);
+
+    // System.out.println(simulatedProjectileState.dt);
   }
 
   private double niceify(double x) {
     return Math.floor(x * 100) / 100d;
-  }
+  };
 
   public ShotParameters convergeSolution(
       BallisticProjectileState simulatedProjectileState,
@@ -151,101 +196,12 @@ public class BallisticPrecomputer {
       ShotParameters parameters) {
     // https://pages.hmc.edu/ruye/MachineLearning/lectures/ch2/node7.html
 
-    int iterations = 0;
+    AdaptiveOutput convergedSolution = this.adaptiveBallisticErrorSystem
+        .simpleConverge(parameters.getInputMatrix(), state);
 
-    while (iterations <= this.simulatorResolution.maxIterations()) {
-      iterations++;
+    SimpleMatrix convergedInputs = convergedSolution.output().inputs();
 
-      SimulationResult errorPrior = simulateBall(simulatedProjectileState, state, parameters);
-
-      System.out.println(simulatedProjectileState.collisionStatus.toString());
-      System.out.println(simulatedProjectileState.boundaryState.toString());
-      System.out.println();
-
-      System.out.println(niceify(errorPrior.errorYaw));
-      System.out.println(niceify(errorPrior.errorRadial));
-      System.out.println(niceify(errorPrior.errorHeight));
-      System.out.println("--");
-      double errRadialPrior = errorPrior.errorRadial();
-      double errYawPrior = errorPrior.errorYaw();
-      double errHeightPrior = errorPrior.errorHeight();
-
-      if (errorPrior.error.getNorm() < this.simulatorResolution.targetMaxDistanceForConvergence()) {
-        return parameters;
-      }
-
-      Angle deltaAngle = this.simulatorResolution.deltaAngle();
-      double deltaSpeed = this.simulatorResolution.delta_dSpeed();
-
-      double da = deltaAngle.baseUnitMagnitude();
-
-      ShotParameters steppedYawParameters = parameters.stepYaw(deltaAngle);
-      ShotParameters steppedPitchParameters = parameters.stepPitch(deltaAngle);
-      ShotParameters steppedSpeedParameters = parameters.stepSpeed(deltaSpeed);
-
-      SimulationResult steppedYaw = simulateBall(simulatedProjectileState, state, steppedYawParameters);
-      // System.out.println(simulatedProjectileState.collisionStatus.toString());
-      // System.out.println(simulatedProjectileState.boundaryState.toString());
-      // System.out.println();
-      SimulationResult steppedPitch = simulateBall(simulatedProjectileState, state, steppedPitchParameters);
-      // System.out.println(simulatedProjectileState.collisionStatus.toString());
-      // System.out.println(simulatedProjectileState.boundaryState.toString());
-      // System.out.println();
-      SimulationResult steppedSpeed = simulateBall(simulatedProjectileState, state, steppedSpeedParameters);
-      // System.out.println(simulatedProjectileState.collisionStatus.toString());
-      // System.out.println(simulatedProjectileState.boundaryState.toString());
-      // System.out.println();
-
-      // y(yaw); p(pitch); s(speed)
-      // Ey(error yaw); Er(error radial); Ez(error height)
-
-      // Compose jacobian [errorYaw, errorDistance(radial), errorHeight] x [dYaw, dPitch, dSpeed]
-
-      double Eydy = (steppedYaw.errorYaw() - errYawPrior) / da;
-      double Erdy = (steppedYaw.errorRadial() - errRadialPrior) / da;
-      double Ezdy = (steppedYaw.errorHeight() - errHeightPrior) / da;
-
-      double Eydp = (steppedPitch.errorYaw() - errYawPrior) / da;
-      double Erdp = (steppedPitch.errorRadial() - errRadialPrior) / da;
-      double Ezdp = (steppedPitch.errorHeight() - errHeightPrior) / da;
-
-      double Eyds = (steppedSpeed.errorYaw() - errYawPrior) / deltaSpeed;
-      double Erds = (steppedSpeed.errorRadial() - errRadialPrior) / deltaSpeed;
-      double Ezds = (steppedSpeed.errorHeight() - errHeightPrior) / deltaSpeed;
-
-      // System.out.println("start--");
-      // System.out.println(niceify(Eydy) + " YAW / yaw");
-      // System.out.println(niceify(Erdy) + " RADIAL / yaw");
-      // System.out.println(niceify(Ezdy) + " HEIGHT / yaw");
-      //
-      // System.out.println(niceify(Eydp) + " YAW / pitch");
-      // System.out.println(niceify(Erdp) + " RADIAL / pitch");
-      // System.out.println(niceify(Ezdp) + " HEIGHT / pitch");
-      //
-      // System.out.println(niceify(Eyds) + " YAW / speed");
-      // System.out.println(niceify(Erds) + " RADIAL / speed");
-      // System.out.println(niceify(Ezds) + " HEIGHT / speed");
-      // System.out.println("end--");
-
-      Matrix<N3, N3> ErrorJacobian = MatBuilder
-          .fill(N3.instance, N3.instance, Eydy, Erdy, Ezdy, Eydp, Erdp, Ezdp, Eyds, Erds, Ezds);
-      Matrix<N3, N1> baseError = MatBuilder.fill(N3.instance, N1.instance, errYawPrior, errRadialPrior, errHeightPrior);
-
-      // May want to consider different method for "inverse" of matrix thats more efficent or stable. See
-      // "psuedo-inverse"
-      Matrix<N3, N1> parameterStepMatrix = ErrorJacobian.inv().times(baseError);
-
-      Angle yawStep = Radians.of(0 * parameterStepMatrix.get(0, 0));
-      Angle pitchStep = Radians.of(0 * -parameterStepMatrix.get(1, 0));
-      double speedStep = -parameterStepMatrix.get(2, 0);
-      System.out.println(yawStep);
-      System.out.println(pitchStep);
-      System.out.println(speedStep);
-      System.out.println("--");
-      parameters = parameters.stepAll(yawStep, pitchStep, speedStep);
-    }
-
-    return parameters;
+    return MatrixToParameters(convergedInputs);
   }
 
   public HashMap<RobotState, ShotParameters> computeTable() {

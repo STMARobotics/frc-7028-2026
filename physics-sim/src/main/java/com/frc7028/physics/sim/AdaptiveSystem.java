@@ -1,10 +1,10 @@
 package com.frc7028.physics.sim;
 
-import java.util.ArrayList;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import org.ejml.simple.SimpleMatrix;
 
-public class AdaptiveSystem {
+public class AdaptiveSystem<context> {
 
   public record AdaptiveOutput(int iterations, boolean converged, SingularOutput output) {
   }
@@ -12,7 +12,7 @@ public class AdaptiveSystem {
   public record SingularOutput(double error, SimpleMatrix inputs, SimpleMatrix errors) {
   }
 
-  Function<SimpleMatrix, SimpleMatrix> computeError;
+  BiFunction<SimpleMatrix, context, SimpleMatrix> computeError;
   Function<SimpleMatrix, Double> errorQuantifier;
 
   double errorTolerance;
@@ -25,7 +25,7 @@ public class AdaptiveSystem {
   int M;
 
   public AdaptiveSystem(
-      Function<SimpleMatrix, SimpleMatrix> computeErrorFunction,
+      BiFunction<SimpleMatrix, context, SimpleMatrix> computeErrorFunction,
       Function<SimpleMatrix, Double> errorQuantifier,
       SimpleMatrix inputDeltas,
       double tolerance,
@@ -45,7 +45,7 @@ public class AdaptiveSystem {
     }
   }
 
-  public SingularOutput computeCorrection(SimpleMatrix baselineInputs, SimpleMatrix baselineErrors) {
+  public SingularOutput computeCorrection(SimpleMatrix baselineInputs, SimpleMatrix baselineErrors, context Context) {
     // SimpleMatrix baselineErrors = this.computeError.apply(baselineInputs);
 
     SimpleMatrix inputMatrix = new SimpleMatrix(this.M, this.M);
@@ -71,22 +71,22 @@ public class AdaptiveSystem {
     }
 
     SimpleMatrix newInput = outputMatrix.pseudoInverse().mult(baselineErrors);
-    SimpleMatrix newError = this.computeError.apply(newInput);
+    SimpleMatrix newError = this.computeError.apply(newInput, Context);
     double error = this.errorQuantifier.apply(newError);
 
     return new SingularOutput(error, newInput, newError);
   }
 
-  public AdaptiveOutput simpleConverge(SimpleMatrix inputGuess) {
+  public AdaptiveOutput simpleConverge(SimpleMatrix inputGuess, context Context) {
     int iterations = 0;
 
-    SingularOutput currentOutput = this.computeCorrection(inputGuess, this.computeError.apply(inputGuess));
+    SimpleMatrix baselineErrors = this.computeError.apply(inputGuess, Context);
+
+    SingularOutput currentOutput = this.computeCorrection(inputGuess, baselineErrors, Context);
     SingularOutput bestOutput = currentOutput;
 
-    ArrayList<SingularOutput> outputs = new ArrayList<SingularOutput>();
-
     while (iterations++ < this.maxIterations) {
-      currentOutput = this.computeCorrection(currentOutput.inputs(), currentOutput.errors());
+      currentOutput = this.computeCorrection(currentOutput.inputs(), currentOutput.errors(), Context);
       if (currentOutput.error < bestOutput.error) {
         bestOutput = currentOutput;
       }

@@ -13,9 +13,9 @@ import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation3d;
 import java.util.function.Function;
 // A way to solve a curve defined by F(t, v)
-// da/dt = f(v)
+// dvs/dt = f(v)
 
-// Recall: F = ma, i.e, force = mass * acceleration 
+// Recall: F = ma, i.e, force = mass * acceleration
 
 // In this ballistic simulation, we have forces like drag and lift in terms like this:
 // dv/dt = f(v) but`
@@ -24,13 +24,13 @@ import java.util.function.Function;
 // v -> v + a(...)*dt
 
 // if we increment velocity by a function of velocity, like drag, then it requires us to know the velocity prior to calculate a new velocity
-// This requires us to simulate the velocity to know position, and for something sensitive like drag, we need a GOOD simulation. 
+// This requires us to simulate the velocity to know position, and for something sensitive like drag, we need a GOOD simulation.
 // Eulers method is the "first order"(taylor series approximation) way to solve this differential equation, it is decent, but it does not behave well with sensitive or rapidly changing functions
 
 // We use RK45 to accurate simulate the position, and it also dynamically modulates your time steps to ensure precision if f is very sensitive, and to increase it when smaller steps are not needed.
 
 // https://en.wikipedia.org/wiki/Runge%E2%80%93Kutta%E2%80%93Fehlberg_method
-// https://math.okstate.edu/people/yqwang/teaching/math4513_fall11/Notes/rungekutta.pdf 
+// https://math.okstate.edu/people/yqwang/teaching/math4513_fall11/Notes/rungekutta.pdf
 public class Integrator {
   VectorState vectorState;
   IntegratorResolution integratorResolution;
