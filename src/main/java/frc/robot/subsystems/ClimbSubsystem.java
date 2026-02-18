@@ -148,14 +148,14 @@ public class ClimbSubsystem extends SubsystemBase {
   /**
    * Moves the upper hook up and the lower hook down
    */
-  public void expand() {
+  public void forward() {
     climbMotorLeader.setControl(voltageOut.withOutput(CLIMB_OUTPUT_FORWARD_VOLTAGE));
   }
 
   /*
    * Moves the upper hook down and the lower hook up
    */
-  public void contract() {
+  public void reverse() {
     climbMotorLeader.setControl(voltageOut.withOutput(CLIMB_OUTPUT_REVERSE_VOLTAGE));
   }
 
@@ -164,7 +164,7 @@ public class ClimbSubsystem extends SubsystemBase {
    */
   public void prepareToL1() {
     currentClimbAction = ClimbAction.PREPARE_TO_L1;
-    expand();
+    forward();
   }
 
   /**
@@ -172,7 +172,7 @@ public class ClimbSubsystem extends SubsystemBase {
    */
   public void L1() {
     currentClimbAction = ClimbAction.L1;
-    contract();
+    reverse();
   }
 
   /**
@@ -188,7 +188,7 @@ public class ClimbSubsystem extends SubsystemBase {
    */
   public void prepareToL2() {
     currentClimbAction = ClimbAction.PREPARE_TO_L2;
-    expand();
+    forward();
   }
 
   /**
@@ -196,7 +196,7 @@ public class ClimbSubsystem extends SubsystemBase {
    */
   public void L2() {
     currentClimbAction = ClimbAction.L2;
-    contract();
+    reverse();
   }
 
   /**
@@ -204,7 +204,7 @@ public class ClimbSubsystem extends SubsystemBase {
    */
   public void prepareToL3() {
     currentClimbAction = ClimbAction.PREPARE_TO_L3;
-    expand();
+    forward();
   }
 
   /**
@@ -212,7 +212,7 @@ public class ClimbSubsystem extends SubsystemBase {
    */
   public void L3() {
     currentClimbAction = ClimbAction.L3;
-    contract();
+    reverse();
   }
 
   /**
@@ -220,7 +220,7 @@ public class ClimbSubsystem extends SubsystemBase {
    */
   public void prepareToStow() {
     currentClimbAction = ClimbAction.PREPARE_TO_STOW;
-    expand();
+    forward();
   }
 
   /**
@@ -237,7 +237,7 @@ public class ClimbSubsystem extends SubsystemBase {
    */
   public void goToFloor() {
     currentClimbAction = ClimbAction.GO_TO_FLOOR;
-    expand();
+    forward();
   }
 
   /**
@@ -286,7 +286,7 @@ public class ClimbSubsystem extends SubsystemBase {
   @Override
   public void periodic() {
     if (currentClimbAction == ClimbAction.PREPARE_TO_STOW || currentClimbAction == ClimbAction.L1_HANG && !isStowed()) {
-      contract();
+      reverse();
     } else if (currentClimbAction == ClimbAction.PREPARE_TO_STOW
         || currentClimbAction == ClimbAction.L1_HANG && isStowed()) {
       stop();

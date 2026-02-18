@@ -29,13 +29,11 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import frc.robot.Constants.OdometryConstants;
 import frc.robot.Constants.QuestNavConstants;
-import frc.robot.Constants.ShootingConstants;
-import frc.robot.Constants.TeleopDriveConstants;
 import frc.robot.commands.ClimbToL1Command;
 import frc.robot.commands.DeployIntakeCommand;
 import frc.robot.commands.IntakeCommand;
 import frc.robot.commands.RetractIntakeCommand;
-import frc.robot.commands.TeleopShootCommand;
+import frc.robot.commands.ShootCommand;
 import frc.robot.commands.led.DefaultLEDCommand;
 import frc.robot.commands.led.LEDBootAnimationCommand;
 import frc.robot.controls.ControlBindings;
@@ -44,12 +42,12 @@ import frc.robot.controls.XBoxControlBindings;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.ClimbSubsystem;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
+import frc.robot.subsystems.FeederSubsystem;
 import frc.robot.subsystems.IntakeSubsytem;
 import frc.robot.subsystems.LEDSubsystem;
 import frc.robot.subsystems.LocalizationSubsystem;
 import frc.robot.subsystems.ShooterSubsystem;
 import frc.robot.subsystems.SpindexerSubsystem;
-import frc.robot.subsystems.TransferSubsystem;
 
 @Logged(strategy = Logged.Strategy.OPT_IN)
 public class RobotContainer {
@@ -81,7 +79,7 @@ public class RobotContainer {
       drivetrain::getIMUYaw,
       drivetrain::getIMUYawVelocity);
   @Logged
-  private final TransferSubsystem transferSubsystem = new TransferSubsystem();
+  private final FeederSubsystem feederSubsystem = new FeederSubsystem();
   @Logged
   private final SpindexerSubsystem spindexerSubsystem = new SpindexerSubsystem();
   @Logged
@@ -142,39 +140,41 @@ public class RobotContainer {
       drivetrain.resetPose(robotNewPose);
     })));
 
-    // Shooting
-    controlBindings.shoot()
-        .ifPresent(
-            trigger -> trigger.whileTrue(
-                new TeleopShootCommand(
-                    drivetrain,
-                    shooterSubsystem,
-                    transferSubsystem,
-                    spindexerSubsystem,
-                    ledSubsystem,
-                    controlBindings.translationX(),
-                    controlBindings.translationY(),
-                    () -> drivetrain.getState().Pose,
-                    ShootingConstants.TARGET_RED,
-                    ShootingConstants.TARGET_BLUE,
-                    ShootingConstants.SHOOTER_TARGETS_BY_DISTANCE_METERS,
-                    TeleopDriveConstants.SHOOT_VELOCITY_MULTIPLIER)));
-
-    // Climb
-    controlBindings.expandClimb()
-        .ifPresent(
-            trigger -> trigger
-                .whileTrue(Commands.runEnd(climbSubsystem::expand, climbSubsystem::stop, climbSubsystem)));
-    controlBindings.contractClimb()
-        .ifPresent(
-            trigger -> trigger
-                .whileTrue(Commands.runEnd(climbSubsystem::contract, climbSubsystem::stop, climbSubsystem)));
-
-    // Intake
-    controlBindings.intake()
+    // Intake controls
+    controlBindings.runIntake()
         .ifPresent(trigger -> trigger.onTrue(new IntakeCommand(intakeSubsystem, spindexerSubsystem)));
+
+    controlBindings.stopIntake().ifPresent(trigger -> trigger.onTrue(Commands.runOnce(() -> {
+      intakeSubsystem.stop();
+      spindexerSubsystem.stop();
+    }, intakeSubsystem, spindexerSubsystem)));
+
+    controlBindings.eject().ifPresent(trigger -> trigger.whileTrue(Commands.run(() -> {
+      intakeSubsystem.reverseIntake();
+      spindexerSubsystem.agitate();
+    }, intakeSubsystem, spindexerSubsystem).finallyDo(() -> {
+      intakeSubsystem.stop();
+      spindexerSubsystem.stop();
+    })));
+
+    controlBindings.deployIntake().ifPresent(trigger -> trigger.onTrue(new DeployIntakeCommand(intakeSubsystem)));
+
     controlBindings.retractIntake().ifPresent(trigger -> trigger.onTrue(new RetractIntakeCommand(intakeSubsystem)));
-    controlBindings.stopIntake().ifPresent(trigger -> trigger.onTrue(intakeSubsystem.runOnce(intakeSubsystem::stop)));
+
+    // Shooting controls
+    controlBindings.manualShoot()
+        .ifPresent(
+            trigger -> trigger.whileTrue(new ShootCommand(spindexerSubsystem, feederSubsystem, shooterSubsystem)));
+
+    // Climb controls
+    controlBindings.climbForward()
+        .ifPresent(
+            trigger -> trigger
+                .whileTrue(Commands.runEnd(climbSubsystem::forward, climbSubsystem::stop, climbSubsystem)));
+    controlBindings.climbReverse()
+        .ifPresent(
+            trigger -> trigger
+                .whileTrue(Commands.runEnd(climbSubsystem::reverse, climbSubsystem::stop, climbSubsystem)));
 
     // Idle while the robot is disabled. This ensures the configured
     // neutral mode is applied to the drive motors while disabled.
@@ -235,10 +235,10 @@ public class RobotContainer {
     SmartDashboard.putData("Spindexer Dynam Fwd", spindexerSubsystem.sysIdSpindexerDynamicCommand(kForward));
     SmartDashboard.putData("Spindexer Dynam Rev", spindexerSubsystem.sysIdSpindexerDynamicCommand(kReverse));
 
-    // Transfer
-    SmartDashboard.putData("Transfer Quasi Fwd", transferSubsystem.sysIdTransferQuasistaticCommand(kForward));
-    SmartDashboard.putData("Transfer Quasi Rev", transferSubsystem.sysIdTransferQuasistaticCommand(kReverse));
-    SmartDashboard.putData("Transfer Dynam Fwd", transferSubsystem.sysIdTransferDynamicCommand(kForward));
-    SmartDashboard.putData("Transfer Dynam Rev", transferSubsystem.sysIdTransferDynamicCommand(kReverse));
+    // Feeder
+    SmartDashboard.putData("Feeder Quasi Fwd", feederSubsystem.sysIdFeederQuasistaticCommand(kForward));
+    SmartDashboard.putData("Feeder Quasi Rev", feederSubsystem.sysIdFeederQuasistaticCommand(kReverse));
+    SmartDashboard.putData("Feeder Dynam Fwd", feederSubsystem.sysIdFeederDynamicCommand(kForward));
+    SmartDashboard.putData("Feeder Dynam Rev", feederSubsystem.sysIdFeederDynamicCommand(kReverse));
   }
 }

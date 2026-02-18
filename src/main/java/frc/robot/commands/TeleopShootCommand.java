@@ -23,11 +23,11 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.LEDPattern;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
+import frc.robot.subsystems.FeederSubsystem;
 import frc.robot.subsystems.LEDSubsystem;
 import frc.robot.subsystems.ShooterSubsystem;
 import frc.robot.subsystems.ShooterSubsystem.ShooterSetpoints;
 import frc.robot.subsystems.SpindexerSubsystem;
-import frc.robot.subsystems.TransferSubsystem;
 import java.util.function.Supplier;
 
 /**
@@ -38,7 +38,7 @@ public class TeleopShootCommand extends Command {
 
   private final CommandSwerveDrivetrain drivetrain;
   private final ShooterSubsystem shooterSubsystem;
-  private final TransferSubsystem transferSubsystem;
+  private final FeederSubsystem feederSubsystem;
   private final SpindexerSubsystem spindexerSubsystem;
   private final LEDSubsystem ledSubsystem;
 
@@ -65,7 +65,7 @@ public class TeleopShootCommand extends Command {
   public TeleopShootCommand(
       CommandSwerveDrivetrain drivetrain,
       ShooterSubsystem shooter,
-      TransferSubsystem transferSubsystem,
+      FeederSubsystem feederSubsystem,
       SpindexerSubsystem spindexerSubsystem,
       LEDSubsystem ledSubsystem,
       Supplier<LinearVelocity> xVelocitySupplier,
@@ -77,7 +77,7 @@ public class TeleopShootCommand extends Command {
       double velocityMultiplier) {
     this.drivetrain = drivetrain;
     this.shooterSubsystem = shooter;
-    this.transferSubsystem = transferSubsystem;
+    this.feederSubsystem = feederSubsystem;
     this.spindexerSubsystem = spindexerSubsystem;
     this.ledSubsystem = ledSubsystem;
     this.xVelocitySupplier = xVelocitySupplier;
@@ -89,7 +89,7 @@ public class TeleopShootCommand extends Command {
     this.velocityMultiplier = velocityMultiplier;
     this.maxVelocity = MAX_TELEOP_VELOCITY.in(MetersPerSecond) * velocityMultiplier;
 
-    addRequirements(drivetrain, shooter, transferSubsystem, spindexerSubsystem, ledSubsystem);
+    addRequirements(drivetrain, shooter, feederSubsystem, spindexerSubsystem, ledSubsystem);
   }
 
   @Override
@@ -97,7 +97,7 @@ public class TeleopShootCommand extends Command {
     var alliance = DriverStation.getAlliance();
     targetTranslation = (alliance.isEmpty() || alliance.get() == Blue) ? targetBlue : targetRed;
     ledSubsystem.off();
-    transferSubsystem.unjam();
+    feederSubsystem.unjam();
   }
 
   @Override
@@ -187,14 +187,14 @@ public class TeleopShootCommand extends Command {
     if (isShooterReady && isPitchReady && isYawReady && isDrivetrainReady) {
       // Shooter is spun up, robot is slowed, and the turret is aimed - shoot and start timer
       spindexerSubsystem.feedShooter();
-      transferSubsystem.feedShooter();
+      feederSubsystem.feedShooter();
       ledSubsystem.runPattern(LEDPattern.solid(kGreen));
     } else {
       ledSubsystem.runPattern(
           LEDSubsystem
               .ledSegments(kBlue, () -> isShooterReady, () -> isPitchReady, () -> isYawReady, () -> isDrivetrainReady));
       spindexerSubsystem.stop();
-      transferSubsystem.stop();
+      feederSubsystem.stop();
     }
   }
 
@@ -206,7 +206,7 @@ public class TeleopShootCommand extends Command {
   @Override
   public void end(boolean interrupted) {
     shooterSubsystem.stopAll();
-    transferSubsystem.stop();
+    feederSubsystem.stop();
     spindexerSubsystem.stop();
     drivetrain.setControl(new SwerveRequest.Idle());
     ledSubsystem.off();

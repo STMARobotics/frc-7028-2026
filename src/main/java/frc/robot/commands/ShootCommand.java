@@ -4,28 +4,34 @@ import static edu.wpi.first.units.Units.RotationsPerSecond;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Constants;
+import frc.robot.subsystems.FeederSubsystem;
 import frc.robot.subsystems.ShooterSubsystem;
 import frc.robot.subsystems.SpindexerSubsystem;
-import frc.robot.subsystems.TransferSubsystem;
 
 /*
- * Command to aim and shoot balls
+ * Command to shoot fuel without aiming. It will shoot at a fixed yaw, pitch, and velocity
  */
-
 public class ShootCommand extends Command {
   private final SpindexerSubsystem spindexerSubsystem;
-  private final TransferSubsystem transferSubsystem;
+  private final FeederSubsystem feederSubsystem;
   private final ShooterSubsystem shooterSubsystem;
 
+  /**
+   * Constructor for ShootCommand
+   * 
+   * @param spindexerSubsystem the spindexer subsystem
+   * @param feederSubsystem the feeder subsystem
+   * @param shooterSubsystem the shooter subsystem
+   */
   public ShootCommand(
       SpindexerSubsystem spindexerSubsystem,
-      TransferSubsystem transferSubsystem,
+      FeederSubsystem feederSubsystem,
       ShooterSubsystem shooterSubsystem) {
-    this.transferSubsystem = transferSubsystem;
+    this.feederSubsystem = feederSubsystem;
     this.spindexerSubsystem = spindexerSubsystem;
     this.shooterSubsystem = shooterSubsystem;
 
-    addRequirements(transferSubsystem, spindexerSubsystem, shooterSubsystem);
+    addRequirements(feederSubsystem, spindexerSubsystem, shooterSubsystem);
   }
 
   @Override
@@ -38,17 +44,17 @@ public class ShootCommand extends Command {
     shooterSubsystem.setFlywheelSpeed(RotationsPerSecond.of(40));
     /*
      * Checks to make sure the shooter is ready and up to speed
-     * before runnig the spindexer and transfer
+     * before runnig the spindexer and feeder
      */
     if (shooterSubsystem.isReadyToShoot()) {
       spindexerSubsystem.feedShooter();
-      transferSubsystem.feedShooter();
+      feederSubsystem.feedShooter();
     }
   }
 
   public void end(boolean interrupted) {
     spindexerSubsystem.stop();
-    transferSubsystem.stop();
+    feederSubsystem.stop();
     shooterSubsystem.stopAll();
   }
 }

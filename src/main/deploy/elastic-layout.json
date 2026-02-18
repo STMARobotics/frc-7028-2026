@@ -391,56 +391,56 @@
             }
           },
           {
-            "title": "Transfer Dynam Fwd",
+            "title": "Feeder Dynam Fwd",
             "x": 256.0,
             "y": 0.0,
             "width": 256.0,
             "height": 128.0,
             "type": "Command",
             "properties": {
-              "topic": "/SmartDashboard/Transfer Dynam Fwd",
+              "topic": "/SmartDashboard/Feeder Dynam Fwd",
               "period": 0.06,
               "show_type": true,
               "maximize_button_space": false
             }
           },
           {
-            "title": "Transfer Dynam Rev",
+            "title": "Feeder Dynam Rev",
             "x": 256.0,
             "y": 128.0,
             "width": 256.0,
             "height": 128.0,
             "type": "Command",
             "properties": {
-              "topic": "/SmartDashboard/Transfer Dynam Rev",
+              "topic": "/SmartDashboard/Feeder Dynam Rev",
               "period": 0.06,
               "show_type": true,
               "maximize_button_space": false
             }
           },
           {
-            "title": "Transfer Quasi Fwd",
+            "title": "Feeder Quasi Fwd",
             "x": 256.0,
             "y": 256.0,
             "width": 256.0,
             "height": 128.0,
             "type": "Command",
             "properties": {
-              "topic": "/SmartDashboard/Transfer Quasi Fwd",
+              "topic": "/SmartDashboard/Feeder Quasi Fwd",
               "period": 0.06,
               "show_type": true,
               "maximize_button_space": false
             }
           },
           {
-            "title": "Transfer Quasi Rev",
+            "title": "Feeder Quasi Rev",
             "x": 256.0,
             "y": 384.0,
             "width": 256.0,
             "height": 128.0,
             "type": "Command",
             "properties": {
-              "topic": "/SmartDashboard/Transfer Quasi Rev",
+              "topic": "/SmartDashboard/Feeder Quasi Rev",
               "period": 0.06,
               "show_type": true,
               "maximize_button_space": false

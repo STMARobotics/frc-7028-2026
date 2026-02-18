@@ -48,7 +48,7 @@ public class JoystickControlBindings extends ControlBindings {
   }
 
   @Override
-  public Optional<Trigger> shoot() {
+  public Optional<Trigger> autoShoot() {
     return Optional.of(rightJoystick.trigger());
   }
 
