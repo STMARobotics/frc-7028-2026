@@ -6,6 +6,7 @@ import static java.lang.Math.sin;
 
 import com.frc7028.physics.sim.AdaptiveSystem.AdaptiveDebugObject;
 import com.frc7028.physics.sim.AdaptiveSystem.AdaptiveOutput;
+import com.frc7028.physics.sim.AdaptiveSystem.DebugEventType;
 import com.frc7028.physics.sim.AdaptiveSystem.DebugType;
 import com.frc7028.physics.sim.Integrator.forceInput;
 import edu.wpi.first.math.geometry.Rotation3d;
@@ -38,6 +39,7 @@ public class BallisticPrecomputer {
 
   // ^^^ use colorful outputs
 
+  private DebugEventType lastDebugEvent;
   int iter = 0;
 
   public SimulatorResolution simulatorResolution;
@@ -148,11 +150,12 @@ public class BallisticPrecomputer {
     // error, error quantifier, input deltas, max iterations, input count, output count
     this.adaptiveBallisticErrorSystem = new AdaptiveSystem<RobotState>(
         (SimpleMatrix input, RobotState currentState) -> {
-          this.iter++;
+          iter++;
           ShotParameters attemptShotParameters = MatrixToParameters(input);
 
           SimulationResult simResult = this.simulateBall(this.projectileState, currentState, attemptShotParameters);
 
+          System.out.println(this.lastDebugEvent);
           StringBuffer cvs = new StringBuffer("x_1, y_1, z_1");
           this.projectileState.trajectory.forEach((Translation3d pos) -> {
             cvs.append(String.format("%.6f,%.6f,%.6f%n", pos.getX(), pos.getY(), pos.getZ()));
@@ -177,9 +180,16 @@ public class BallisticPrecomputer {
         (AdaptiveDebugObject dbo) -> {
           switch (dbo.type()) {
             case DebugType.Event: {
+              this.lastDebugEvent = dbo.event();
               System.out.println(dbo.event().getColor() + dbo.type() + " | " + dbo.event() + ANSI_RESET);
             }
+            case DebugType.Display: {
+              if (dbo.matrixOutput() != this.adaptiveBallisticErrorSystem.defaultMatrix) {
+                System.out.println(ANSI_WHITE + dbo.displayEvent() + " | " + dbo.matrixOutput() + ANSI_RESET);
+              }
+            }
           }
+          ;
         },
         new SimpleMatrix(deltas),
         0,

@@ -6,4 +6,4 @@ build
 
 trajectory.csv
 
-trajectory[*].csv
+trajectory*.csv

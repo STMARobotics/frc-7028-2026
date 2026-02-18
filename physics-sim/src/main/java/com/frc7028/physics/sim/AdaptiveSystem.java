@@ -56,10 +56,11 @@ public class AdaptiveSystem<context> {
 
   public enum DebugDisplayEvent {
     NA,
-    CurrentOutput
+    CurrentOutput,
+    Jacobian
   }
 
-  private SimpleMatrix defaultMatrix = new SimpleMatrix(0, 0);
+  public SimpleMatrix defaultMatrix = new SimpleMatrix(0, 0);
 
   public record AdaptiveOutput(int iterations, boolean converged, SingularOutput output) {
   }
@@ -180,7 +181,7 @@ public class AdaptiveSystem<context> {
         Jacobian.set(outputIndex, inputIndex, epsilon.get(outputIndex, 0) / (2 * delta));
       }
     }
-    System.out.println(Jacobian);
+    debug(DebugType.Display, DebugDisplayEvent.Jacobian, Jacobian);
     SimpleMatrix correction = Jacobian.pseudoInverse().mult(baselineErrors).scale(-1.0);
     SimpleMatrix correctedInput = baselineInputs.plus(correction);
     SimpleMatrix correctedOutput = this.computeError.apply(correctedInput, Context);
