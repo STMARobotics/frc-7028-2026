@@ -33,7 +33,7 @@ public class BallisticPrecomputer {
   public record RobotState(Translation2d position, Translation2d velocity) {
   }
 
-  private record SimulationResult(Translation3d endPosition, Translation3d closestPosition, double flightTime) {
+  public record SimulationResult(Translation3d endPosition, Translation3d closestPosition, double flightTime) {
 
   }
 
@@ -139,10 +139,12 @@ public class BallisticPrecomputer {
         },
         (SimpleMatrix output) -> (double) output.normF(),
         new SimpleMatrix(deltas),
-        1d,
+        0,
         10,
         3,
         3);
+
+    this.projectileState = new BallisticProjectileState(this, integratorResolution, forceFunction);
   }
 
   public SimulationResult simulateBall(
@@ -168,11 +170,15 @@ public class BallisticPrecomputer {
     while (simulatedProjectileState.completedTrajectory()) {
       simulatedProjectileState.step();
 
+      // System.out.println(simulatedProjectileState.position);
+
       Translation3d currentPosition = simulatedProjectileState.position;
       if (currentPosition.getDistance(targetPosition) < nearestDistance) {
         nearestPosition = currentPosition;
       }
     }
+
+    System.out.println(simulatedProjectileState.collisionStatus);
 
     return new SimulationResult(
         simulatedProjectileState.position,

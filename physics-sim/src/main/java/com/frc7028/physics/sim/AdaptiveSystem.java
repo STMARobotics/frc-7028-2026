@@ -18,7 +18,6 @@ public class AdaptiveSystem<context> {
   double errorTolerance;
 
   SimpleMatrix inputDeltas;
-  SimpleMatrix deltaMatrix;
 
   private int maxIterations;
   int N;
@@ -37,45 +36,39 @@ public class AdaptiveSystem<context> {
     this.errorQuantifier = errorQuantifier;
     this.errorTolerance = tolerance;
     this.maxIterations = maxIterations;
+    this.inputDeltas = inputDeltas;
     this.N = inputs;
     this.M = outputs;
-    this.deltaMatrix = new SimpleMatrix(M, M);
-    for (int inputIndex = 0; inputIndex < M; inputIndex++) {
-      this.deltaMatrix.set(inputIndex, inputIndex, inputDeltas.get(inputIndex, 0));
-    }
   }
 
   public SingularOutput computeCorrection(SimpleMatrix baselineInputs, SimpleMatrix baselineErrors, context Context) {
-    // SimpleMatrix baselineErrors = this.computeError.apply(baselineInputs);
+    // using central diff, but now im doing 3 to
 
-    SimpleMatrix inputMatrix = new SimpleMatrix(this.M, this.M);
-    SimpleMatrix outputMatrix = new SimpleMatrix(this.N, this.M);
+    SimpleMatrix Jacobian = new SimpleMatrix(this.M, this.N);
 
-    SimpleMatrix baselineReferenceMatrix = new SimpleMatrix(this.N, this.M);
+    for (int inputIndex = 0; inputIndex < this.N; inputIndex++) {
+      SimpleMatrix shiftedInputs = baselineInputs.copy();
+      double delta = inputDeltas.get(inputIndex, 0);
+      shiftedInputs.set(inputIndex, 0, shiftedInputs.get(inputIndex, 0) - delta);
 
-    for (int inputIndex = 0; inputIndex < this.M; inputIndex++) {
-      inputMatrix.setRow(inputIndex, baselineInputs.transpose());
-      baselineReferenceMatrix.setColumn(inputIndex, baselineErrors);
+      SimpleMatrix shiftErrorA = this.computeError.apply(shiftedInputs, Context);
+
+      shiftedInputs.set(inputIndex, 0, shiftedInputs.get(inputIndex, 0) + 2 * delta);
+
+      SimpleMatrix shiftErrorB = this.computeError.apply(shiftedInputs, Context);
+      SimpleMatrix epsilon = shiftErrorB.minus(shiftErrorA);
+
+      for (int outputIndex = 0; outputIndex < this.M; outputIndex++) {
+        Jacobian.set(outputIndex, inputIndex, epsilon.get(outputIndex, 0) / (2 * delta));
+      }
     }
 
-    SimpleMatrix perturbedInputMatrix = inputMatrix.plus(this.deltaMatrix);
+    SimpleMatrix correction = Jacobian.pseudoInverse().mult(baselineErrors).scale(-1.0);
+    SimpleMatrix correctedInput = baselineInputs.plus(correction);
+    SimpleMatrix correctedOutput = this.computeError.apply(correctedInput, Context);
+    double error = this.errorQuantifier.apply(correctedOutput);
 
-    for (int inputIndex = 0; inputIndex < this.M; inputIndex++) {
-      outputMatrix
-          .setColumn(inputIndex, this.computeError.apply(perturbedInputMatrix.getRow(inputIndex).transpose(), Context));
-    }
-
-    outputMatrix = outputMatrix.minus(baselineReferenceMatrix);
-
-    for (int inputIndex = 0; inputIndex < this.M; inputIndex++) {
-      outputMatrix.setColumn(inputIndex, outputMatrix.getColumn(inputIndex).divide(inputDeltas.get(inputIndex, 0)));
-    }
-
-    SimpleMatrix newInput = outputMatrix.pseudoInverse().mult(baselineErrors);
-    SimpleMatrix newError = this.computeError.apply(newInput, Context);
-    double error = this.errorQuantifier.apply(newError);
-
-    return new SingularOutput(error, newInput, newError);
+    return new SingularOutput(error, correctedInput, correctedOutput);
   }
 
   public AdaptiveOutput simpleConverge(SimpleMatrix inputGuess, context Context) {
@@ -88,11 +81,16 @@ public class AdaptiveSystem<context> {
 
     while (iterations++ < this.maxIterations) {
       currentOutput = this.computeCorrection(currentOutput.inputs(), currentOutput.errors(), Context);
+      System.out.println(currentOutput.error);
       if (currentOutput.error < bestOutput.error) {
         bestOutput = currentOutput;
       }
+
+      if (this.errorTolerance > bestOutput.error) {
+        break;
+      }
     }
 
-    return new AdaptiveOutput(iterations, iterations < this.maxIterations, bestOutput);
+    return new AdaptiveOutput(iterations, bestOutput.error < this.errorTolerance, bestOutput);
   }
 }
