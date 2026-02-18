@@ -79,7 +79,7 @@ public final class Constants {
   public static class TeleopDriveConstants {
     /** Max velocity the driver can request */
     public static final LinearVelocity MAX_TELEOP_VELOCITY = TunerConstants.kSpeedAt12Volts;
-    /** Max angular velicity the driver can request */
+    /** Max angular velocity the driver can request */
     public static final AngularVelocity MAX_TELEOP_ANGULAR_VELOCITY = RotationsPerSecond.of(1.25);
     public static final double SHOOT_VELOCITY_MULTIPLIER = 0.5;
   }
