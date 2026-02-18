@@ -7,7 +7,7 @@ import frc.robot.subsystems.ClimbSubsystem;
  * Command to climb to L1 (Level 1) in autonomous mode.
  * 
  * <p>
- * This command prepares the climb mechanism and pulls the robot up to the L1 bar.
+ * This command prepares the climb mechanism and pulls the robot up to hang from the L1 bar.
  */
 public class ClimbToL1Command extends Command {
 
@@ -26,11 +26,6 @@ public class ClimbToL1Command extends Command {
   @Override
   public void initialize() {
     climbSubsystem.prepareToL1();
-    climbSubsystem.run(climbSubsystem::prepareToL1)
-        .until(climbSubsystem::isActionComplete)
-        .andThen(climbSubsystem::L1)
-        .until(climbSubsystem::isActionComplete)
-        .finallyDo(climbSubsystem::stop);
   }
 
   @Override
@@ -38,7 +33,7 @@ public class ClimbToL1Command extends Command {
     // Wait until the prepare action is complete, then move to L1
     if (climbSubsystem.getCurrentState() == ClimbSubsystem.ClimbAction.PREPARE_TO_L1
         && climbSubsystem.isActionComplete()) {
-      climbSubsystem.L1();
+      climbSubsystem.L1Hang();
     }
   }
 
@@ -49,7 +44,7 @@ public class ClimbToL1Command extends Command {
 
   @Override
   public boolean isFinished() {
-    // Finished when we're at L1 and the action is complete
-    return climbSubsystem.getCurrentState() == ClimbSubsystem.ClimbAction.L1 && climbSubsystem.isActionComplete();
+    // Finished when we're hanging at L1 and the action is complete
+    return climbSubsystem.getCurrentState() == ClimbSubsystem.ClimbAction.L1_HANG && climbSubsystem.isActionComplete();
   }
 }
