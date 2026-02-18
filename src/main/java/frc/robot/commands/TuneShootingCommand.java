@@ -3,7 +3,8 @@ package frc.robot.commands;
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Radian;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
-import static frc.robot.Constants.ShooterConstants.HUB_POSE;
+import static frc.robot.Constants.ShooterConstants.HUB_POSE_BLUE;
+import static frc.robot.Constants.ShooterConstants.HUB_POSE_RED;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -12,6 +13,7 @@ import edu.wpi.first.networktables.DoublePublisher;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.units.measure.MutAngle;
 import edu.wpi.first.units.measure.MutAngularVelocity;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.FeederSubsystem;
 import frc.robot.subsystems.ShooterSubsystem;
@@ -68,7 +70,8 @@ public class TuneShootingCommand extends Command {
   @Override
   public void initialize() {
     shooting = false;
-    hubTranslation = HUB_POSE.getTranslation();
+    hubTranslation = (DriverStation.getAlliance().isEmpty()
+        || DriverStation.getAlliance().get() == DriverStation.Alliance.Blue) ? HUB_POSE_BLUE : HUB_POSE_RED;
   }
 
   @Override
