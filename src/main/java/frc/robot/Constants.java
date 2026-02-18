@@ -75,7 +75,7 @@ public final class Constants {
   public static class TeleopDriveConstants {
     /** Max velocity the driver can request */
     public static final LinearVelocity MAX_TELEOP_VELOCITY = TunerConstants.kSpeedAt12Volts;
-    /** Max angular velicity the driver can request */
+    /** Max angular velocity the driver can request */
     public static final AngularVelocity MAX_TELEOP_ANGULAR_VELOCITY = RotationsPerSecond.of(1.25);
   }
 
@@ -271,19 +271,19 @@ public final class Constants {
   }
 
   /**
-   * Constants for the Transfer Subsystem
+   * Constants for the Feeder Subsystem
    */
-  public static class TransferConstants {
-    public static final int DEVICE_ID_TRANSFER_MOTOR = 20;
-    public static final int DEVICE_ID_TRANSFER_CANRANGE = 20;
+  public static class FeederConstants {
+    public static final int DEVICE_ID_FEEDER_MOTOR = 20;
+    public static final int DEVICE_ID_FEEDER_CANRANGE = 20;
 
-    public static final Current TRANSFER_TORQUE_CURRENT_LIMIT = Amps.of(80);
-    public static final Current TRANSFER_STATOR_CURRENT_LIMIT = Amps.of(90);
-    public static final Current TRANSFER_SUPPLY_CURRENT_LIMIT = Amps.of(40);
-    public static final SlotConfigs TRANSFER_SLOT_CONFIGS = new SlotConfigs().withKP(10).withKS(0);
+    public static final Current FEEDER_TORQUE_CURRENT_LIMIT = Amps.of(50);
+    public static final Current FEEDER_STATOR_CURRENT_LIMIT = FEEDER_TORQUE_CURRENT_LIMIT;
+    public static final Current FEEDER_SUPPLY_CURRENT_LIMIT = Amps.of(40);
+    public static final SlotConfigs FEEDER_SLOT_CONFIGS = new SlotConfigs().withKP(10).withKS(0);
 
-    public static final AngularVelocity TRANSFER_FEED_VELOCITY = RotationsPerSecond.of(60);
-    public static final AngularVelocity TRANSFER_UNJAM_VELOCITY = RotationsPerSecond.of(-10);
+    public static final AngularVelocity FEEDER_FEED_VELOCITY = RotationsPerSecond.of(60);
+    public static final AngularVelocity FEEDER_UNJAM_VELOCITY = RotationsPerSecond.of(-10);
   }
 
   /** Constants for the climb subsystem */

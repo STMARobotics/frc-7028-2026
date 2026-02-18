@@ -39,12 +39,12 @@ import frc.robot.controls.XBoxControlBindings;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.ClimbSubsystem;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
+import frc.robot.subsystems.FeederSubsystem;
 import frc.robot.subsystems.IntakeSubsytem;
 import frc.robot.subsystems.LEDSubsystem;
 import frc.robot.subsystems.LocalizationSubsystem;
 import frc.robot.subsystems.ShooterSubsystem;
 import frc.robot.subsystems.SpindexerSubsystem;
-import frc.robot.subsystems.TransferSubsystem;
 
 @Logged(strategy = Logged.Strategy.OPT_IN)
 public class RobotContainer {
@@ -76,7 +76,7 @@ public class RobotContainer {
       drivetrain::getIMUYaw,
       drivetrain::getIMUYawVelocity);
   @Logged
-  private final TransferSubsystem transferSubsystem = new TransferSubsystem();
+  private final FeederSubsystem feederSubsystem = new FeederSubsystem();
   @Logged
   private final SpindexerSubsystem spindexerSubsystem = new SpindexerSubsystem();
   @Logged
@@ -204,10 +204,10 @@ public class RobotContainer {
     SmartDashboard.putData("Spindexer Dynam Fwd", spindexerSubsystem.sysIdSpindexerDynamicCommand(kForward));
     SmartDashboard.putData("Spindexer Dynam Rev", spindexerSubsystem.sysIdSpindexerDynamicCommand(kReverse));
 
-    // Transfer
-    SmartDashboard.putData("Transfer Quasi Fwd", transferSubsystem.sysIdTransferQuasistaticCommand(kForward));
-    SmartDashboard.putData("Transfer Quasi Rev", transferSubsystem.sysIdTransferQuasistaticCommand(kReverse));
-    SmartDashboard.putData("Transfer Dynam Fwd", transferSubsystem.sysIdTransferDynamicCommand(kForward));
-    SmartDashboard.putData("Transfer Dynam Rev", transferSubsystem.sysIdTransferDynamicCommand(kReverse));
+    // Feeder
+    SmartDashboard.putData("Feeder Quasi Fwd", feederSubsystem.sysIdFeederQuasistaticCommand(kForward));
+    SmartDashboard.putData("Feeder Quasi Rev", feederSubsystem.sysIdFeederQuasistaticCommand(kReverse));
+    SmartDashboard.putData("Feeder Dynam Fwd", feederSubsystem.sysIdFeederDynamicCommand(kForward));
+    SmartDashboard.putData("Feeder Dynam Rev", feederSubsystem.sysIdFeederDynamicCommand(kReverse));
   }
 }
