@@ -28,6 +28,7 @@ import static frc.robot.Constants.ShooterConstants.PITCH_SENSOR_TO_MECHANISM_RAT
 import static frc.robot.Constants.ShooterConstants.PITCH_SLOT_CONFIGS;
 import static frc.robot.Constants.ShooterConstants.PITCH_STATOR_CURRENT_LIMIT;
 import static frc.robot.Constants.ShooterConstants.PITCH_SUPPLY_CURRENT_LIMIT;
+import static frc.robot.Constants.ShooterConstants.ROBOT_TO_TURRET;
 import static frc.robot.Constants.ShooterConstants.YAW_ENCODER_ID;
 import static frc.robot.Constants.ShooterConstants.YAW_HOME_ANGLE;
 import static frc.robot.Constants.ShooterConstants.YAW_LIMIT_FORWARD;
@@ -65,6 +66,8 @@ import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularAcceleration;
 import edu.wpi.first.units.measure.AngularVelocity;
@@ -486,6 +489,10 @@ public class ShooterSubsystem extends SubsystemBase {
       }
     }
     return bestCandidate;
+  }
+
+  public static Translation2d getTurretTranslation(Pose2d robotPose) {
+    return robotPose.getTranslation().plus(ROBOT_TO_TURRET.rotateBy(robotPose.getRotation()));
   }
 
   /**

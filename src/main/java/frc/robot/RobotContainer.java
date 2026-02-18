@@ -31,6 +31,7 @@ import frc.robot.Constants.OdometryConstants;
 import frc.robot.Constants.QuestNavConstants;
 import frc.robot.commands.DeployIntakeCommand;
 import frc.robot.commands.IntakeCommand;
+import frc.robot.commands.TuneShootingCommand;
 import frc.robot.commands.led.DefaultLEDCommand;
 import frc.robot.commands.led.LEDBootAnimationCommand;
 import frc.robot.controls.ControlBindings;
@@ -136,6 +137,15 @@ public class RobotContainer {
       localizationSubsystem.setQuestNavPose(robotNewPose);
       drivetrain.resetPose(robotNewPose);
     })));
+
+    controlBindings.tuneShooting()
+        .ifPresent(
+            trigger -> trigger.whileTrue(
+                new TuneShootingCommand(
+                    shooterSubsystem,
+                    spindexerSubsystem,
+                    feederSubsystem,
+                    () -> drivetrain.getState().Pose)));
 
     controlBindings.expandClimb()
         .ifPresent(

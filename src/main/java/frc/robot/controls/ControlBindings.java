@@ -72,4 +72,13 @@ public abstract class ControlBindings {
     return Optional.empty();
   }
 
+  /**
+   * Tune shooting
+   *
+   * @return trigger
+   */
+  public Optional<Trigger> tuneShooting() {
+    return Optional.empty();
+  }
+
 }

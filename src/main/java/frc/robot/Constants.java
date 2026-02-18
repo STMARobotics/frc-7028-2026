@@ -18,6 +18,7 @@ import com.ctre.phoenix6.configs.SlotConfigs;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -168,6 +169,9 @@ public final class Constants {
         .withKS(0.0)
         .withKV(0.0)
         .withKA(0.0);
+
+    public static final Pose2d HUB_POSE = new Pose2d();
+    public static final Translation2d ROBOT_TO_TURRET = new Translation2d();
   }
 
   /**
