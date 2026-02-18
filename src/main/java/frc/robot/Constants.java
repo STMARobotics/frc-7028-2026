@@ -81,6 +81,7 @@ public final class Constants {
     public static final LinearVelocity MAX_TELEOP_VELOCITY = TunerConstants.kSpeedAt12Volts;
     /** Max angular velocity the driver can request */
     public static final AngularVelocity MAX_TELEOP_ANGULAR_VELOCITY = RotationsPerSecond.of(1.25);
+    /** Multiplier for shooting in teleop to reduce driver speed while shooting */
     public static final double SHOOT_VELOCITY_MULTIPLIER = 0.5;
   }
 
@@ -344,6 +345,11 @@ public final class Constants {
     public static final int TOTAL_LEDS = 2 * LED_STRIP_LENGTH;
   }
 
+  /**
+   * Constants related to shooting fuel
+   * <p>
+   * These constants are not specific to the shooter subsystem, they are about the process of shooting.
+   */
   public static class ShootingConstants {
     public static final Angle AIM_TOLERANCE = Degrees.of(1.5);
 
