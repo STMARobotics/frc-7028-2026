@@ -194,7 +194,7 @@ public class RobotContainer {
 
   private void configurePathPlannerCommands() {
     NamedCommands.registerCommand("ClimbToL1", new ClimbToL1Command(climbSubsystem));
-    NamedCommands.registerCommand("DeployInstake", new DeployIntakeCommand(intakeSubsystem));
+    NamedCommands.registerCommand("DeployIntake", new DeployIntakeCommand(intakeSubsystem));
     NamedCommands.registerCommand("Intake", new IntakeCommand(intakeSubsystem, spindexerSubsystem));
   }
 
