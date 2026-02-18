@@ -172,6 +172,7 @@ public final class Constants {
 
     public static final Pose2d HUB_POSE = new Pose2d();
     public static final Translation2d ROBOT_TO_TURRET = new Translation2d();
+    // TODO: set these
   }
 
   /**
