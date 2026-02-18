@@ -27,7 +27,7 @@ import java.util.function.Function;
 // This requires us to simulate the velocity to know position, and for something sensitive like drag, we need a GOOD simulation.
 // Eulers method is the "first order"(taylor series approximation) way to solve this differential equation, it is decent, but it does not behave well with sensitive or rapidly changing functions
 
-// We use RK45 to accurate simulate the position, and it also dynamically modulates your time steps to ensure precision if f is very sensitive, and to increase it when smaller steps are not needed.
+// We use RKF45 to accurate simulate the position, and it also dynamically modulates your time steps to ensure precision if f is very sensitive, and to increase it when smaller steps are not needed.
 
 // https://en.wikipedia.org/wiki/Runge%E2%80%93Kutta%E2%80%93Fehlberg_method
 // https://math.okstate.edu/people/yqwang/teaching/math4513_fall11/Notes/rungekutta.pdf
@@ -71,10 +71,6 @@ public class Integrator {
 
     this.epsilon = integratorResolution.epsilon();
     this.maxIterations = integratorResolution.maxIterations();
-  }
-
-  public void reset() {
-    this.vectorState.dt = this.integratorResolution.dtInitial();
   }
 
   private Translation3d f(forceInput input) {

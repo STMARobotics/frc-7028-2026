@@ -37,4 +37,8 @@ public class VectorState {
     this.integrator.step();
     this.timeElapsed += this.dt;
   }
+
+  public void clearTrajectory() {
+    this.trajectory.clear();
+  }
 }

@@ -4,17 +4,25 @@ import static edu.wpi.first.units.Units.Radians;
 import static java.lang.Math.cos;
 import static java.lang.Math.sin;
 
+import com.frc7028.physics.sim.AdaptiveSystem.AdaptiveDebugObject;
 import com.frc7028.physics.sim.AdaptiveSystem.AdaptiveOutput;
+import com.frc7028.physics.sim.AdaptiveSystem.DebugType;
 import com.frc7028.physics.sim.Integrator.forceInput;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.units.measure.Angle;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.function.Function;
 import org.ejml.simple.SimpleMatrix;
 
 public class BallisticPrecomputer {
+
+  int iter = 0;
 
   public SimulatorResolution simulatorResolution;
   public IntegratorResolution integratorResolution;
@@ -124,20 +132,39 @@ public class BallisticPrecomputer {
     // error, error quantifier, input deltas, max iterations, input count, output count
     this.adaptiveBallisticErrorSystem = new AdaptiveSystem<RobotState>(
         (SimpleMatrix input, RobotState currentState) -> {
+          this.iter++;
           ShotParameters attemptShotParameters = MatrixToParameters(input);
 
           SimulationResult simResult = this.simulateBall(this.projectileState, currentState, attemptShotParameters);
 
+          StringBuffer cvs = new StringBuffer("x_1, y_1, z_1");
+          this.projectileState.trajectory.forEach((Translation3d pos) -> {
+            cvs.append(String.format("%.6f,%.6f,%.6f%n", pos.getX(), pos.getY(), pos.getZ()));
+          });
+          Path outputPath = Paths.get("trajectory" + this.iter + ".csv");
+          try {
+            Files.writeString(outputPath, cvs.toString());
+          } catch (IOException e) {
+          }
+
           Translation3d closestErrorDisplacement = simResult.closestPosition
               .minus(this.fieldMetrics.targetRegion().center);
+          Translation3d endErrorDisplacement = simResult.endPosition.minus(this.fieldMetrics.targetRegion().center);
 
           double[] errorVector = {
-              closestErrorDisplacement.getX(),
-              closestErrorDisplacement.getY(),
-              closestErrorDisplacement.getZ() };
+              endErrorDisplacement.getX(),
+              endErrorDisplacement.getY(),
+              endErrorDisplacement.getZ() };
           return new SimpleMatrix(errorVector);
         },
         (SimpleMatrix output) -> (double) output.normF(),
+        (AdaptiveDebugObject dbo) -> {
+          switch (dbo.type()) {
+            case DebugType.Event: {
+              System.out.println(dbo.type() + " | " + dbo.event());
+            }
+          }
+        },
         new SimpleMatrix(deltas),
         0,
         10,

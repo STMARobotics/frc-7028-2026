@@ -22,13 +22,18 @@ public class BallisticProjectileState extends VectorState {
   }
 
   public void launch(Translation3d position, Translation3d velocity, Rotation3d spin) {
-    this.integrator.reset();
+    this.reset();
     this.timeElapsed = 0;
     this.collisionStatus = CollisionStatus.NA;
     this.boundaryState = BoundaryState.IN_BOUNDS;
     this.position = position;
     this.velocity = velocity;
     this.spin = spin;
+  }
+
+  public void reset() {
+    this.dt = this.integrator.integratorResolution.dtInitial();
+    this.clearTrajectory();
   }
 
   public enum BoundaryState {

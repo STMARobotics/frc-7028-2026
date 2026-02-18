@@ -11,10 +11,6 @@ import com.frc7028.physics.sim.BallisticPrecomputer.RobotState;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.function.Function;
 import org.junit.jupiter.api.Test;
@@ -29,7 +25,7 @@ class AppTest {
     ArrayList<Region3d> obstacles = new ArrayList<>();
     obstacles.add(new Region3d(new Translation3d(4, 4, 0), new Translation3d(6, 6, 3)));
     ArrayList<Region3d> rejectRegions = new ArrayList<>();
-    Region3d targetRegion = new Region3d(new Translation3d(9, 9, 0), new Translation3d(10, 10, 2));
+    Region3d targetRegion = new Region3d(new Translation3d(4, 4, 0), new Translation3d(5, 5, 2));
     Region2d fieldPlane = new Region2d(new Translation2d(0, 0), new Translation2d(10, 10));
     System.out.println();
     System.out.println(targetRegion.center);
@@ -43,12 +39,12 @@ class AppTest {
     );
     SimulatorResolution simRes = new SimulatorResolution(
         Degrees.of(2), // 0.035 rad (~2°)
-        0.5, // 0.5 m/s ← 500x bigger!
+        0.5,
         0.1,
         0.1,
         0.2,
         2.0,
-        20);
+        1);
     IntegratorResolution intRes = new IntegratorResolution(
         0.01, // dt initial
         0.01, // epsilon
@@ -73,39 +69,19 @@ class AppTest {
     App unitTest = new App(simRes, intRes, env, testFieldMetrics, spinFunction, guessShotFunction);
     StringBuffer cvs = new StringBuffer("x_1, y_1, z_1");
 
-    // Test if integrator actually changes trajectory with parameter changes
     BallisticPrecomputer precomputer = unitTest.precomputer;
     RobotState state = testingRobotState;
 
-    // Base trajectory length
     BallisticPrecomputer.ShotParameters baseShot = new BallisticPrecomputer.ShotParameters(
         Degrees.of(45),
-        Degrees.of(10),
+        Degrees.of(70),
         15.0);
-    precomputer.simulateBall(precomputer.projectileState, state, baseShot);
-    int baseLength = precomputer.projectileState.trajectory.size();
-    System.out.println("Base trajectory steps: " + baseLength);
-
-    // Speed change - does trajectory length change?
-    BallisticPrecomputer.ShotParameters fastShot = baseShot.stepSpeed(0.5);
-    precomputer.simulateBall(precomputer.projectileState, state, fastShot);
-    int fastLength = precomputer.projectileState.trajectory.size();
-    System.out.println("Fast trajectory steps: " + fastLength);
-    System.out.println("Steps changed? " + (baseLength != fastLength));
 
     unitTest.precomputer.convergeSolution(
         unitTest.precomputer.projectileState,
           testingRobotState,
-          new BallisticPrecomputer.ShotParameters(Degrees.of(45), Radians.of(0.1), 5.0));
+          new BallisticPrecomputer.ShotParameters(Degrees.of(60), Radians.of(0.1), 10.0));
 
-    unitTest.precomputer.projectileState.trajectory.forEach((Translation3d pos) -> {
-      cvs.append(String.format("%.6f,%.6f,%.6f%n", pos.getX(), pos.getY(), pos.getZ()));
-    });
-    Path outputPath = Paths.get("trajectory.csv");
-    try {
-      Files.writeString(outputPath, cvs.toString());
-    } catch (IOException e) {
-    }
     System.out.println("FINISHED");
     // assertNotNull(convergedShot, "Shot should converge to a solution");
     // assertTrue(convergedShot.speed() > 0, "Speed should be positive");
