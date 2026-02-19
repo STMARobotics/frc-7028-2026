@@ -115,8 +115,6 @@ public class RobotContainer {
     // Warmup PathPlanner to avoid Java pauses
     CommandScheduler.getInstance().schedule(FollowPathCommand.warmupCommand());
 
-    populateSysIdDashboard();
-
     // Run the boot animation
     var bootAnimation = new LEDBootAnimationCommand(ledSubsystem);
     CommandScheduler.getInstance().schedule(bootAnimation);
@@ -214,7 +212,7 @@ public class RobotContainer {
   }
 
   /** Populate the SysID dashboard controls with commands for system identification */
-  public void populateSysIdDashboard() {
+  public void populateTestModeDashboard() {
     // Drive
     SmartDashboard.putData("Drive Quasi Fwd", drivetrain.sysIdTranslationQuasiCommand(kForward));
     SmartDashboard.putData("Drive Quasi Rev", drivetrain.sysIdTranslationQuasiCommand(kReverse));
@@ -268,5 +266,14 @@ public class RobotContainer {
     SmartDashboard.putData("Shooter Flywheel Dynam Fwd", shooterSubsystem.sysIdFlywheelDynamicCommand(kForward));
     SmartDashboard.putData("Shooter Flywheel Dynam Rev", shooterSubsystem.sysIdFlywheelDynamicCommand(kReverse));
 
+    SmartDashboard.putData("Shooter Yaw Quasi Fwd", shooterSubsystem.sysIdYawQuasistaticCommand(kForward));
+    SmartDashboard.putData("Shooter Yaw Quasi Rev", shooterSubsystem.sysIdYawQuasistaticCommand(kReverse));
+    SmartDashboard.putData("Shooter Yaw Dynam Fwd", shooterSubsystem.sysIdYawDynamicCommand(kForward));
+    SmartDashboard.putData("Shooter Yaw Dynam Rev", shooterSubsystem.sysIdYawDynamicCommand(kReverse));
+
+    SmartDashboard.putData("Shooter Pitch Quasi Fwd", shooterSubsystem.sysIdPitchQuasistaticCommand(kForward));
+    SmartDashboard.putData("Shooter Pitch Quasi Rev", shooterSubsystem.sysIdPitchQuasistaticCommand(kReverse));
+    SmartDashboard.putData("Shooter Pitch Dynam Fwd", shooterSubsystem.sysIdPitchDynamicCommand(kForward));
+    SmartDashboard.putData("Shooter Pitch Dynam Rev", shooterSubsystem.sysIdPitchDynamicCommand(kReverse));
   }
 }
