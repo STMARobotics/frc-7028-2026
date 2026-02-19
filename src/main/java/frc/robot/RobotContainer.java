@@ -13,9 +13,13 @@ import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveModule.SteerRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.commands.FollowPathCommand;
+import com.pathplanner.lib.commands.PathPlannerAuto;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -25,17 +29,22 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import frc.robot.Constants.OdometryConstants;
 import frc.robot.Constants.QuestNavConstants;
+import frc.robot.commands.DeployIntakeCommand;
+import frc.robot.commands.IntakeCommand;
 import frc.robot.commands.led.DefaultLEDCommand;
 import frc.robot.commands.led.LEDBootAnimationCommand;
 import frc.robot.controls.ControlBindings;
 import frc.robot.controls.JoystickControlBindings;
 import frc.robot.controls.XBoxControlBindings;
 import frc.robot.generated.TunerConstants;
+import frc.robot.subsystems.ClimbSubsystem;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
+import frc.robot.subsystems.FeederSubsystem;
+import frc.robot.subsystems.IntakeSubsytem;
 import frc.robot.subsystems.LEDSubsystem;
-import frc.robot.subsystems.QuestNavSubsystem;
+import frc.robot.subsystems.LocalizationSubsystem;
+import frc.robot.subsystems.ShooterSubsystem;
 import frc.robot.subsystems.SpindexerSubsystem;
-import frc.robot.subsystems.TransferSubsystem;
 
 @Logged(strategy = Logged.Strategy.OPT_IN)
 public class RobotContainer {
@@ -60,12 +69,22 @@ public class RobotContainer {
       TunerConstants.FrontRight,
       TunerConstants.BackLeft,
       TunerConstants.BackRight);
-
-  private final QuestNavSubsystem questNavSubsystem = new QuestNavSubsystem(drivetrain::addVisionMeasurement);
   @Logged
-  private final TransferSubsystem transferSubsystem = new TransferSubsystem();
+  private final LocalizationSubsystem localizationSubsystem = new LocalizationSubsystem(
+      drivetrain::addVisionMeasurement,
+      drivetrain::resetPose,
+      drivetrain::getIMUYaw,
+      drivetrain::getIMUYawVelocity);
+  @Logged
+  private final FeederSubsystem feederSubsystem = new FeederSubsystem();
   @Logged
   private final SpindexerSubsystem spindexerSubsystem = new SpindexerSubsystem();
+  @Logged
+  private final IntakeSubsytem intakeSubsystem = new IntakeSubsytem();
+  @Logged
+  private final ClimbSubsystem climbSubsystem = new ClimbSubsystem();
+  @Logged
+  private final ShooterSubsystem shooterSubsystem = new ShooterSubsystem();
   private final LEDSubsystem ledSubsystem = new LEDSubsystem();
 
   /* Path follower */
@@ -82,8 +101,10 @@ public class RobotContainer {
     }
 
     // Configure and populate the auto command chooser with autos from PathPlanner
+    configurePathPlannerCommands();
     autoChooser = AutoBuilder.buildAutoChooser();
     SmartDashboard.putData("Auto Mode", autoChooser);
+    autoChooser.onChange(this::setStartingPose);
 
     configureBindings();
 
@@ -112,9 +133,18 @@ public class RobotContainer {
     controlBindings.seedFieldCentric().ifPresent(trigger -> trigger.onTrue(Commands.runOnce(() -> {
       Pose2d robotCurrentPose = drivetrain.getState().Pose;
       Pose2d robotNewPose = new Pose2d(robotCurrentPose.getTranslation(), drivetrain.getOperatorForwardDirection());
-      questNavSubsystem.setPose(robotNewPose);
+      localizationSubsystem.setQuestNavPose(robotNewPose);
       drivetrain.resetPose(robotNewPose);
     })));
+
+    controlBindings.expandClimb()
+        .ifPresent(
+            trigger -> trigger
+                .whileTrue(Commands.runEnd(climbSubsystem::expand, climbSubsystem::stop, climbSubsystem)));
+    controlBindings.contractClimb()
+        .ifPresent(
+            trigger -> trigger
+                .whileTrue(Commands.runEnd(climbSubsystem::contract, climbSubsystem::stop, climbSubsystem)));
 
     // Idle while the robot is disabled. This ensures the configured
     // neutral mode is applied to the drive motors while disabled.
@@ -122,6 +152,19 @@ public class RobotContainer {
     RobotModeTriggers.disabled().whileTrue(drivetrain.applyRequest(() -> idle).ignoringDisable(true));
 
     drivetrain.registerTelemetry(drivetrainTelemetry::telemeterize);
+  }
+
+  public void setStartingPose(Command auto) {
+    if (auto instanceof PathPlannerAuto ppAuto) {
+      localizationSubsystem.setInitialPose(ppAuto.getStartingPose());
+    } else {
+      localizationSubsystem.setInitialPose(new Pose2d(new Translation2d(), new Rotation2d(0)));
+    }
+  }
+
+  private void configurePathPlannerCommands() {
+    NamedCommands.registerCommand("DeployInstake", new DeployIntakeCommand(intakeSubsystem));
+    NamedCommands.registerCommand("Intake", new IntakeCommand(intakeSubsystem, spindexerSubsystem));
   }
 
   public Command getAutonomousCommand() {
@@ -161,10 +204,10 @@ public class RobotContainer {
     SmartDashboard.putData("Spindexer Dynam Fwd", spindexerSubsystem.sysIdSpindexerDynamicCommand(kForward));
     SmartDashboard.putData("Spindexer Dynam Rev", spindexerSubsystem.sysIdSpindexerDynamicCommand(kReverse));
 
-    // Transfer
-    SmartDashboard.putData("Transfer Quasi Fwd", transferSubsystem.sysIdTransferQuasistaticCommand(kForward));
-    SmartDashboard.putData("Transfer Quasi Rev", transferSubsystem.sysIdTransferQuasistaticCommand(kReverse));
-    SmartDashboard.putData("Transfer Dynam Fwd", transferSubsystem.sysIdTransferDynamicCommand(kForward));
-    SmartDashboard.putData("Transfer Dynam Rev", transferSubsystem.sysIdTransferDynamicCommand(kReverse));
+    // Feeder
+    SmartDashboard.putData("Feeder Quasi Fwd", feederSubsystem.sysIdFeederQuasistaticCommand(kForward));
+    SmartDashboard.putData("Feeder Quasi Rev", feederSubsystem.sysIdFeederQuasistaticCommand(kReverse));
+    SmartDashboard.putData("Feeder Dynam Fwd", feederSubsystem.sysIdFeederDynamicCommand(kForward));
+    SmartDashboard.putData("Feeder Dynam Rev", feederSubsystem.sysIdFeederDynamicCommand(kReverse));
   }
 }
