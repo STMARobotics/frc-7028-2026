@@ -55,20 +55,92 @@ public abstract class ControlBindings {
   }
 
   /**
-   * Trigger for expanding the climb
-   * 
+   * Trigger for running the intake
+   *
    * @return optional trigger
    */
-  public Optional<Trigger> expandClimb() {
+  public Optional<Trigger> runIntake() {
     return Optional.empty();
   }
 
   /**
-   * Trigger for contracting the climb
+   * Trigger for stopping the intake
+   *
+   * @return optional trigger
+   */
+  public Optional<Trigger> stopIntake() {
+    return Optional.empty();
+  }
+
+  /**
+   * Trigger for ejecting game piece out of the intake
+   *
+   * @return optional trigger
+   */
+  public Optional<Trigger> eject() {
+    return Optional.empty();
+  }
+
+  /**
+   * Trigger for deploying the intake
+   *
+   * @return optional trigger
+   */
+  public Optional<Trigger> deployIntake() {
+    return Optional.empty();
+  }
+
+  /**
+   * Trigger for retracting the intake
+   *
+   * @return optional trigger
+   */
+  public Optional<Trigger> retractIntake() {
+    return Optional.empty();
+  }
+
+  /**
+   * Trigger for manual shooting
+   *
+   * @return optional trigger
+   */
+  public Optional<Trigger> manualShoot() {
+    return Optional.empty();
+  }
+
+  /**
+   * Trigger for automatic shooting
+   *
+   * @return optional trigger
+   */
+  public Optional<Trigger> autoShoot() {
+    return Optional.empty();
+  }
+
+  /**
+   * Trigger for moving the climb forward
    * 
    * @return optional trigger
    */
-  public Optional<Trigger> contractClimb() {
+  public Optional<Trigger> climbForward() {
+    return Optional.empty();
+  }
+
+  /**
+   * Trigger for moving the climb in reverse
+   * 
+   * @return optional trigger
+   */
+  public Optional<Trigger> climbReverse() {
+    return Optional.empty();
+  }
+
+  /**
+   * Trigger to run the shooting tuning command
+   * 
+   * @return optional trigger
+   */
+  public Optional<Trigger> tuneShoot() {
     return Optional.empty();
   }
 

@@ -10,10 +10,10 @@ import static edu.wpi.first.units.Units.Volts;
 import static frc.robot.Constants.CANIVORE_BUS;
 import static frc.robot.Constants.ShooterConstants.FLYWHEEL_FOLLOWER_MOTOR_ID;
 import static frc.robot.Constants.ShooterConstants.FLYWHEEL_LEADER_MOTOR_ID;
-import static frc.robot.Constants.ShooterConstants.FLYWHEEL_MAX_SPEED;
 import static frc.robot.Constants.ShooterConstants.FLYWHEEL_SLOT_CONFIGS;
-import static frc.robot.Constants.ShooterConstants.FLYWHEEL_STATOR_CURRENT_LIMIT;
 import static frc.robot.Constants.ShooterConstants.FLYWHEEL_SUPPLY_CURRENT_LIMIT;
+import static frc.robot.Constants.ShooterConstants.FLYWHEEL_TORQUE_CURRENT_LIMIT_FORWARD;
+import static frc.robot.Constants.ShooterConstants.FLYWHEEL_TORQUE_CURRENT_LIMIT_REVERSE;
 import static frc.robot.Constants.ShooterConstants.FLYWHEEL_VELOCITY_TOLERANCE;
 import static frc.robot.Constants.ShooterConstants.PITCH_ENCODER_ID;
 import static frc.robot.Constants.ShooterConstants.PITCH_HOME_ANGLE;
@@ -28,6 +28,7 @@ import static frc.robot.Constants.ShooterConstants.PITCH_SENSOR_TO_MECHANISM_RAT
 import static frc.robot.Constants.ShooterConstants.PITCH_SLOT_CONFIGS;
 import static frc.robot.Constants.ShooterConstants.PITCH_STATOR_CURRENT_LIMIT;
 import static frc.robot.Constants.ShooterConstants.PITCH_SUPPLY_CURRENT_LIMIT;
+import static frc.robot.Constants.ShooterConstants.ROBOT_TO_SHOOTER;
 import static frc.robot.Constants.ShooterConstants.YAW_ENCODER_ID;
 import static frc.robot.Constants.ShooterConstants.YAW_HOME_ANGLE;
 import static frc.robot.Constants.ShooterConstants.YAW_LIMIT_FORWARD;
@@ -53,6 +54,7 @@ import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.SoftwareLimitSwitchConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.configs.TorqueCurrentConfigs;
 import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.TorqueCurrentFOC;
@@ -65,6 +67,8 @@ import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularAcceleration;
 import edu.wpi.first.units.measure.AngularVelocity;
@@ -93,7 +97,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
   private final VoltageOut sysIdYawVoltage = new VoltageOut(0.0).withEnableFOC(true);
   private final VoltageOut sysIdPitchVoltage = new VoltageOut(0.0).withEnableFOC(true);
-  private final TorqueCurrentFOC sysIdFlywheelVoltage = new TorqueCurrentFOC(0.0);
+  private final TorqueCurrentFOC sysIdFlywheelTorqueCurrent = new TorqueCurrentFOC(0.0);
 
   private final StatusSignal<Angle> yawPosition = yawMotor.getPosition();
   private final StatusSignal<AngularVelocity> yawVelocity = yawMotor.getVelocity();
@@ -106,7 +110,7 @@ public class ShooterSubsystem extends SubsystemBase {
   // SysId routines
   private final SysIdRoutine yawSysIdRoutine = new SysIdRoutine(
       new SysIdRoutine.Config(
-          Volts.per(Second).of(0.25),
+          Volts.of(0.25).per(Second),
           Volts.of(1),
           Seconds.of(10),
           state -> SignalLogger.writeString("Yaw Motor SysId", state.toString())),
@@ -117,7 +121,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
   private final SysIdRoutine pitchSysIdRoutine = new SysIdRoutine(
       new SysIdRoutine.Config(
-          Volts.per(Second).of(0.25),
+          Volts.of(0.25).per(Second),
           Volts.of(1),
           Seconds.of(10),
           state -> SignalLogger.writeString("Pitch Motor SysId", state.toString())),
@@ -130,12 +134,12 @@ public class ShooterSubsystem extends SubsystemBase {
   // https://www.chiefdelphi.com/t/sysid-with-ctre-swerve-characterization/452631/8
   private final SysIdRoutine flywheelSysIdRoutine = new SysIdRoutine(
       new SysIdRoutine.Config(
-          Volts.per(Second).of(0.25),
+          Volts.of(5).per(Second),
           Volts.of(10),
           Seconds.of(10),
           state -> SignalLogger.writeString("Flywheel SysId", state.toString())),
       new SysIdRoutine.Mechanism(
-          amps -> flywheelLeaderMotor.setControl(sysIdFlywheelVoltage.withOutput(amps.in(Volts))),
+          amps -> flywheelLeaderMotor.setControl(sysIdFlywheelTorqueCurrent.withOutput(amps.in(Volts))),
           null,
           this));
 
@@ -208,8 +212,12 @@ public class ShooterSubsystem extends SubsystemBase {
     TalonFXConfiguration flywheelConfig = new TalonFXConfiguration()
         .withMotorOutput(
             new MotorOutputConfigs().withNeutralMode(Coast).withInverted(InvertedValue.CounterClockwise_Positive))
+
+        .withTorqueCurrent(
+            new TorqueCurrentConfigs().withPeakForwardTorqueCurrent(FLYWHEEL_TORQUE_CURRENT_LIMIT_FORWARD)
+                .withPeakReverseTorqueCurrent(FLYWHEEL_TORQUE_CURRENT_LIMIT_REVERSE))
         .withCurrentLimits(
-            new CurrentLimitsConfigs().withStatorCurrentLimit(FLYWHEEL_STATOR_CURRENT_LIMIT)
+            new CurrentLimitsConfigs().withStatorCurrentLimit(FLYWHEEL_TORQUE_CURRENT_LIMIT_FORWARD)
                 .withStatorCurrentLimitEnable(true)
                 .withSupplyCurrentLimit(FLYWHEEL_SUPPLY_CURRENT_LIMIT)
                 .withSupplyCurrentLimitEnable(true))
@@ -321,10 +329,7 @@ public class ShooterSubsystem extends SubsystemBase {
    * @param targetSpeed desired flywheel velocity
    */
   public void setFlywheelSpeed(AngularVelocity flywheelVelocity) {
-    double clampedFlywheelVelocityRPS = MathUtil
-        .clamp(flywheelVelocity.in(RotationsPerSecond), 0.0, FLYWHEEL_MAX_SPEED.in(RotationsPerSecond));
-
-    flywheelLeaderMotor.setControl(flywheelVelocityRequest.withVelocity(clampedFlywheelVelocityRPS));
+    flywheelLeaderMotor.setControl(flywheelVelocityRequest.withVelocity(flywheelVelocity));
   }
 
   /**
@@ -486,6 +491,16 @@ public class ShooterSubsystem extends SubsystemBase {
       }
     }
     return bestCandidate;
+  }
+
+  /**
+   * Gets the translation of the turret center in field coordinates.
+   * 
+   * @param robotPose the current pose of the robot
+   * @return the translation of the turret center in field coordinates
+   */
+  public static Translation2d getShooterTranslation(Pose2d robotPose) {
+    return robotPose.getTranslation().plus(ROBOT_TO_SHOOTER.rotateBy(robotPose.getRotation()));
   }
 
   /**

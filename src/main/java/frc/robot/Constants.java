@@ -16,6 +16,7 @@ import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.SlotConfigs;
 import com.ctre.phoenix6.signals.GravityTypeValue;
+import com.ctre.phoenix6.signals.StaticFeedforwardSignValue;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Rotation3d;
@@ -77,6 +78,8 @@ public final class Constants {
     public static final LinearVelocity MAX_TELEOP_VELOCITY = TunerConstants.kSpeedAt12Volts;
     /** Max angular velocity the driver can request */
     public static final AngularVelocity MAX_TELEOP_ANGULAR_VELOCITY = RotationsPerSecond.of(1.25);
+    /** Multiplier for shooting in teleop to reduce driver speed while shooting */
+    public static final double SHOOT_VELOCITY_MULTIPLIER = 0.5;
   }
 
   /**
@@ -106,7 +109,6 @@ public final class Constants {
    * Constants for the shooter subsystem
    */
   public static class ShooterConstants {
-    // TODO: Replace placeholder values and confirm ID assignments
     public static final int YAW_MOTOR_ID = 25;
     public static final int YAW_ENCODER_ID = 29;
     public static final int PITCH_MOTOR_ID = 26;
@@ -118,8 +120,9 @@ public final class Constants {
     public static final Current YAW_SUPPLY_CURRENT_LIMIT = Amps.of(40);
     public static final Current PITCH_STATOR_CURRENT_LIMIT = Amps.of(40);
     public static final Current PITCH_SUPPLY_CURRENT_LIMIT = Amps.of(30);
-    public static final Current FLYWHEEL_STATOR_CURRENT_LIMIT = Amps.of(40);
-    public static final Current FLYWHEEL_SUPPLY_CURRENT_LIMIT = Amps.of(30);
+    public static final Current FLYWHEEL_TORQUE_CURRENT_LIMIT_FORWARD = Amps.of(120);
+    public static final Current FLYWHEEL_TORQUE_CURRENT_LIMIT_REVERSE = Amps.of(-40);
+    public static final Current FLYWHEEL_SUPPLY_CURRENT_LIMIT = Amps.of(40);
 
     public static final double YAW_ROTOR_TO_SENSOR_RATIO = (52.0 / 12.0) * (52.0 / 18.0);
     public static final double YAW_SENSOR_TO_MECHANISM_RATIO = (18.0 / 52.0) * (12.0 / 52.0) * (170.0 / 34.0);
@@ -131,14 +134,13 @@ public final class Constants {
 
     public static final Angle YAW_LIMIT_FORWARD = Rotations.of(0.55);
     public static final Angle YAW_LIMIT_REVERSE = Rotations.of(-0.55);
-    public static final Angle YAW_HOME_ANGLE = Rotations.of(0.0); // placeholder
-    public static final Angle YAW_POSITION_TOLERANCE = Rotations.of(0.01); // placeholder (~3.6deg)
+    public static final Angle YAW_HOME_ANGLE = Rotations.of(0.0);
+    public static final Angle YAW_POSITION_TOLERANCE = Degrees.of(2.0);
     public static final Angle PITCH_LIMIT_FORWARD = Rotations.of(0.08);
     public static final Angle PITCH_LIMIT_REVERSE = Rotations.of(0.01);
-    public static final Angle PITCH_HOME_ANGLE = Rotations.of(0.0); // placeholder
-    public static final Angle PITCH_POSITION_TOLERANCE = Rotations.of(0.01); // placeholder (~3.6deg)
-    public static final AngularVelocity FLYWHEEL_MAX_SPEED = RotationsPerSecond.of(1.0); // placeholder
-    public static final AngularVelocity FLYWHEEL_VELOCITY_TOLERANCE = RotationsPerSecond.of(0.05); // placeholder
+    public static final Angle PITCH_HOME_ANGLE = PITCH_LIMIT_REVERSE;
+    public static final Angle PITCH_POSITION_TOLERANCE = Degrees.of(2.0);
+    public static final AngularVelocity FLYWHEEL_VELOCITY_TOLERANCE = RotationsPerSecond.of(1.5);
 
     // TODO: Tune PID values
     public static final SlotConfigs YAW_SLOT_CONFIGS = new SlotConfigs().withKP(0.0)
@@ -162,12 +164,11 @@ public final class Constants {
         .withMotionMagicAcceleration(1.0) // placeholder
         .withMotionMagicCruiseVelocity(1.0); // placeholder
 
-    public static final SlotConfigs FLYWHEEL_SLOT_CONFIGS = new SlotConfigs().withKP(0.0)
-        .withKI(0.0)
-        .withKD(0.0)
-        .withKS(0.0)
-        .withKV(0.0)
-        .withKA(0.0);
+    public static final SlotConfigs FLYWHEEL_SLOT_CONFIGS = new SlotConfigs().withKP(10.0).withKS(10.5).withKV(0.75);
+
+    public static final Translation2d ROBOT_TO_SHOOTER = new Translation2d(Inches.of(-5.508), Inches.zero());
+    // Distance from turret center to where the fuel launches
+    public static final Distance MUZZLE_RADIUS = Inches.of(8);
   }
 
   /**
@@ -214,37 +215,38 @@ public final class Constants {
     public static final int DEVICE_ID_DEPLOY_CANCODER = 10;
 
     // Roller constants
-    public static final Current ROLLER_PEAK_DEPLOY_CURRENT_FORWARD = Amps.of(80);
-    public static final Current ROLLER_PEAK_DEPLOY_CURRENT_REVERSE = ROLLER_PEAK_DEPLOY_CURRENT_FORWARD.unaryMinus();
-    public static final Current ROLLER_SUPPLY_CURRENT_LIMIT = Amps.of(40);
-    public static final SlotConfigs ROLLER_SLOT_CONFIGS = new SlotConfigs().withKP(10).withKS(0.0);
+    public static final Current ROLLER_PEAK_CURRENT_FORWARD = Amps.of(80);
+    public static final Current ROLLER_PEAK_CURRENT_REVERSE = ROLLER_PEAK_CURRENT_FORWARD.unaryMinus();
+    public static final Current ROLLER_SUPPLY_CURRENT_LIMIT = Amps.of(30);
+    public static final SlotConfigs ROLLER_SLOT_CONFIGS = new SlotConfigs().withKP(12).withKS(5.1);
 
-    public static final AngularVelocity ROLLER_INTAKE_VELOCITY = RotationsPerSecond.of(40.0);
-    public static final AngularVelocity ROLLER_EJECT_VELOCITY = RotationsPerSecond.of(-20.0);
+    public static final AngularVelocity ROLLER_INTAKE_VELOCITY = RotationsPerSecond.of(100.0);
+    public static final AngularVelocity ROLLER_EJECT_VELOCITY = RotationsPerSecond.of(-30.0);
 
     // Deploy constants
-    public static final Current DEPLOY_STATOR_CURRENT_LIMIT = Amps.of(80);
-    public static final Current DEPLOY_SUPPLY_CURRENT_LIMIT = Amps.of(40);
+    public static final Current DEPLOY_STATOR_CURRENT_LIMIT = Amps.of(60);
+    public static final Current DEPLOY_SUPPLY_CURRENT_LIMIT = Amps.of(30);
     public static final double DEPLOY_ROTOR_TO_SENSOR_RATIO = (46.0 / 9.0) * (60.0 / 22.0) * (48.0 / 30.0);
     public static final double DEPLOY_SENSOR_TO_MECHANISM_RATIO = 64.0 / 50.0;
 
-    public static final Angle DEPLOY_REVERSE_LIMIT = Degrees.of(24.55); // From CAD
-    public static final Angle DEPLOY_FORWARD_LIMIT = Rotations.of(0.225);
+    public static final Angle DEPLOY_REVERSE_LIMIT = Rotations.of(0.0);
+    public static final Angle DEPLOY_FORWARD_LIMIT = Rotations.of(0.165);
     // Discontinuity point is the center of the unreachable region
     public static final Angle DEPLOY_DISCONTINUITY_POINT = DEPLOY_REVERSE_LIMIT.plus(DEPLOY_FORWARD_LIMIT)
         .div(2)
         .plus(Rotations.of(0.5));
 
     public static final SlotConfigs DEPLOY_SLOT_CONFIGS = new SlotConfigs().withGravityType(GravityTypeValue.Arm_Cosine)
-        .withKP(2)
-        .withKS(0.1)
+        .withKP(20.0)
+        .withKS(0.6)
         .withKV(0.0)
-        .withKG(0.0)
+        .withKG(0.7)
+        .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseClosedLoopSign)
         .withGravityType(GravityTypeValue.Arm_Cosine);
     public static final MotionMagicConfigs DEPLOY_MOTION_MAGIC_CONFIGS = new MotionMagicConfigs()
-        .withMotionMagicAcceleration(5)
-        .withMotionMagicCruiseVelocity(40);
-    public static final Angle DEPLOY_CANCODER_OFFSET = Rotations.of(-0.2333984375);
+        .withMotionMagicAcceleration(10.0)
+        .withMotionMagicCruiseVelocity(15.0);
+    public static final Angle DEPLOY_CANCODER_OFFSET = Rotations.of(-0.31);
 
     public static final Angle DEPLOYED_POSITION = DEPLOY_FORWARD_LIMIT.minus(Degrees.of(2.0));
     public static final Angle RETRACTED_POSITION = DEPLOY_REVERSE_LIMIT.plus(Degrees.of(2.0));
@@ -255,16 +257,18 @@ public final class Constants {
     public static final int DEVICE_ID_SPINDEXER_MOTOR = 15;
     public static final String HOPPER_CAMERA_NAME = "HopperCam";
 
-    public static final Current SPINDEXER_TORQUE_CURRENT_LIMIT = Amps.of(80);
+    public static final Current SPINDEXER_TORQUE_CURRENT_LIMIT_FORWARD = Amps.of(80);
+    public static final Current SPINDEXER_TORQUE_CURRENT_LIMIT_REVERSE = SPINDEXER_TORQUE_CURRENT_LIMIT_FORWARD
+        .unaryMinus();
     public static final Current SPINDEXER_STATOR_CURRENT_LIMIT = Amps.of(80);
     public static final Current SPINDEXER_SUPPLY_CURRENT_LIMIT = Amps.of(40);
 
-    public static final SlotConfigs SPINDEXER_SLOT_CONFIGS = new SlotConfigs().withKP(10).withKS(0);
+    public static final SlotConfigs SPINDEXER_SLOT_CONFIGS = new SlotConfigs().withKP(5.0).withKV(2.0).withKS(8.0);
 
-    public static final AngularVelocity SPINDEXER_FEED_VELOCITY = RotationsPerSecond.of(20);
-    public static final AngularVelocity SPINDEXER_INTAKE_VELOCITY = RotationsPerSecond.of(-10);
-    public static final AngularVelocity SPINDEXER_AGITATE_FORWARD_VELOCITY = RotationsPerSecond.of(5);
-    public static final AngularVelocity SPINDEXER_AGITATE_BACKWARD_VELOCITY = RotationsPerSecond.of(-5);
+    public static final AngularVelocity SPINDEXER_FEED_VELOCITY = RotationsPerSecond.of(5);
+    public static final AngularVelocity SPINDEXER_INTAKE_VELOCITY = RotationsPerSecond.of(-2);
+    public static final AngularVelocity SPINDEXER_AGITATE_FORWARD_VELOCITY = RotationsPerSecond.of(3);
+    public static final AngularVelocity SPINDEXER_AGITATE_BACKWARD_VELOCITY = RotationsPerSecond.of(-3);
 
     public static final double HOPPER_FULL_THRESHOLD = 85.0; // percent
     public static final Time PIPELINE_RESULT_TTL = Seconds.of(0.25);
@@ -280,10 +284,10 @@ public final class Constants {
     public static final Current FEEDER_TORQUE_CURRENT_LIMIT = Amps.of(50);
     public static final Current FEEDER_STATOR_CURRENT_LIMIT = FEEDER_TORQUE_CURRENT_LIMIT;
     public static final Current FEEDER_SUPPLY_CURRENT_LIMIT = Amps.of(40);
-    public static final SlotConfigs FEEDER_SLOT_CONFIGS = new SlotConfigs().withKP(10).withKS(0);
+    public static final SlotConfigs FEEDER_SLOT_CONFIGS = new SlotConfigs().withKP(7).withKS(11.2);
 
-    public static final AngularVelocity FEEDER_FEED_VELOCITY = RotationsPerSecond.of(60);
-    public static final AngularVelocity FEEDER_UNJAM_VELOCITY = RotationsPerSecond.of(-10);
+    public static final AngularVelocity FEEDER_FEED_VELOCITY = RotationsPerSecond.of(20);
+    public static final AngularVelocity FEEDER_UNJAM_VELOCITY = RotationsPerSecond.of(-5);
   }
 
   /** Constants for the climb subsystem */
@@ -321,4 +325,17 @@ public final class Constants {
     public static final int TOTAL_LEDS = 2 * LED_STRIP_LENGTH;
   }
 
+  /**
+   * Constants related to shooting fuel
+   * <p>
+   * These constants are not specific to the shooter subsystem, they are about the process of shooting.
+   */
+  public static class ShootingConstants {
+
+    /** Translation of the hub on the blue side */
+    public static final Translation2d TARGET_BLUE = new Translation2d(Inches.of(182), Inches.of(158.8125));
+
+    /** Translation of the hub on the red side */
+    public static final Translation2d TARGET_RED = new Translation2d(Inches.of(433.25), Inches.of(158.8125));
+  }
 }
