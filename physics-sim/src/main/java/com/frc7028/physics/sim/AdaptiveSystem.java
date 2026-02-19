@@ -1,5 +1,8 @@
 package com.frc7028.physics.sim;
 
+import com.frc7028.physics.sim.Debugger.DebugDisplayEvent;
+import com.frc7028.physics.sim.Debugger.DebugEventType;
+import com.frc7028.physics.sim.Debugger.DebugType;
 import edu.wpi.first.math.geometry.Translation3d;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -7,58 +10,6 @@ import java.util.function.Function;
 import org.ejml.simple.SimpleMatrix;
 
 public class AdaptiveSystem<context> {
-
-  // Source - https://stackoverflow.com/a/5762502
-  // Posted by WhiteFang34, modified by community. See post 'Timeline' for change history
-  // Retrieved 2026-02-18, License - CC BY-SA 3.0
-
-  public static final String ANSI_RESET = "\u001B[0m";
-  public static final String ANSI_BLACK = "\u001B[30m";
-  public static final String ANSI_RED = "\u001B[31m";
-  public static final String ANSI_GREEN = "\u001B[32m";
-  public static final String ANSI_YELLOW = "\u001B[33m";
-  public static final String ANSI_BLUE = "\u001B[34m";
-  public static final String ANSI_PURPLE = "\u001B[35m";
-  public static final String ANSI_CYAN = "\u001B[36m";
-  public static final String ANSI_WHITE = "\u001B[37m";
-
-  // ^^^ use colorful outputs
-
-  public enum DebugType {
-    Event,
-    Display
-  }
-
-  public enum DebugEventType {
-    CorrectionStart(ANSI_BLUE),
-    CorrectionEnd(ANSI_BLUE),
-    IterationStart(ANSI_GREEN),
-    IterationStop(ANSI_GREEN),
-    IterationStepStart(ANSI_PURPLE),
-    IterationStepStop(ANSI_PURPLE),
-    IterationStepBreak(ANSI_RED),
-    AdaptiveStart(ANSI_WHITE),
-    AdaptiveEnd(ANSI_WHITE),
-    ComputeStart(ANSI_YELLOW),
-    ComputeEnd(ANSI_YELLOW),
-    NA(ANSI_WHITE);
-
-    private final String color;
-
-    public String getColor() {
-      return this.color;
-    }
-
-    DebugEventType(String color) {
-      this.color = color;
-    }
-  }
-
-  public enum DebugDisplayEvent {
-    NA,
-    CurrentOutput,
-    Jacobian
-  }
 
   public SimpleMatrix defaultMatrix = new SimpleMatrix(0, 0);
 

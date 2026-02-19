@@ -6,8 +6,8 @@ import static java.lang.Math.sin;
 
 import com.frc7028.physics.sim.AdaptiveSystem.AdaptiveDebugObject;
 import com.frc7028.physics.sim.AdaptiveSystem.AdaptiveOutput;
-import com.frc7028.physics.sim.AdaptiveSystem.DebugEventType;
-import com.frc7028.physics.sim.AdaptiveSystem.DebugType;
+import com.frc7028.physics.sim.Debugger.DebugEventType;
+import com.frc7028.physics.sim.Debugger.DebugType;
 import com.frc7028.physics.sim.Integrator.forceInput;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation2d;
