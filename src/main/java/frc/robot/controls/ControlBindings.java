@@ -135,4 +135,13 @@ public abstract class ControlBindings {
     return Optional.empty();
   }
 
+  /**
+   * Trigger to run the shooting tuning command
+   * 
+   * @return optional trigger
+   */
+  public Optional<Trigger> tuneShoot() {
+    return Optional.empty();
+  }
+
 }

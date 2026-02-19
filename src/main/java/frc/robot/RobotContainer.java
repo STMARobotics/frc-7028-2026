@@ -34,6 +34,7 @@ import frc.robot.commands.DeployIntakeCommand;
 import frc.robot.commands.IntakeCommand;
 import frc.robot.commands.RetractIntakeCommand;
 import frc.robot.commands.ShootCommand;
+import frc.robot.commands.TuneShootingCommand;
 import frc.robot.commands.led.DefaultLEDCommand;
 import frc.robot.commands.led.LEDBootAnimationCommand;
 import frc.robot.controls.ControlBindings;
@@ -141,8 +142,7 @@ public class RobotContainer {
     })));
 
     // Intake controls
-    controlBindings.runIntake()
-        .ifPresent(trigger -> trigger.onTrue(new IntakeCommand(intakeSubsystem, spindexerSubsystem)));
+    controlBindings.runIntake().ifPresent(trigger -> trigger.onTrue(new IntakeCommand(intakeSubsystem)));
 
     controlBindings.stopIntake().ifPresent(trigger -> trigger.onTrue(Commands.runOnce(() -> {
       intakeSubsystem.stop();
@@ -165,6 +165,16 @@ public class RobotContainer {
     controlBindings.manualShoot()
         .ifPresent(
             trigger -> trigger.whileTrue(new ShootCommand(spindexerSubsystem, feederSubsystem, shooterSubsystem)));
+
+    controlBindings.tuneShoot()
+        .ifPresent(
+            trigger -> trigger.whileTrue(
+                new TuneShootingCommand(
+                    spindexerSubsystem,
+                    feederSubsystem,
+                    shooterSubsystem,
+                    ledSubsystem,
+                    () -> drivetrain.getState().Pose)));
 
     // Climb controls
     controlBindings.climbForward()
@@ -195,7 +205,7 @@ public class RobotContainer {
   private void configurePathPlannerCommands() {
     NamedCommands.registerCommand("ClimbToL1", new ClimbToL1Command(climbSubsystem));
     NamedCommands.registerCommand("DeployIntake", new DeployIntakeCommand(intakeSubsystem));
-    NamedCommands.registerCommand("Intake", new IntakeCommand(intakeSubsystem, spindexerSubsystem));
+    NamedCommands.registerCommand("Intake", new IntakeCommand(intakeSubsystem));
   }
 
   public Command getAutonomousCommand() {
@@ -240,5 +250,23 @@ public class RobotContainer {
     SmartDashboard.putData("Feeder Quasi Rev", feederSubsystem.sysIdFeederQuasistaticCommand(kReverse));
     SmartDashboard.putData("Feeder Dynam Fwd", feederSubsystem.sysIdFeederDynamicCommand(kForward));
     SmartDashboard.putData("Feeder Dynam Rev", feederSubsystem.sysIdFeederDynamicCommand(kReverse));
+
+    // Intake
+    SmartDashboard.putData("Intake Deploy Quasi Fwd", intakeSubsystem.sysIdDeployQuasistaticCommand(kForward));
+    SmartDashboard.putData("Intake Deploy Quasi Rev", intakeSubsystem.sysIdDeployQuasistaticCommand(kReverse));
+    SmartDashboard.putData("Intake Deploy Dynam Fwd", intakeSubsystem.sysIdDeployDynamicCommand(kForward));
+    SmartDashboard.putData("Intake Deploy Dynam Rev", intakeSubsystem.sysIdDeployDynamicCommand(kReverse));
+
+    SmartDashboard.putData("Intake Roller Quasi Fwd", intakeSubsystem.sysIdRollerQuasistaticCommand(kForward));
+    SmartDashboard.putData("Intake Roller Quasi Rev", intakeSubsystem.sysIdRollerQuasistaticCommand(kReverse));
+    SmartDashboard.putData("Intake Roller Dynam Fwd", intakeSubsystem.sysIdRollerDynamicCommand(kForward));
+    SmartDashboard.putData("Intake Roller Dynam Rev", intakeSubsystem.sysIdRollerDynamicCommand(kReverse));
+
+    // Shooter
+    SmartDashboard.putData("Shooter Flywheel Quasi Fwd", shooterSubsystem.sysIdFlywheelQuasistaticCommand(kForward));
+    SmartDashboard.putData("Shooter Flywheel Quasi Rev", shooterSubsystem.sysIdFlywheelQuasistaticCommand(kReverse));
+    SmartDashboard.putData("Shooter Flywheel Dynam Fwd", shooterSubsystem.sysIdFlywheelDynamicCommand(kForward));
+    SmartDashboard.putData("Shooter Flywheel Dynam Rev", shooterSubsystem.sysIdFlywheelDynamicCommand(kReverse));
+
   }
 }

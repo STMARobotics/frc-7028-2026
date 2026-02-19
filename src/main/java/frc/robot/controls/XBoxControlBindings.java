@@ -104,4 +104,9 @@ public class XBoxControlBindings extends ControlBindings {
     return Math.copySign(value * value, value);
   }
 
+  @Override
+  public Optional<Trigger> tuneShoot() {
+    return Optional.of(driverController.y());
+  }
+
 }
