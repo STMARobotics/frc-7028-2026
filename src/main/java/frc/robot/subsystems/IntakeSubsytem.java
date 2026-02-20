@@ -25,8 +25,8 @@ import static frc.robot.Constants.IntakeConstants.DEVICE_ID_ROLLER_MOTOR;
 import static frc.robot.Constants.IntakeConstants.RETRACTED_POSITION;
 import static frc.robot.Constants.IntakeConstants.ROLLER_EJECT_VELOCITY;
 import static frc.robot.Constants.IntakeConstants.ROLLER_INTAKE_VELOCITY;
-import static frc.robot.Constants.IntakeConstants.ROLLER_PEAK_DEPLOY_CURRENT_FORWARD;
-import static frc.robot.Constants.IntakeConstants.ROLLER_PEAK_DEPLOY_CURRENT_REVERSE;
+import static frc.robot.Constants.IntakeConstants.ROLLER_PEAK_CURRENT_FORWARD;
+import static frc.robot.Constants.IntakeConstants.ROLLER_PEAK_CURRENT_REVERSE;
 import static frc.robot.Constants.IntakeConstants.ROLLER_SLOT_CONFIGS;
 import static frc.robot.Constants.IntakeConstants.ROLLER_SUPPLY_CURRENT_LIMIT;
 
@@ -84,7 +84,7 @@ public class IntakeSubsytem extends SubsystemBase {
   // https://www.chiefdelphi.com/t/sysid-with-ctre-swerve-characterization/452631/8
   private final SysIdRoutine rollerSysIdRoutine = new SysIdRoutine(
       new SysIdRoutine.Config(
-          Volts.of(5).per(Second),
+          Volts.of(1).per(Second),
           Volts.of(30),
           null,
           state -> SignalLogger.writeString("Intake Roller SysId", state.toString())),
@@ -95,8 +95,8 @@ public class IntakeSubsytem extends SubsystemBase {
 
   private final SysIdRoutine deploySysIdRoutine = new SysIdRoutine(
       new SysIdRoutine.Config(
-          Volts.of(1).per(Second),
-          Volts.of(2),
+          Volts.of(0.1).per(Second),
+          Volts.of(1),
           null,
           state -> SignalLogger.writeString("Intake Deploy SysId", state.toString())),
       new SysIdRoutine.Mechanism(
@@ -114,10 +114,12 @@ public class IntakeSubsytem extends SubsystemBase {
         new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast).withInverted(InvertedValue.Clockwise_Positive))
         .withSlot0(Slot0Configs.from(ROLLER_SLOT_CONFIGS))
         .withTorqueCurrent(
-            new TorqueCurrentConfigs().withPeakForwardTorqueCurrent(ROLLER_PEAK_DEPLOY_CURRENT_FORWARD)
-                .withPeakReverseTorqueCurrent(ROLLER_PEAK_DEPLOY_CURRENT_REVERSE))
+            new TorqueCurrentConfigs().withPeakForwardTorqueCurrent(ROLLER_PEAK_CURRENT_FORWARD)
+                .withPeakReverseTorqueCurrent(ROLLER_PEAK_CURRENT_REVERSE))
         .withCurrentLimits(
             new CurrentLimitsConfigs().withSupplyCurrentLimit(ROLLER_SUPPLY_CURRENT_LIMIT)
+                .withStatorCurrentLimitEnable(true)
+                .withStatorCurrentLimit(ROLLER_PEAK_CURRENT_FORWARD)
                 .withSupplyCurrentLimitEnable(true));
     rollerMotor.getConfigurator().apply(rollerConfig);
 

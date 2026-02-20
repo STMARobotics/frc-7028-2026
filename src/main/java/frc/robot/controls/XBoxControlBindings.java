@@ -45,10 +45,6 @@ public class XBoxControlBindings extends ControlBindings {
           RadiansPerSecond);
   }
 
-  private static double squareAxis(double value) {
-    return Math.copySign(value * value, value);
-  }
-
   @Override
   public Optional<Trigger> wheelsToX() {
     return Optional.of(driverController.back());
@@ -57,6 +53,60 @@ public class XBoxControlBindings extends ControlBindings {
   @Override
   public Optional<Trigger> seedFieldCentric() {
     return Optional.of(driverController.start());
+  }
+
+  @Override
+  public Optional<Trigger> runIntake() {
+    return Optional.of(driverController.rightBumper());
+  }
+
+  @Override
+  public Optional<Trigger> stopIntake() {
+    return Optional.of(driverController.leftBumper());
+  }
+
+  @Override
+  public Optional<Trigger> eject() {
+    return Optional.of(driverController.x());
+  }
+
+  @Override
+  public Optional<Trigger> deployIntake() {
+    return Optional.of(driverController.povLeft());
+  }
+
+  @Override
+  public Optional<Trigger> retractIntake() {
+    return Optional.of(driverController.povRight());
+  }
+
+  @Override
+  public Optional<Trigger> manualShoot() {
+    return Optional.of(driverController.a());
+  }
+
+  @Override
+  public Optional<Trigger> autoShoot() {
+    return Optional.of(driverController.rightTrigger());
+  }
+
+  @Override
+  public Optional<Trigger> climbForward() {
+    return Optional.of(driverController.povUp());
+  }
+
+  @Override
+  public Optional<Trigger> climbReverse() {
+    return Optional.of(driverController.povDown());
+  }
+
+  private static double squareAxis(double value) {
+    return Math.copySign(value * value, value);
+  }
+
+  @Override
+  public Optional<Trigger> tuneShoot() {
+    return Optional.of(driverController.y());
   }
 
 }
