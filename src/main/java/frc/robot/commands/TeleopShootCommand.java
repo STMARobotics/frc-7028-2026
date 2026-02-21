@@ -104,12 +104,9 @@ public class TeleopShootCommand extends Command {
   public void execute() {
     var robotPose = robotPoseSupplier.get();
     var currentChassisSpeeds = drivetrain.getCurrentFieldChassisSpeeds();
-    var currentTurretYaw = shooterSubsystem.getYaw();
 
-    // Translation to the muzzle (exit point of the fuel)
-    var muzzleTranslation = ShooterSubsystem.getMuzzleTranslation(robotPose, currentTurretYaw);
-
-    // --- PHYSICS-BASED PREDICTION START ---
+    // Translation to the shooter
+    var shooterTranslation = ShooterSubsystem.getShooterTranslation(robotPose);
 
     // 1. Calculate the TOTAL effective velocity vector that gets imparted to the fuel.
 
@@ -117,15 +114,15 @@ public class TeleopShootCommand extends Command {
     var vRobot = new Translation2d(currentChassisSpeeds.vxMetersPerSecond, currentChassisSpeeds.vyMetersPerSecond);
 
     // B. Total Angular Velocity (field-relative)
-    // The muzzle rotates due to both robot rotation AND turret rotation
+    // The shooter rotates due to both robot rotation AND turret rotation
     var omegaRobot = currentChassisSpeeds.omegaRadiansPerSecond;
     var turretVelocity = shooterSubsystem.getYawVelocity().in(RadiansPerSecond);
     var totalOmega = omegaRobot + turretVelocity;
 
-    // C. Tangential Velocity at Muzzle due to Total Rotation
-    // The muzzle is offset from the robot center, so rotation imparts tangential velocity
-    var robotToMuzzle = muzzleTranslation.minus(robotPose.getTranslation());
-    var vTanTotal = new Translation2d(-totalOmega * robotToMuzzle.getY(), totalOmega * robotToMuzzle.getX());
+    // C. Tangential Velocity at Shooter due to Total Rotation
+    // The shooter is offset from the robot center, so rotation imparts tangential velocity
+    var robotToShooter = shooterTranslation.minus(robotPose.getTranslation());
+    var vTanTotal = new Translation2d(-totalOmega * robotToShooter.getY(), totalOmega * robotToShooter.getX());
 
     // Sum all velocity vectors to get the "Effective Injection Velocity"
     var effectiveShooterVelocity = vRobot.plus(vTanTotal);
@@ -136,7 +133,7 @@ public class TeleopShootCommand extends Command {
     // Iterate 4 times to converge on the intersection of trajectory and target
     ShooterSetpoints shootingSettings;
     for (int i = 0; i < 4; i++) {
-      var dist = predictedTargetTranslation.getDistance(muzzleTranslation);
+      var dist = predictedTargetTranslation.getDistance(shooterTranslation);
       shootingSettings = lookupTable.get(dist);
 
       var timeUntilScored = 0.0;
@@ -158,10 +155,10 @@ public class TeleopShootCommand extends Command {
       predictedTargetTranslation = targetTranslation.minus(targetPredictedOffset);
     }
 
-    shootingSettings = lookupTable.get(predictedTargetTranslation.getDistance(muzzleTranslation));
+    shootingSettings = lookupTable.get(predictedTargetTranslation.getDistance(shooterTranslation));
 
     // Calculate the angle to the target
-    var angleToTarget = predictedTargetTranslation.minus(muzzleTranslation).getAngle();
+    var angleToTarget = predictedTargetTranslation.minus(shooterTranslation).getAngle();
 
     // Calculate required turret angle, accounting for the robot heading
     turretYawTarget.mut_replace(angleToTarget.minus(robotPose.getRotation()).getRotations(), Rotations);

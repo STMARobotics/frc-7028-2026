@@ -1,5 +1,6 @@
 package frc.robot.commands;
 
+import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Radian;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static edu.wpi.first.wpilibj.DriverStation.Alliance.Blue;
@@ -93,12 +94,10 @@ public class TuneShootingCommand extends Command {
     var turretDistanceToHub = ShooterSubsystem.getShooterTranslation(poseSupplier.get()).getDistance(hubTranslation);
     distancePublisher.accept(turretDistanceToHub);
 
-    // shooterSubsystem.setPitchAngle(pitchMeasure.mut_replace(pitchSubscriber.get(0.0), Degrees));
+    shooterSubsystem.setPitchAngle(pitchMeasure.mut_replace(pitchSubscriber.get(0.0), Degrees));
     // shooterSubsystem.setYawAngle(yawMeasure.mut_replace(yawSubscriber.get(180.0), Degrees));
     shooterSubsystem.setFlywheelSpeed(topVelocityMeasure.mut_replace(flywheelSubscriber.get(0.0), RotationsPerSecond));
-    var turretReady = shooterSubsystem.isReadyToShoot();
-    var shooterReady = shooterSubsystem.isReadyToShoot();
-    if (shooting || shooterSubsystem.isFlywheelAtSpeed()) {
+    if (shooting || (shooterSubsystem.isFlywheelAtSpeed() && shooterSubsystem.isPitchAtSetpoint())) {
       feederSubsystem
           .runFeeder(feederVelocityMeasure.mut_replace(feederVelocitySubscriber.get(0.0), RotationsPerSecond));
       spindexerSubsystem

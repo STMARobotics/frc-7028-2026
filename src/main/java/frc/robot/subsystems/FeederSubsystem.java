@@ -6,10 +6,11 @@ import static frc.robot.Constants.CANIVORE_BUS;
 import static frc.robot.Constants.FeederConstants.DEVICE_ID_FEEDER_CANRANGE;
 import static frc.robot.Constants.FeederConstants.DEVICE_ID_FEEDER_MOTOR;
 import static frc.robot.Constants.FeederConstants.FEEDER_FEED_VELOCITY;
+import static frc.robot.Constants.FeederConstants.FEEDER_PEAK_TORQUE_CURRENT_FORWARD;
+import static frc.robot.Constants.FeederConstants.FEEDER_PEAK_TORQUE_CURRENT_REVERSE;
 import static frc.robot.Constants.FeederConstants.FEEDER_SLOT_CONFIGS;
 import static frc.robot.Constants.FeederConstants.FEEDER_STATOR_CURRENT_LIMIT;
 import static frc.robot.Constants.FeederConstants.FEEDER_SUPPLY_CURRENT_LIMIT;
-import static frc.robot.Constants.FeederConstants.FEEDER_TORQUE_CURRENT_LIMIT;
 import static frc.robot.Constants.FeederConstants.FEEDER_UNJAM_VELOCITY;
 
 import com.ctre.phoenix6.SignalLogger;
@@ -68,8 +69,8 @@ public class FeederSubsystem extends SubsystemBase {
     var feederTalonconfig = new TalonFXConfiguration().withSlot0(Slot0Configs.from(FEEDER_SLOT_CONFIGS))
         .withMotorOutput(new MotorOutputConfigs().withInverted(InvertedValue.CounterClockwise_Positive))
         .withTorqueCurrent(
-            new TorqueCurrentConfigs().withPeakForwardTorqueCurrent(FEEDER_TORQUE_CURRENT_LIMIT)
-                .withPeakReverseTorqueCurrent(FEEDER_TORQUE_CURRENT_LIMIT.unaryMinus()))
+            new TorqueCurrentConfigs().withPeakForwardTorqueCurrent(FEEDER_PEAK_TORQUE_CURRENT_FORWARD)
+                .withPeakReverseTorqueCurrent(FEEDER_PEAK_TORQUE_CURRENT_REVERSE))
         .withCurrentLimits(
             new CurrentLimitsConfigs().withStatorCurrentLimit(FEEDER_STATOR_CURRENT_LIMIT)
                 .withStatorCurrentLimitEnable(true)

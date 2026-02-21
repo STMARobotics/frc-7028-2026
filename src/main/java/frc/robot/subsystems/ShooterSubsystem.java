@@ -2,7 +2,6 @@ package frc.robot.subsystems;
 
 import static com.ctre.phoenix6.signals.NeutralModeValue.Brake;
 import static com.ctre.phoenix6.signals.NeutralModeValue.Coast;
-import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static edu.wpi.first.units.Units.Second;
@@ -11,12 +10,12 @@ import static edu.wpi.first.units.Units.Volts;
 import static frc.robot.Constants.CANIVORE_BUS;
 import static frc.robot.Constants.ShooterConstants.FLYWHEEL_FOLLOWER_MOTOR_ID;
 import static frc.robot.Constants.ShooterConstants.FLYWHEEL_LEADER_MOTOR_ID;
+import static frc.robot.Constants.ShooterConstants.FLYWHEEL_PEAK_TORQUE_CURRENT_FORWARD;
+import static frc.robot.Constants.ShooterConstants.FLYWHEEL_PEAK_TORQUE_CURRENT_REVERSE;
 import static frc.robot.Constants.ShooterConstants.FLYWHEEL_SLOT_CONFIGS;
+import static frc.robot.Constants.ShooterConstants.FLYWHEEL_STATOR_CURRENT_LIMIT;
 import static frc.robot.Constants.ShooterConstants.FLYWHEEL_SUPPLY_CURRENT_LIMIT;
-import static frc.robot.Constants.ShooterConstants.FLYWHEEL_TORQUE_CURRENT_LIMIT_FORWARD;
-import static frc.robot.Constants.ShooterConstants.FLYWHEEL_TORQUE_CURRENT_LIMIT_REVERSE;
 import static frc.robot.Constants.ShooterConstants.FLYWHEEL_VELOCITY_TOLERANCE;
-import static frc.robot.Constants.ShooterConstants.MUZZLE_RADIUS;
 import static frc.robot.Constants.ShooterConstants.PITCH_ENCODER_ID;
 import static frc.robot.Constants.ShooterConstants.PITCH_HOME_ANGLE;
 import static frc.robot.Constants.ShooterConstants.PITCH_LIMIT_FORWARD;
@@ -70,7 +69,6 @@ import com.ctre.phoenix6.signals.SensorDirectionValue;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularAcceleration;
@@ -124,8 +122,8 @@ public class ShooterSubsystem extends SubsystemBase {
 
   private final SysIdRoutine pitchSysIdRoutine = new SysIdRoutine(
       new SysIdRoutine.Config(
-          Volts.of(0.25).per(Second),
-          Volts.of(1),
+          Volts.of(0.1).per(Second),
+          Volts.of(0.3),
           Seconds.of(10),
           state -> SignalLogger.writeString("Pitch Motor SysId", state.toString())),
       new SysIdRoutine.Mechanism(
@@ -217,10 +215,10 @@ public class ShooterSubsystem extends SubsystemBase {
             new MotorOutputConfigs().withNeutralMode(Coast).withInverted(InvertedValue.CounterClockwise_Positive))
 
         .withTorqueCurrent(
-            new TorqueCurrentConfigs().withPeakForwardTorqueCurrent(FLYWHEEL_TORQUE_CURRENT_LIMIT_FORWARD)
-                .withPeakReverseTorqueCurrent(FLYWHEEL_TORQUE_CURRENT_LIMIT_REVERSE))
+            new TorqueCurrentConfigs().withPeakForwardTorqueCurrent(FLYWHEEL_PEAK_TORQUE_CURRENT_FORWARD)
+                .withPeakReverseTorqueCurrent(FLYWHEEL_PEAK_TORQUE_CURRENT_REVERSE))
         .withCurrentLimits(
-            new CurrentLimitsConfigs().withStatorCurrentLimit(FLYWHEEL_TORQUE_CURRENT_LIMIT_FORWARD)
+            new CurrentLimitsConfigs().withStatorCurrentLimit(FLYWHEEL_STATOR_CURRENT_LIMIT)
                 .withStatorCurrentLimitEnable(true)
                 .withSupplyCurrentLimit(FLYWHEEL_SUPPLY_CURRENT_LIMIT)
                 .withSupplyCurrentLimitEnable(true))
@@ -513,20 +511,6 @@ public class ShooterSubsystem extends SubsystemBase {
    */
   public static Translation2d getShooterTranslation(Pose2d robotPose) {
     return robotPose.getTranslation().plus(ROBOT_TO_SHOOTER.rotateBy(robotPose.getRotation()));
-  }
-
-  /**
-   * Gets the translation of the muzzle in field coordinates.
-   * 
-   * @param robotPose the current pose of the robot
-   * @param turretYaw the current yaw angle of the turret relative to the robot
-   * @return the translation of the muzzle in field coordinates
-   */
-  public static Translation2d getMuzzleTranslation(Pose2d robotPose, Angle turretYaw) {
-    var turretCenter = getShooterTranslation(robotPose);
-    var turretFieldRotation = robotPose.getRotation().plus(Rotation2d.fromRotations(turretYaw.in(Rotations)));
-    var turretToMuzzle = new Translation2d(MUZZLE_RADIUS.in(Meters), turretFieldRotation);
-    return turretCenter.plus(turretToMuzzle);
   }
 
   /**

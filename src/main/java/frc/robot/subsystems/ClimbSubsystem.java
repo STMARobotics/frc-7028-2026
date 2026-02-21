@@ -95,11 +95,11 @@ public class ClimbSubsystem extends SubsystemBase {
     TalonFXConfiguration climbMotorConfig = new TalonFXConfiguration();
     climbMotorConfig.withMotorOutput(new MotorOutputConfigs().withInverted(InvertedValue.Clockwise_Positive))
         .withHardwareLimitSwitch(
-            new HardwareLimitSwitchConfigs().withForwardLimitRemoteCANdiS1(topCanDi)
+            new HardwareLimitSwitchConfigs().withForwardLimitRemoteCANdiS2(bottomCanDi)
                 .withForwardLimitEnable(true)
                 .withForwardLimitAutosetPositionValue(CLIMB_FORWARD_LIMIT)
                 .withForwardLimitAutosetPositionEnable(true)
-                .withReverseLimitRemoteCANdiS2(bottomCanDi)
+                .withReverseLimitRemoteCANdiS1(topCanDi)
                 .withReverseLimitEnable(true)
                 .withReverseLimitAutosetPositionValue(CLIMB_REVERSE_LIMIT)
                 .withReverseLimitAutosetPositionEnable(true))

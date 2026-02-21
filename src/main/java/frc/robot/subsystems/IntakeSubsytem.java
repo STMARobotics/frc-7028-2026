@@ -4,6 +4,7 @@
 
 package frc.robot.subsystems;
 
+import static edu.wpi.first.units.Units.Celsius;
 import static edu.wpi.first.units.Units.Second;
 import static edu.wpi.first.units.Units.Volts;
 import static frc.robot.Constants.CANIVORE_BUS;
@@ -11,6 +12,7 @@ import static frc.robot.Constants.IntakeConstants.DEPLOYED_POSITION;
 import static frc.robot.Constants.IntakeConstants.DEPLOY_CANCODER_OFFSET;
 import static frc.robot.Constants.IntakeConstants.DEPLOY_DISCONTINUITY_POINT;
 import static frc.robot.Constants.IntakeConstants.DEPLOY_FORWARD_LIMIT;
+import static frc.robot.Constants.IntakeConstants.DEPLOY_HOLD_CURRENT;
 import static frc.robot.Constants.IntakeConstants.DEPLOY_MOTION_MAGIC_CONFIGS;
 import static frc.robot.Constants.IntakeConstants.DEPLOY_REVERSE_LIMIT;
 import static frc.robot.Constants.IntakeConstants.DEPLOY_ROTOR_TO_SENSOR_RATIO;
@@ -25,9 +27,10 @@ import static frc.robot.Constants.IntakeConstants.DEVICE_ID_ROLLER_MOTOR;
 import static frc.robot.Constants.IntakeConstants.RETRACTED_POSITION;
 import static frc.robot.Constants.IntakeConstants.ROLLER_EJECT_VELOCITY;
 import static frc.robot.Constants.IntakeConstants.ROLLER_INTAKE_VELOCITY;
-import static frc.robot.Constants.IntakeConstants.ROLLER_PEAK_CURRENT_FORWARD;
-import static frc.robot.Constants.IntakeConstants.ROLLER_PEAK_CURRENT_REVERSE;
+import static frc.robot.Constants.IntakeConstants.ROLLER_PEAK_TORQUE_CURRENT_FORWARD;
+import static frc.robot.Constants.IntakeConstants.ROLLER_PEAK_TORQUE_CURRENT_REVERSE;
 import static frc.robot.Constants.IntakeConstants.ROLLER_SLOT_CONFIGS;
+import static frc.robot.Constants.IntakeConstants.ROLLER_STATOR_CURRENT_LIMIT;
 import static frc.robot.Constants.IntakeConstants.ROLLER_SUPPLY_CURRENT_LIMIT;
 
 import com.ctre.phoenix6.BaseStatusSignal;
@@ -54,6 +57,7 @@ import com.ctre.phoenix6.signals.SensorDirectionValue;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Temperature;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
@@ -75,9 +79,14 @@ public class IntakeSubsytem extends SubsystemBase {
 
   private final TorqueCurrentFOC rollerSysIdControl = new TorqueCurrentFOC(0.0);
   private final VoltageOut deploySysIdControl = new VoltageOut(0.0).withEnableFOC(true);
+  // Torque control to hold the intake, ignoring the soft limit
+  private final TorqueCurrentFOC deployHoldControl = new TorqueCurrentFOC(DEPLOY_HOLD_CURRENT)
+      .withIgnoreSoftwareLimits(true);
 
-  private final StatusSignal<Angle> deployPositionSignal = deployMotor.getPosition();
-  private final StatusSignal<AngularVelocity> deployVelocitySignal = deployMotor.getVelocity();
+  private final StatusSignal<Angle> deployPositionSignal = deployMotor.getPosition(false);
+  private final StatusSignal<AngularVelocity> deployVelocitySignal = deployMotor.getVelocity(false);
+  private final StatusSignal<Temperature> deployTempSignal = deployMotor.getDeviceTemp(false);
+  private final StatusSignal<Boolean> deployTempFaultSignal = deployMotor.getFault_DeviceTemp(false);
 
   // SysId routines
   // NOTE: the output type is amps, NOT volts (even though it says volts)
@@ -114,12 +123,12 @@ public class IntakeSubsytem extends SubsystemBase {
         new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast).withInverted(InvertedValue.Clockwise_Positive))
         .withSlot0(Slot0Configs.from(ROLLER_SLOT_CONFIGS))
         .withTorqueCurrent(
-            new TorqueCurrentConfigs().withPeakForwardTorqueCurrent(ROLLER_PEAK_CURRENT_FORWARD)
-                .withPeakReverseTorqueCurrent(ROLLER_PEAK_CURRENT_REVERSE))
+            new TorqueCurrentConfigs().withPeakForwardTorqueCurrent(ROLLER_PEAK_TORQUE_CURRENT_FORWARD)
+                .withPeakReverseTorqueCurrent(ROLLER_PEAK_TORQUE_CURRENT_REVERSE))
         .withCurrentLimits(
             new CurrentLimitsConfigs().withSupplyCurrentLimit(ROLLER_SUPPLY_CURRENT_LIMIT)
                 .withStatorCurrentLimitEnable(true)
-                .withStatorCurrentLimit(ROLLER_PEAK_CURRENT_FORWARD)
+                .withStatorCurrentLimit(ROLLER_STATOR_CURRENT_LIMIT)
                 .withSupplyCurrentLimitEnable(true));
     rollerMotor.getConfigurator().apply(rollerConfig);
 
@@ -152,6 +161,12 @@ public class IntakeSubsytem extends SubsystemBase {
                 .withReverseSoftLimitEnable(true)
                 .withReverseSoftLimitThreshold(DEPLOY_REVERSE_LIMIT));
     deployMotor.getConfigurator().apply(deployConfig);
+
+    // If the intake started in the retracted position, continue to hold it retracted. Otherwise, leave it neutral so it
+    // stays deployed.
+    if (isRetracted()) {
+      // holdRetracted();
+    }
   }
 
   /**
@@ -231,6 +246,13 @@ public class IntakeSubsytem extends SubsystemBase {
   }
 
   /**
+   * Applies some torque to hold the intake in the retracted position.
+   */
+  public void holdRetracted() {
+    deployMotor.setControl(deployHoldControl);
+  }
+
+  /**
    * Stops the intake rollers
    */
   public void stopIntaking() {
@@ -274,5 +296,25 @@ public class IntakeSubsytem extends SubsystemBase {
     BaseStatusSignal.refreshAll(deployPositionSignal, deployVelocitySignal);
     Angle deployPosition = BaseStatusSignal.getLatencyCompensatedValue(deployPositionSignal, deployVelocitySignal);
     return deployPosition.isNear(RETRACTED_POSITION, DEPLOY_TOLERANCE);
+  }
+
+  /**
+   * Gets the current temperature of the deploy motor
+   * 
+   * @return temperature of the deploy motor
+   */
+  @Logged(name = "Deploy Motor Temp (C)")
+  public double getDeployMotorTemp() {
+    return deployTempSignal.refresh().getValue().in(Celsius);
+  }
+
+  /**
+   * Gets the deploy motor temperature fault value
+   * 
+   * @return true if the deploy motor has a temperature fault, false otherwise
+   */
+  @Logged(name = "Deploy Motor Temp Fault")
+  public boolean isDeployMotorDeviceTempFault() {
+    return deployTempFaultSignal.refresh().getValue();
   }
 }
