@@ -164,7 +164,7 @@ public class TeleopShootCommand extends Command {
     turretYawTarget.mut_replace(angleToTarget.minus(robotPose.getRotation()).getRotations(), Rotations);
 
     // Prepare shooter
-    shooterSubsystem.setYawAngle(turretYawTarget);
+    // shooterSubsystem.setYawAngle(turretYawTarget);
     shooterSubsystem.setPitchAngle(shootingSettings.targetPitch());
     shooterSubsystem.setFlywheelSpeed(shootingSettings.targetFlywheelSpeed());
 
@@ -180,7 +180,7 @@ public class TeleopShootCommand extends Command {
     var magnitude = Math.hypot(currentChassisSpeeds.vxMetersPerSecond, currentChassisSpeeds.vyMetersPerSecond);
     var isDrivetrainReady = magnitude <= maxVelocity;
     var isPitchReady = shooterSubsystem.isPitchAtSetpoint();
-    var isYawReady = shooterSubsystem.isYawAtSetpoint();
+    var isYawReady = true; // shooterSubsystem.isYawAtSetpoint();
     if (isShooterReady && isPitchReady && isYawReady && isDrivetrainReady) {
       // Shooter is spun up, robot is slowed, and the turret is aimed - shoot and start timer
       spindexerSubsystem.feedShooter();

@@ -335,6 +335,12 @@ public final class Constants {
       var map = new InterpolatingTreeMap<>(InverseInterpolator.forDouble(), ShooterSetpoints::interpolate);
       map.put(1.548, new ShooterSetpoints(Rotations.zero(), Degrees.zero(), RotationsPerSecond.of(20)));
       map.put(1.918, new ShooterSetpoints(Rotations.zero(), Degrees.of(4), RotationsPerSecond.of(21)));
+      map.put(1.918, new ShooterSetpoints(Rotations.zero(), Degrees.of(7), RotationsPerSecond.of(21)));
+      map.put(2.422, new ShooterSetpoints(Rotations.zero(), Degrees.of(11), RotationsPerSecond.of(22)));
+      map.put(2.807, new ShooterSetpoints(Rotations.zero(), Degrees.of(13), RotationsPerSecond.of(23)));
+      map.put(3.283, new ShooterSetpoints(Rotations.zero(), Degrees.of(13), RotationsPerSecond.of(25)));
+      map.put(3.571, new ShooterSetpoints(Rotations.zero(), Degrees.of(13), RotationsPerSecond.of(25.65)));
+
       return map;
     }
 
