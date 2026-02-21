@@ -318,10 +318,7 @@ public class ShooterSubsystem extends SubsystemBase {
    * @param targetPitch requested pitch
    */
   public void setPitchAngle(Angle targetPitch) {
-    double targetPitchRotations = MathUtil
-        .clamp(targetPitch.in(Rotations), PITCH_LIMIT_REVERSE.in(Rotations), PITCH_LIMIT_FORWARD.in(Rotations));
-
-    pitchMotor.setControl(pitchPositionRequest.withPosition(targetPitchRotations));
+    pitchMotor.setControl(pitchPositionRequest.withPosition(targetPitch));
   }
 
   /**
@@ -515,6 +512,10 @@ public class ShooterSubsystem extends SubsystemBase {
 
   /**
    * Setpoints for the shooter subsystem.
+   * 
+   * @param targetYaw yaw angle
+   * @param targetPitch pitch angle
+   * @param targetFlywheelSpeed flywheel velocity
    */
   public static record ShooterSetpoints(Angle targetYaw, Angle targetPitch, AngularVelocity targetFlywheelSpeed) {
     /**

@@ -143,7 +143,7 @@ public final class Constants {
     public static final Angle YAW_HOME_ANGLE = Rotations.of(0.0);
     public static final Angle YAW_POSITION_TOLERANCE = Degrees.of(2.0);
     public static final Angle PITCH_LIMIT_FORWARD = Rotations.of(0.085);
-    public static final Angle PITCH_LIMIT_REVERSE = Rotations.of(0.01);
+    public static final Angle PITCH_LIMIT_REVERSE = Rotations.of(0.00);
     public static final Angle PITCH_HOME_ANGLE = PITCH_LIMIT_REVERSE;
     public static final Angle PITCH_POSITION_TOLERANCE = Degrees.of(2.0);
     public static final AngularVelocity FLYWHEEL_VELOCITY_TOLERANCE = RotationsPerSecond.of(1.5);
@@ -171,7 +171,7 @@ public final class Constants {
 
     public static final SlotConfigs FLYWHEEL_SLOT_CONFIGS = new SlotConfigs().withKP(23.0).withKS(20.0);
 
-    public static final Translation2d ROBOT_TO_SHOOTER = new Translation2d(Inches.of(-4.5), Inches.of(7.563));
+    public static final Translation2d ROBOT_TO_SHOOTER = new Translation2d(Inches.of(-4.5), Inches.of(-7.563));
   }
 
   /**
@@ -181,8 +181,8 @@ public final class Constants {
     public static final String[] APRILTAG_CAMERA_NAMES = { "limelight-right" };
     public static final Transform3d[] ROBOT_TO_CAMERA_TRANSFORMS = new Transform3d[] {
         new Transform3d(
-            new Translation3d(0.241813, -0.349273, 0.203479),
-            new Rotation3d(0.0, -degreesToRadians(28), -Math.PI / 2.0)) };
+            new Translation3d(-0.241813, 0.349273, 0.203479),
+            new Rotation3d(0.0, degreesToRadians(28), -Math.PI / 2.0)) };
 
     // The standard deviations of our vision estimated poses, which affect correction rate
     public static final double APRILTAG_STD_DEVS = 0.1;
@@ -333,8 +333,8 @@ public final class Constants {
 
     private static InterpolatingTreeMap<Double, ShooterSubsystem.ShooterSetpoints> createShooterInterpolator() {
       var map = new InterpolatingTreeMap<>(InverseInterpolator.forDouble(), ShooterSetpoints::interpolate);
-      // TODO: Populate with real data
-      map.put(1.0, new ShooterSetpoints(Rotations.zero(), Rotations.zero(), RotationsPerSecond.zero()));
+      map.put(1.548, new ShooterSetpoints(Rotations.zero(), Degrees.zero(), RotationsPerSecond.of(20)));
+      map.put(1.918, new ShooterSetpoints(Rotations.zero(), Degrees.of(4), RotationsPerSecond.of(21)));
       return map;
     }
 
@@ -343,9 +343,10 @@ public final class Constants {
     public static final double FLYWHEEL_TO_FUEL_VELOCITY_MULTIPLIER = 4;
 
     /** Translation of the hub on the blue side */
-    public static final Translation2d TARGET_BLUE = new Translation2d(Inches.of(182), Inches.of(158.8125));
+    public static final Translation2d TARGET_BLUE = new Translation2d(Inches.of(182), Inches.of(317.7 / 2.0)); // TODO
+                                                                                                               // SET X!
 
     /** Translation of the hub on the red side */
-    public static final Translation2d TARGET_RED = new Translation2d(Inches.of(433.25), Inches.of(158.8125));
+    public static final Translation2d TARGET_RED = new Translation2d(Inches.of(469.078905), Inches.of(317.7 / 2.0));
   }
 }
