@@ -29,6 +29,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import frc.robot.Constants.OdometryConstants;
 import frc.robot.Constants.QuestNavConstants;
+import frc.robot.commands.ClimbToL1Command;
 import frc.robot.commands.DeployIntakeCommand;
 import frc.robot.commands.IntakeCommand;
 import frc.robot.commands.RetractIntakeCommand;
@@ -200,6 +201,7 @@ public class RobotContainer {
   }
 
   private void configurePathPlannerCommands() {
+    NamedCommands.registerCommand("ClimbToL1", new ClimbToL1Command(climbSubsystem));
     NamedCommands.registerCommand("DeployIntake", new DeployIntakeCommand(intakeSubsystem));
     NamedCommands.registerCommand("Intake", new IntakeCommand(intakeSubsystem));
   }

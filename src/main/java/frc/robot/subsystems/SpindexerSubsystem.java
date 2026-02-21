@@ -11,11 +11,11 @@ import static frc.robot.Constants.SpindexerConstants.SPINDEXER_AGITATE_BACKWARD_
 import static frc.robot.Constants.SpindexerConstants.SPINDEXER_AGITATE_FORWARD_VELOCITY;
 import static frc.robot.Constants.SpindexerConstants.SPINDEXER_FEED_VELOCITY;
 import static frc.robot.Constants.SpindexerConstants.SPINDEXER_INTAKE_VELOCITY;
+import static frc.robot.Constants.SpindexerConstants.SPINDEXER_PEAK_TORQUE_CURRENT_FORWARD;
+import static frc.robot.Constants.SpindexerConstants.SPINDEXER_PEAK_TORQUE_CURRENT_REVERSE;
 import static frc.robot.Constants.SpindexerConstants.SPINDEXER_SLOT_CONFIGS;
 import static frc.robot.Constants.SpindexerConstants.SPINDEXER_STATOR_CURRENT_LIMIT;
 import static frc.robot.Constants.SpindexerConstants.SPINDEXER_SUPPLY_CURRENT_LIMIT;
-import static frc.robot.Constants.SpindexerConstants.SPINDEXER_TORQUE_CURRENT_LIMIT_FORWARD;
-import static frc.robot.Constants.SpindexerConstants.SPINDEXER_TORQUE_CURRENT_LIMIT_REVERSE;
 
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
@@ -79,8 +79,8 @@ public class SpindexerSubsystem extends SubsystemBase {
             new MotorOutputConfigs().withInverted(InvertedValue.CounterClockwise_Positive)
                 .withNeutralMode(NeutralModeValue.Coast))
         .withTorqueCurrent(
-            new TorqueCurrentConfigs().withPeakForwardTorqueCurrent(SPINDEXER_TORQUE_CURRENT_LIMIT_FORWARD)
-                .withPeakReverseTorqueCurrent(SPINDEXER_TORQUE_CURRENT_LIMIT_REVERSE))
+            new TorqueCurrentConfigs().withPeakForwardTorqueCurrent(SPINDEXER_PEAK_TORQUE_CURRENT_FORWARD)
+                .withPeakReverseTorqueCurrent(SPINDEXER_PEAK_TORQUE_CURRENT_REVERSE))
         .withCurrentLimits(
             new CurrentLimitsConfigs().withStatorCurrentLimit(SPINDEXER_STATOR_CURRENT_LIMIT)
                 .withStatorCurrentLimitEnable(true)

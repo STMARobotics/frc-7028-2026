@@ -16,6 +16,7 @@ import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
@@ -413,6 +414,23 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
    */
   public AngularVelocity getIMUYawVelocity() {
     return yawVelocity.refresh().getValue();
+  }
+
+  /**
+   * Gets the current field-oriented chassis speeds
+   *
+   * @return field oriented chassis speeds
+   */
+  public ChassisSpeeds getCurrentFieldChassisSpeeds() {
+    var state = getState();
+    if (state == null || state.Pose == null) {
+      return new ChassisSpeeds();
+    }
+    var robotAngle = state.Pose.getRotation();
+    var chassisSpeeds = state.Speeds;
+    var fieldSpeeds = new Translation2d(chassisSpeeds.vxMetersPerSecond, chassisSpeeds.vyMetersPerSecond)
+        .rotateBy(robotAngle);
+    return new ChassisSpeeds(fieldSpeeds.getX(), fieldSpeeds.getY(), chassisSpeeds.omegaRadiansPerSecond);
   }
 
 }

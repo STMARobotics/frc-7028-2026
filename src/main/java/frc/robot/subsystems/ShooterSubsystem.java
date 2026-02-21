@@ -10,10 +10,11 @@ import static edu.wpi.first.units.Units.Volts;
 import static frc.robot.Constants.CANIVORE_BUS;
 import static frc.robot.Constants.ShooterConstants.FLYWHEEL_FOLLOWER_MOTOR_ID;
 import static frc.robot.Constants.ShooterConstants.FLYWHEEL_LEADER_MOTOR_ID;
+import static frc.robot.Constants.ShooterConstants.FLYWHEEL_PEAK_TORQUE_CURRENT_FORWARD;
+import static frc.robot.Constants.ShooterConstants.FLYWHEEL_PEAK_TORQUE_CURRENT_REVERSE;
 import static frc.robot.Constants.ShooterConstants.FLYWHEEL_SLOT_CONFIGS;
+import static frc.robot.Constants.ShooterConstants.FLYWHEEL_STATOR_CURRENT_LIMIT;
 import static frc.robot.Constants.ShooterConstants.FLYWHEEL_SUPPLY_CURRENT_LIMIT;
-import static frc.robot.Constants.ShooterConstants.FLYWHEEL_TORQUE_CURRENT_LIMIT_FORWARD;
-import static frc.robot.Constants.ShooterConstants.FLYWHEEL_TORQUE_CURRENT_LIMIT_REVERSE;
 import static frc.robot.Constants.ShooterConstants.FLYWHEEL_VELOCITY_TOLERANCE;
 import static frc.robot.Constants.ShooterConstants.PITCH_ENCODER_ID;
 import static frc.robot.Constants.ShooterConstants.PITCH_HOME_ANGLE;
@@ -121,8 +122,8 @@ public class ShooterSubsystem extends SubsystemBase {
 
   private final SysIdRoutine pitchSysIdRoutine = new SysIdRoutine(
       new SysIdRoutine.Config(
-          Volts.of(0.25).per(Second),
-          Volts.of(1),
+          Volts.of(0.1).per(Second),
+          Volts.of(0.3),
           Seconds.of(10),
           state -> SignalLogger.writeString("Pitch Motor SysId", state.toString())),
       new SysIdRoutine.Mechanism(
@@ -214,10 +215,10 @@ public class ShooterSubsystem extends SubsystemBase {
             new MotorOutputConfigs().withNeutralMode(Coast).withInverted(InvertedValue.CounterClockwise_Positive))
 
         .withTorqueCurrent(
-            new TorqueCurrentConfigs().withPeakForwardTorqueCurrent(FLYWHEEL_TORQUE_CURRENT_LIMIT_FORWARD)
-                .withPeakReverseTorqueCurrent(FLYWHEEL_TORQUE_CURRENT_LIMIT_REVERSE))
+            new TorqueCurrentConfigs().withPeakForwardTorqueCurrent(FLYWHEEL_PEAK_TORQUE_CURRENT_FORWARD)
+                .withPeakReverseTorqueCurrent(FLYWHEEL_PEAK_TORQUE_CURRENT_REVERSE))
         .withCurrentLimits(
-            new CurrentLimitsConfigs().withStatorCurrentLimit(FLYWHEEL_TORQUE_CURRENT_LIMIT_FORWARD)
+            new CurrentLimitsConfigs().withStatorCurrentLimit(FLYWHEEL_STATOR_CURRENT_LIMIT)
                 .withStatorCurrentLimitEnable(true)
                 .withSupplyCurrentLimit(FLYWHEEL_SUPPLY_CURRENT_LIMIT)
                 .withSupplyCurrentLimitEnable(true))
@@ -384,6 +385,15 @@ public class ShooterSubsystem extends SubsystemBase {
   }
 
   /**
+   * Gets the shooter's yaw angular velocity.
+   * 
+   * @return yaw angular velocity
+   */
+  public AngularVelocity getYawVelocity() {
+    return yawVelocity.refresh().getValue();
+  }
+
+  /**
    * Returns turret yaw normalized to (-0.5, 0.5] rotations
    *
    * @return normalized yaw
@@ -507,5 +517,23 @@ public class ShooterSubsystem extends SubsystemBase {
    * Setpoints for the shooter subsystem.
    */
   public static record ShooterSetpoints(Angle targetYaw, Angle targetPitch, AngularVelocity targetFlywheelSpeed) {
+    /**
+     * Interpolates between this and another ShootingSettings.
+     *
+     * @param endValue the end value
+     * @param t the interpolation parameter [0, 1]
+     * @return interpolated ShootingSettings
+     */
+    public ShooterSetpoints interpolate(ShooterSetpoints endValue, double t) {
+      ShooterSetpoints result = new ShooterSetpoints(
+          Rotations.of(MathUtil.interpolate(targetYaw.in(Rotations), endValue.targetYaw.in(Rotations), t)),
+          Rotations.of(MathUtil.interpolate(targetPitch.in(Rotations), endValue.targetPitch.in(Rotations), t)),
+          RotationsPerSecond.of(
+              MathUtil.interpolate(
+                  targetFlywheelSpeed.in(RotationsPerSecond),
+                    endValue.targetFlywheelSpeed.in(RotationsPerSecond),
+                    t)));
+      return result;
+    }
   }
 }
