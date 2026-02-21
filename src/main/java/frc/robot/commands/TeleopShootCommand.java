@@ -57,6 +57,7 @@ public class TeleopShootCommand extends Command {
   private final double maxVelocity;
 
   private Translation2d targetTranslation;
+  private boolean isShooting;
 
   private final SwerveRequest.FieldCentric swerveRequestRotation = new SwerveRequest.FieldCentric()
       .withDriveRequestType(DriveRequestType.Velocity)
@@ -97,7 +98,7 @@ public class TeleopShootCommand extends Command {
     var alliance = DriverStation.getAlliance();
     targetTranslation = (alliance.isEmpty() || alliance.get() == Blue) ? targetBlue : targetRed;
     ledSubsystem.off();
-    feederSubsystem.unjam();
+    isShooting = false;
   }
 
   @Override
@@ -176,20 +177,25 @@ public class TeleopShootCommand extends Command {
 
     // We might want to debounce some of the ready states, we'll see
     // Calculate ready state
-    var isShooterReady = shooterSubsystem.isReadyToShoot();
+    var isFlywheelReady = shooterSubsystem.isFlywheelAtSpeed();
     var magnitude = Math.hypot(currentChassisSpeeds.vxMetersPerSecond, currentChassisSpeeds.vyMetersPerSecond);
     var isDrivetrainReady = magnitude <= maxVelocity;
     var isPitchReady = shooterSubsystem.isPitchAtSetpoint();
     var isYawReady = true; // shooterSubsystem.isYawAtSetpoint();
-    if (isShooterReady && isPitchReady && isYawReady && isDrivetrainReady) {
+    if (isShooting || isFlywheelReady && isPitchReady && isYawReady && isDrivetrainReady) {
       // Shooter is spun up, robot is slowed, and the turret is aimed - shoot and start timer
       spindexerSubsystem.feedShooter();
       feederSubsystem.feedShooter();
       ledSubsystem.runPattern(LEDPattern.solid(kGreen));
+      isShooting = true;
     } else {
       ledSubsystem.runPattern(
-          LEDSubsystem
-              .ledSegments(kBlue, () -> isShooterReady, () -> isPitchReady, () -> isYawReady, () -> isDrivetrainReady));
+          LEDSubsystem.ledSegments(
+              kBlue,
+                () -> isFlywheelReady,
+                () -> isPitchReady,
+                () -> isYawReady,
+                () -> isDrivetrainReady));
       spindexerSubsystem.stop();
       feederSubsystem.stop();
     }

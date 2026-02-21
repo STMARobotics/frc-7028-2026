@@ -30,11 +30,14 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import frc.robot.Constants.OdometryConstants;
 import frc.robot.Constants.QuestNavConstants;
+import frc.robot.Constants.ShootingConstants;
+import frc.robot.Constants.TeleopDriveConstants;
 import frc.robot.commands.ClimbToL1Command;
 import frc.robot.commands.DeployIntakeCommand;
 import frc.robot.commands.IntakeCommand;
 import frc.robot.commands.RetractIntakeCommand;
 import frc.robot.commands.ShootCommand;
+import frc.robot.commands.TeleopShootCommand;
 import frc.robot.commands.TuneShootingCommand;
 import frc.robot.commands.led.DefaultLEDCommand;
 import frc.robot.commands.led.LEDBootAnimationCommand;
@@ -174,6 +177,23 @@ public class RobotContainer {
                     shooterSubsystem,
                     ledSubsystem,
                     () -> drivetrain.getState().Pose)));
+
+    controlBindings.autoShoot()
+        .ifPresent(
+            trigger -> trigger.whileTrue(
+                new TeleopShootCommand(
+                    drivetrain,
+                    shooterSubsystem,
+                    feederSubsystem,
+                    spindexerSubsystem,
+                    ledSubsystem,
+                    () -> controlBindings.translationX().get(),
+                    () -> controlBindings.translationY().get(),
+                    () -> drivetrain.getState().Pose,
+                    ShootingConstants.TARGET_RED,
+                    ShootingConstants.TARGET_BLUE,
+                    ShootingConstants.SHOOTER_TARGETS_BY_DISTANCE_METERS,
+                    TeleopDriveConstants.SHOOT_VELOCITY_MULTIPLIER)));
 
     // Climb controls
     controlBindings.climbForward()
