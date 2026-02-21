@@ -15,6 +15,7 @@ import static frc.robot.Constants.VisionConstants.ROBOT_TO_CAMERA_TRANSFORMS;
 import static frc.robot.Constants.VisionConstants.STARTING_DISTANCE_THRESHOLD;
 import static frc.robot.Constants.VisionConstants.TAG_DISTANCE_THRESHOLD;
 
+import com.pathplanner.lib.util.FlippingUtil;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
@@ -28,6 +29,8 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.RobotState;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.FieldConstants;
@@ -103,6 +106,8 @@ public class LocalizationSubsystem extends SubsystemBase {
    * <p>
    * This pose is used to initialize robot orientation and serves as a fallback
    * for translation if vision-based localization is unavailable.
+   * 
+   * @param pose starting pose ALWAYS on the blue side
    */
   public void setInitialPose(Pose2d pose) {
     startingPose = pose;
@@ -148,12 +153,15 @@ public class LocalizationSubsystem extends SubsystemBase {
     for (String cameraName : APRILTAG_CAMERA_NAMES) {
       // When the robot is disabled, set IMU and robot orientation for each AprilTag camera
       LimelightHelpers.SetIMUMode(cameraName, 1);
-      LimelightHelpers.SetRobotOrientation(cameraName, startingPose.getRotation().getDegrees(), 0, 0, 0, 0, 0);
+      var alliance = DriverStation.getAlliance();
+      var alliancePose = (alliance.isEmpty() || alliance.get() == Alliance.Blue) ? startingPose
+          : FlippingUtil.flipFieldPose(startingPose);
+      LimelightHelpers.SetRobotOrientation(cameraName, alliancePose.getRotation().getDegrees(), 0, 0, 0, 0, 0);
       PoseEstimate currentPose = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(cameraName);
 
-      Pose2d poseToUse = startingPose;
+      Pose2d poseToUse = alliancePose;
       if (isValidPoseEstimate(currentPose) && (currentPose.pose.getTranslation()
-          .getDistance(startingPose.getTranslation()) < STARTING_DISTANCE_THRESHOLD.in(Meters))) {
+          .getDistance(alliancePose.getTranslation()) < STARTING_DISTANCE_THRESHOLD.in(Meters))) {
         // The pose is valid, use it
         poseToUse = currentPose.pose;
       }
@@ -214,7 +222,11 @@ public class LocalizationSubsystem extends SubsystemBase {
    */
   private void periodicQuestNav(PoseEstimate bestVisionEstimate) {
     questNav.commandPeriodic();
-    trackingPublisher.set(questNav.isTracking());
+    boolean isTracking = questNav.isTracking();
+    trackingPublisher.set(isTracking);
+    if (!isTracking) {
+      questNavFaultCounter++;
+    }
     PoseFrame[] frames = questNav.getAllUnreadPoseFrames();
     // Iterate backwards through frames to find the most recent valid frame
     for (int i = frames.length - 1; i >= 0; i--) {

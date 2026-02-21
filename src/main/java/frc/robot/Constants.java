@@ -1,7 +1,6 @@
 package frc.robot;
 
 import static edu.wpi.first.math.util.Units.degreesToRadians;
-import static edu.wpi.first.math.util.Units.inchesToMeters;
 import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.DegreesPerSecond;
@@ -179,18 +178,11 @@ public final class Constants {
    * Constants for vision processing
    */
   public static class VisionConstants {
-    public static final String[] APRILTAG_CAMERA_NAMES = { "left", "right", "back" };
-    // TODO - Set this once the robot is designed
+    public static final String[] APRILTAG_CAMERA_NAMES = { "limelight-right" };
     public static final Transform3d[] ROBOT_TO_CAMERA_TRANSFORMS = new Transform3d[] {
         new Transform3d(
-            new Translation3d(inchesToMeters(0), inchesToMeters(0), inchesToMeters(0)),
-            new Rotation3d(0, 0, degreesToRadians(0))),
-        new Transform3d(
-            new Translation3d(inchesToMeters(0), inchesToMeters(0), inchesToMeters(0)),
-            new Rotation3d(0, 0, degreesToRadians(0))),
-        new Transform3d(
-            new Translation3d(inchesToMeters(0), inchesToMeters(0), inchesToMeters(0)),
-            new Rotation3d(0, degreesToRadians(0), degreesToRadians(0))) };
+            new Translation3d(0.241813, -0.349273, 0.203479),
+            new Rotation3d(0.0, -degreesToRadians(28), -Math.PI / 2.0)) };
 
     // The standard deviations of our vision estimated poses, which affect correction rate
     public static final double APRILTAG_STD_DEVS = 0.1;
