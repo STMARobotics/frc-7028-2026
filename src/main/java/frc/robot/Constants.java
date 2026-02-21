@@ -80,7 +80,7 @@ public final class Constants {
     /** Max velocity the driver can request */
     public static final LinearVelocity MAX_TELEOP_VELOCITY = TunerConstants.kSpeedAt12Volts;
     /** Max angular velocity the driver can request */
-    public static final AngularVelocity MAX_TELEOP_ANGULAR_VELOCITY = RotationsPerSecond.of(1.25);
+    public static final AngularVelocity MAX_TELEOP_ANGULAR_VELOCITY = RotationsPerSecond.of(1.75);
     /** Multiplier for shooting in teleop to reduce driver speed while shooting */
     public static final double SHOOT_VELOCITY_MULTIPLIER = 0.5;
   }
@@ -98,8 +98,9 @@ public final class Constants {
   }
 
   public static class QuestNavConstants {
-    // TODO - Set this once the robot is designed
-    public static final Transform3d ROBOT_TO_QUEST = new Transform3d(new Translation3d(), new Rotation3d());
+    public static final Transform3d ROBOT_TO_QUEST = new Transform3d(
+        new Translation3d(-0.252, 0.293, 0.450685),
+        new Rotation3d(0, 0, degreesToRadians(165.0)));
     public static final double QUESTNAV_FAILURE_THRESHOLD = 6.0;
     public static final Matrix<N3, N1> QUESTNAV_STD_DEVS = VecBuilder.fill(
         0.03, // X: Trust Quest to within 3cm (Trust more than odometry)

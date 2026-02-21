@@ -54,8 +54,8 @@ import frc.robot.subsystems.SpindexerSubsystem;
 public class RobotContainer {
   /* Setting up bindings for necessary control of the swerve drive platform */
   private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
-      .withDeadband(MAX_TELEOP_VELOCITY.times(0.05))
-      .withRotationalDeadband(MAX_TELEOP_ANGULAR_VELOCITY.times(0.05))
+      .withDeadband(MAX_TELEOP_VELOCITY.times(0.01))
+      .withRotationalDeadband(MAX_TELEOP_ANGULAR_VELOCITY.times(0.01))
       .withDriveRequestType(DriveRequestType.Velocity)
       .withSteerRequestType(SteerRequestType.MotionMagicExpo);
   private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();

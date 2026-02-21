@@ -85,13 +85,12 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
    */
   private final SysIdRoutine m_sysIdRoutineTranslationTorque = new SysIdRoutine(
       new SysIdRoutine.Config(
-          Volts.of(5).per(Second), // Use ramp rate of 5 A/s
-          Volts.of(10), // Use dynamic step of 10 A
-          Seconds.of(5), // Use timeout of 5 seconds
-          // Log state with SignalLogger class
+          Volts.of(5).per(Second), // amps per second
+          Volts.of(10), // amps
+          Seconds.of(30),
           state -> SignalLogger.writeString("SysIdTranslation_State", state.toString())),
       new SysIdRoutine.Mechanism(
-          output -> setControl(m_translationCharacterizationTorque.withTorqueCurrent(output.in(Volts))),
+          amps -> setControl(m_translationCharacterizationTorque.withTorqueCurrent(amps.in(Volts))),
           null,
           this));
 
@@ -218,7 +217,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                 // PID constants for translation
                 new PIDConstants(10, 0, 0),
                 // PID constants for rotation
-                new PIDConstants(7, 0, 0)),
+                new PIDConstants(6, 0, 0)),
             config,
             // Assume the path needs to be flipped for Red vs Blue, this is normally the case
             () -> DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red,

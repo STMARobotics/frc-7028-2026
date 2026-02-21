@@ -33,7 +33,7 @@ public class TunerConstants {
   private static final Slot0Configs driveGains = new Slot0Configs().withKP(0.1)
       .withKI(0)
       .withKD(0)
-      .withKS(0)
+      .withKS(0.1)
       .withKV(0.124);
 
   // The closed-loop output type to use for the steer motors;
@@ -67,7 +67,10 @@ public class TunerConstants {
           .withStatorCurrentLimitEnable(true));
   private static final CANcoderConfiguration encoderInitialConfigs = new CANcoderConfiguration();
   // Configs for the Pigeon 2; leave this null to skip applying Pigeon 2 configs
-  private static final Pigeon2Configuration pigeonConfigs = null;
+  private static final Pigeon2Configuration pigeonConfigs = new Pigeon2Configuration().withMountPose(
+      new MountPoseConfigs().withMountPoseYaw(-178.1185302734375)
+          .withMountPosePitch(0.26242750883102417)
+          .withMountPoseRoll(179.7565155029297));
 
   // CAN bus that the devices are located on;
   // All swerve devices must share the same CAN bus
@@ -75,7 +78,7 @@ public class TunerConstants {
 
   // Theoretical free speed (m/s) at 12 V applied output;
   // This needs to be tuned to your individual robot
-  public static final LinearVelocity kSpeedAt12Volts = MetersPerSecond.of(5.85);
+  public static final LinearVelocity kSpeedAt12Volts = MetersPerSecond.of(5.01);
 
   // Every 1 rotation of the azimuth results in kCoupleRatio drive motor turns;
   // This may need to be tuned to your individual robot
@@ -83,7 +86,7 @@ public class TunerConstants {
 
   private static final double kDriveGearRatio = 5.2734375;
   private static final double kSteerGearRatio = 26.09090909090909;
-  private static final Distance kWheelRadius = Inches.of(2);
+  private static final Distance kWheelRadius = Inches.of(2.0125);
 
   private static final boolean kInvertLeftSide = false;
   private static final boolean kInvertRightSide = true;
