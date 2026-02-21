@@ -340,6 +340,10 @@ public final class Constants {
       map.put(2.807, new ShooterSetpoints(Rotations.zero(), Degrees.of(13), RotationsPerSecond.of(23)));
       map.put(3.283, new ShooterSetpoints(Rotations.zero(), Degrees.of(13), RotationsPerSecond.of(25)));
       map.put(3.571, new ShooterSetpoints(Rotations.zero(), Degrees.of(13), RotationsPerSecond.of(25.65)));
+      map.put(3.944, new ShooterSetpoints(Rotations.zero(), Degrees.of(13), RotationsPerSecond.of(26.65)));
+      map.put(4.503, new ShooterSetpoints(Rotations.zero(), Degrees.of(13), RotationsPerSecond.of(27.4)));
+      map.put(4.945, new ShooterSetpoints(Rotations.zero(), Degrees.of(13), RotationsPerSecond.of(28.4)));
+      map.put(5.429, new ShooterSetpoints(Rotations.zero(), Degrees.of(13), RotationsPerSecond.of(29.5)));
 
       return map;
     }
