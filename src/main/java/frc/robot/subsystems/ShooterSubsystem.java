@@ -331,12 +331,11 @@ public class ShooterSubsystem extends SubsystemBase {
   }
 
   /**
-   * Applies yaw, pitch, and flywheel setpoints
+   * Applies pitch and flywheel setpoints
    *
    * @param setpoints shooter setpoints
    */
   public void applySetpoints(ShooterSetpoints setpoints) {
-    setYawAngle(setpoints.targetYaw());
     setPitchAngle(setpoints.targetPitch());
     setFlywheelSpeed(setpoints.targetFlywheelSpeed());
   }
@@ -513,11 +512,10 @@ public class ShooterSubsystem extends SubsystemBase {
   /**
    * Setpoints for the shooter subsystem.
    * 
-   * @param targetYaw yaw angle
    * @param targetPitch pitch angle
    * @param targetFlywheelSpeed flywheel velocity
    */
-  public static record ShooterSetpoints(Angle targetYaw, Angle targetPitch, AngularVelocity targetFlywheelSpeed) {
+  public static record ShooterSetpoints(Angle targetPitch, AngularVelocity targetFlywheelSpeed) {
     /**
      * Interpolates between this and another ShootingSettings.
      *
@@ -527,7 +525,6 @@ public class ShooterSubsystem extends SubsystemBase {
      */
     public ShooterSetpoints interpolate(ShooterSetpoints endValue, double t) {
       ShooterSetpoints result = new ShooterSetpoints(
-          Rotations.of(MathUtil.interpolate(targetYaw.in(Rotations), endValue.targetYaw.in(Rotations), t)),
           Rotations.of(MathUtil.interpolate(targetPitch.in(Rotations), endValue.targetPitch.in(Rotations), t)),
           RotationsPerSecond.of(
               MathUtil.interpolate(

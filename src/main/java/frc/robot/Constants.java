@@ -333,18 +333,17 @@ public final class Constants {
 
     private static InterpolatingTreeMap<Double, ShooterSubsystem.ShooterSetpoints> createShooterInterpolator() {
       var map = new InterpolatingTreeMap<>(InverseInterpolator.forDouble(), ShooterSetpoints::interpolate);
-      map.put(1.548, new ShooterSetpoints(Rotations.zero(), Degrees.zero(), RotationsPerSecond.of(20)));
-      map.put(1.918, new ShooterSetpoints(Rotations.zero(), Degrees.of(4), RotationsPerSecond.of(21)));
-      map.put(1.918, new ShooterSetpoints(Rotations.zero(), Degrees.of(7), RotationsPerSecond.of(21)));
-      map.put(2.422, new ShooterSetpoints(Rotations.zero(), Degrees.of(11), RotationsPerSecond.of(22)));
-      map.put(2.807, new ShooterSetpoints(Rotations.zero(), Degrees.of(13), RotationsPerSecond.of(23)));
-      map.put(3.283, new ShooterSetpoints(Rotations.zero(), Degrees.of(13), RotationsPerSecond.of(25)));
-      map.put(3.571, new ShooterSetpoints(Rotations.zero(), Degrees.of(13), RotationsPerSecond.of(25.65)));
-      map.put(3.944, new ShooterSetpoints(Rotations.zero(), Degrees.of(13), RotationsPerSecond.of(26.65)));
-      map.put(4.503, new ShooterSetpoints(Rotations.zero(), Degrees.of(13), RotationsPerSecond.of(27.4)));
-      map.put(4.945, new ShooterSetpoints(Rotations.zero(), Degrees.of(13), RotationsPerSecond.of(28.4)));
-      map.put(5.429, new ShooterSetpoints(Rotations.zero(), Degrees.of(13), RotationsPerSecond.of(29.5)));
-
+      map.put(1.548, new ShooterSetpoints(Degrees.zero(), RotationsPerSecond.of(20)));
+      map.put(1.918, new ShooterSetpoints(Degrees.of(4), RotationsPerSecond.of(21)));
+      map.put(1.918, new ShooterSetpoints(Degrees.of(7), RotationsPerSecond.of(21)));
+      map.put(2.422, new ShooterSetpoints(Degrees.of(11), RotationsPerSecond.of(22)));
+      map.put(2.807, new ShooterSetpoints(Degrees.of(13), RotationsPerSecond.of(23)));
+      map.put(3.283, new ShooterSetpoints(Degrees.of(13), RotationsPerSecond.of(25)));
+      map.put(3.571, new ShooterSetpoints(Degrees.of(13), RotationsPerSecond.of(25.65)));
+      map.put(3.944, new ShooterSetpoints(Degrees.of(13), RotationsPerSecond.of(26.65)));
+      map.put(4.503, new ShooterSetpoints(Degrees.of(13), RotationsPerSecond.of(27.4)));
+      map.put(4.945, new ShooterSetpoints(Degrees.of(13), RotationsPerSecond.of(28.4)));
+      map.put(5.429, new ShooterSetpoints(Degrees.of(13), RotationsPerSecond.of(29.5)));
       return map;
     }
 
@@ -353,10 +352,9 @@ public final class Constants {
     public static final double FLYWHEEL_TO_FUEL_VELOCITY_MULTIPLIER = 4;
 
     /** Translation of the hub on the blue side */
-    public static final Translation2d TARGET_BLUE = new Translation2d(Inches.of(182), Inches.of(317.7 / 2.0)); // TODO
-                                                                                                               // SET X!
+    public static final Translation2d TARGET_BLUE = new Translation2d(Inches.of(182.143595), Inches.of(158.84375));
 
     /** Translation of the hub on the red side */
-    public static final Translation2d TARGET_RED = new Translation2d(Inches.of(469.078905), Inches.of(317.7 / 2.0));
+    public static final Translation2d TARGET_RED = new Translation2d(Inches.of(469.078905), Inches.of(158.84375));
   }
 }

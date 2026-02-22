@@ -175,7 +175,6 @@ public class TeleopShootCommand extends Command {
             .withVelocityY(yVelocitySupplier.get().in(MetersPerSecond) * velocityMultiplier)
             .withRotationalRate(0.0));
 
-    // We might want to debounce some of the ready states, we'll see
     // Calculate ready state
     var isFlywheelReady = shooterSubsystem.isFlywheelAtSpeed();
     var magnitude = Math.hypot(currentChassisSpeeds.vxMetersPerSecond, currentChassisSpeeds.vyMetersPerSecond);
@@ -183,7 +182,7 @@ public class TeleopShootCommand extends Command {
     var isPitchReady = shooterSubsystem.isPitchAtSetpoint();
     var isYawReady = true; // shooterSubsystem.isYawAtSetpoint();
     if (isShooting || isFlywheelReady && isPitchReady && isYawReady && isDrivetrainReady) {
-      // Shooter is spun up, robot is slowed, and the turret is aimed - shoot and start timer
+      // Shooter is spun up, robot is slowed, and the turret is aimed - shoot continuously until interupted
       spindexerSubsystem.feedShooter();
       feederSubsystem.feedShooter();
       ledSubsystem.runPattern(LEDPattern.solid(kGreen));
