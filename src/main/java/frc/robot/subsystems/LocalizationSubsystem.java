@@ -27,7 +27,6 @@ import edu.wpi.first.networktables.BooleanPublisher;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructPublisher;
-import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
@@ -62,7 +61,7 @@ public class LocalizationSubsystem extends SubsystemBase {
       .publish();
   private final BooleanPublisher trackingPublisher = localizationTable.getBooleanTopic("Quest Tracking").publish();
   private final BooleanPublisher questHealthPublisher = localizationTable.getBooleanTopic("Quest Healthy?").publish();
-  private final Supplier<Angle> yaw;
+  private final Supplier<Pose2d> poseSupplier;
   private final Supplier<AngularVelocity> robotAngularVelocitySupplier;
   @Logged
   private Pose2d startingPose = new Pose2d();
@@ -74,7 +73,7 @@ public class LocalizationSubsystem extends SubsystemBase {
    *
    * @param addVisionMeasurement the consumer for vision-based pose measurements
    * @param poseResetConsumer the consumer for resetting the robot's pose when the robot is disabled
-   * @param yawSupplier supplier for the robot's current yaw angle, NOT from the fused estimator but directly from the
+   * @param poseSupplier supplier for the robot's current yaw angle, NOT from the fused estimator but directly from the
    *          IMU
    * @param angularVelocitySupplier supplier for the robot's current angular velocity, NOT from the fused estimator but
    *          directly from the IMU
@@ -82,11 +81,11 @@ public class LocalizationSubsystem extends SubsystemBase {
   public LocalizationSubsystem(
       VisionMeasurementConsumer addVisionMeasurement,
       Consumer<Pose2d> poseResetConsumer,
-      Supplier<Angle> yawSupplier,
+      Supplier<Pose2d> poseSupplier,
       Supplier<AngularVelocity> angularVelocitySupplier) {
     this.visionMeasurementConsumer = addVisionMeasurement;
     this.poseResetConsumer = poseResetConsumer;
-    this.yaw = yawSupplier;
+    this.poseSupplier = poseSupplier;
     this.robotAngularVelocitySupplier = angularVelocitySupplier;
 
     for (int i = 0; i < APRILTAG_CAMERA_NAMES.length; i++) {
@@ -151,23 +150,39 @@ public class LocalizationSubsystem extends SubsystemBase {
    */
   private void periodicDisabled() {
     for (String cameraName : APRILTAG_CAMERA_NAMES) {
-      // When the robot is disabled, set IMU and robot orientation for each AprilTag camera
-      LimelightHelpers.SetIMUMode(cameraName, 1);
-      var alliance = DriverStation.getAlliance();
-      var alliancePose = (alliance.isEmpty() || alliance.get() == Alliance.Blue) ? startingPose
-          : FlippingUtil.flipFieldPose(startingPose);
-      LimelightHelpers.SetRobotOrientation(cameraName, alliancePose.getRotation().getDegrees(), 0, 0, 0, 0, 0);
-      PoseEstimate currentPose = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(cameraName);
+      if (RobotState.isAutonomous() || DriverStation.isFMSAttached()) {
+        LimelightHelpers.SetIMUMode(cameraName, 1);
+        var alliance = DriverStation.getAlliance();
+        var allianceStartingPose = (alliance.isEmpty() || alliance.get() == Alliance.Blue) ? startingPose
+            : FlippingUtil.flipFieldPose(startingPose);
+        LimelightHelpers
+            .SetRobotOrientation(cameraName, allianceStartingPose.getRotation().getDegrees(), 0, 0, 0, 0, 0);
+        PoseEstimate currentPose = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(cameraName);
 
-      Pose2d poseToUse = alliancePose;
-      if (isValidPoseEstimate(currentPose) && (currentPose.pose.getTranslation()
-          .getDistance(alliancePose.getTranslation()) < STARTING_DISTANCE_THRESHOLD.in(Meters))) {
-        // The pose is valid, use it
-        poseToUse = currentPose.pose;
+        if (isValidPoseEstimate(currentPose) && currentPose.pose.getTranslation()
+            .getDistance(allianceStartingPose.getTranslation()) < STARTING_DISTANCE_THRESHOLD.in(Meters)) {
+          // The pose is valid and close to the starting position, use its translation but the alliance's rotation
+          Pose2d poseToUse = new Pose2d(currentPose.pose.getTranslation(), allianceStartingPose.getRotation());
+          setQuestNavPose(poseToUse);
+          poseResetConsumer.accept(poseToUse);
+        } else {
+          // The pose is valid but far from the starting position, likely a bad reading - use the alliance's starting
+          // pose
+          setQuestNavPose(allianceStartingPose);
+          poseResetConsumer.accept(allianceStartingPose);
+        }
+      } else {
+        // Not prepping for auto, so add the vision measurement from limelight MegaTag1
+        PoseEstimate currentPose = LimelightHelpers.getBotPoseEstimate_wpiBlue(cameraName);
+        visionMeasurementConsumer.addVisionMeasurement(
+            currentPose.pose,
+              currentPose.timestampSeconds,
+              VecBuilder.fill(APRILTAG_STD_DEVS, APRILTAG_STD_DEVS, Double.MAX_VALUE));
+        // Get the most recent fused pose estimate and give it to QuestNav and MegaTag2
+        Pose2d currentPoseEstimate = poseSupplier.get();
+        setQuestNavPose(currentPoseEstimate);
+        LimelightHelpers.SetRobotOrientation(cameraName, currentPoseEstimate.getRotation().getDegrees(), 0, 0, 0, 0, 0);
       }
-
-      setQuestNavPose(poseToUse);
-      poseResetConsumer.accept(poseToUse);
     }
   }
 
@@ -186,7 +201,7 @@ public class LocalizationSubsystem extends SubsystemBase {
     for (String cameraName : APRILTAG_CAMERA_NAMES) {
       // When the robot is enabled, set IMU mode for each AprilTag camera
       LimelightHelpers.SetIMUMode(cameraName, 4);
-      LimelightHelpers.SetRobotOrientation(cameraName, yaw.get().in(Degrees), 0, 0, 0, 0, 0);
+      LimelightHelpers.SetRobotOrientation(cameraName, poseSupplier.get().getRotation().getDegrees(), 0, 0, 0, 0, 0);
       PoseEstimate currentPose = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(cameraName);
 
       if (isValidPoseEstimate(currentPose)

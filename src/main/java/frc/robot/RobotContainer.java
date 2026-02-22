@@ -4,7 +4,6 @@
 
 package frc.robot;
 
-import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction.kForward;
 import static edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction.kReverse;
 import static frc.robot.Constants.TeleopDriveConstants.MAX_TELEOP_ANGULAR_VELOCITY;
@@ -81,7 +80,7 @@ public class RobotContainer {
   private final LocalizationSubsystem localizationSubsystem = new LocalizationSubsystem(
       drivetrain::addVisionMeasurement,
       drivetrain::resetPose,
-      () -> Radians.of(drivetrain.getState().Pose.getRotation().getRadians()),
+      () -> drivetrain.getState().Pose,
       drivetrain::getIMUYawVelocity);
   @Logged
   private final FeederSubsystem feederSubsystem = new FeederSubsystem();
