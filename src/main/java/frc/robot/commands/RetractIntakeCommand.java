@@ -4,7 +4,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.IntakeSubsytem;
 
 /**
- * Command to retract the intake. This command will run until the intake is fully retracted.
+ * Command to retract the intake. This command will hold the intake indefinitely until interrupted.
  */
 public class RetractIntakeCommand extends Command {
 
@@ -17,13 +17,19 @@ public class RetractIntakeCommand extends Command {
   }
 
   @Override
-  public void initialize() {
-    intakeSubsystem.retract();
+  public void execute() {
+    if (intakeSubsystem.isRetracted()) {
+      // Once retracted, hold it in place
+      intakeSubsystem.holdRetracted();
+    } else {
+      // Not retracted, so retract it
+      intakeSubsystem.retract();
+    }
   }
 
   @Override
   public boolean isFinished() {
-    return intakeSubsystem.isRetracted();
+    return false;
   }
 
   @Override

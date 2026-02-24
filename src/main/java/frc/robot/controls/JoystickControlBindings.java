@@ -52,4 +52,34 @@ public class JoystickControlBindings extends ControlBindings {
     return Optional.of(rightJoystick.trigger());
   }
 
+  @Override
+  public Optional<Trigger> runIntake() {
+    return Optional.of(leftJoystick.button(4));
+  }
+
+  @Override
+  public Optional<Trigger> stopIntake() {
+    return Optional.of(leftJoystick.button(3));
+  }
+
+  @Override
+  public Optional<Trigger> deployIntake() {
+    return Optional.of(leftJoystick.trigger());
+  }
+
+  @Override
+  public Optional<Trigger> retractIntake() {
+    return Optional.empty();
+  }
+
+  @Override
+  public Optional<Trigger> manualShoot() {
+    return Optional.of(rightJoystick.povUp());
+  }
+
+  @Override
+  public Optional<Trigger> tuneShoot() {
+    return Optional.of(rightJoystick.povDown());
+  }
+
 }

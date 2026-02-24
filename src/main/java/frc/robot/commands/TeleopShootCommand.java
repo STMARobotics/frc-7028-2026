@@ -134,7 +134,7 @@ public class TeleopShootCommand extends Command {
     // Iterate 4 times to converge on the intersection of trajectory and target
     ShooterSetpoints shootingSettings;
     for (int i = 0; i < 4; i++) {
-      var dist = predictedTargetTranslation.getDistance(shooterTranslation);
+      var dist = robotPose.getTranslation().getDistance(shooterTranslation);
       shootingSettings = lookupTable.get(dist);
 
       var timeUntilScored = 0.0;
@@ -183,8 +183,8 @@ public class TeleopShootCommand extends Command {
     var isYawReady = true; // shooterSubsystem.isYawAtSetpoint();
     if (isShooting || isFlywheelReady && isPitchReady && isYawReady && isDrivetrainReady) {
       // Shooter is spun up, robot is slowed, and the turret is aimed - shoot continuously until interupted
-      spindexerSubsystem.feedShooter();
-      feederSubsystem.feedShooter();
+      spindexerSubsystem.runSpindexer(shootingSettings.spindexerVelocity());
+      feederSubsystem.runFeeder(shootingSettings.feederVelocity());
       ledSubsystem.runPattern(LEDPattern.solid(kGreen));
       isShooting = true;
     } else {

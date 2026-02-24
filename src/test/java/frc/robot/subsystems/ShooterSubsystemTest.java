@@ -19,15 +19,13 @@ class ShooterSubsystemTest {
   @Test
   void chooseYawShortestDistanceChoosesNearestLegalEquivalent() {
     double target = ShooterSubsystem.chooseYawShortestDistance(Rotations.of(0.6), Rotations.of(-0.2));
-    System.out.println("Target: " + target);
     assertEquals(-0.4, target, 1e-9);
   }
 
   @Test
   void chooseYawShortestDistanceRespectsLimits() {
-    double target = ShooterSubsystem.chooseYawShortestDistance(Rotations.of(3.2), Rotations.of(0.1));
-
-    assertEquals(0.2, target, 1e-9);
+    double target = ShooterSubsystem.chooseYawShortestDistance(Rotations.of(3.5), Rotations.of(0.1));
+    assertEquals(-0.5, target, 1e-9);
   }
 
 }
