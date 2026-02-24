@@ -45,7 +45,9 @@ dependencies {
 
     implementation 'us.hebi.quickbuf:quickbuf-runtime:1.3.3'
 
-    implementation 'org.jzy3d:jzy3d-api:1.0.3'
+
+    implementation 'org.jzy3d:jzy3d-core:2.1.0' // REQUIRED for Func3D, Shape, etc.
+    implementation 'org.jzy3d:jzy3d-emul-gl-awt:2.1.0'
 }
 
 // Apply a specific Java toolchain to ease working on different environments.

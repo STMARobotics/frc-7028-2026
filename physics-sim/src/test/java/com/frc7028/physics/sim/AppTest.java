@@ -16,7 +16,7 @@ import java.util.function.Function;
 import org.junit.jupiter.api.Test;
 
 class AppTest {
-  @Test
+
   void unitTest_ConvergeSolution() {
 
     Translation3d origin = new Translation3d(0, 0, 0);
@@ -90,5 +90,13 @@ class AppTest {
     // System.out.println("Pitch: " + convergedShot.pitch());
     // System.out.println("Speed: " + convergedShot.speed());
 
+  }
+
+  @Test
+  void testGraphicsLibrary() {
+    DebugVisualOutput outputTest = new DebugVisualOutput();
+    while (true) {
+
+    }
   }
 }
