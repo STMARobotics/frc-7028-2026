@@ -2,13 +2,15 @@ package frc.robot.subsystems;
 
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Meters;
-import static frc.robot.Constants.FieldConstants.isValidFieldPosition;
+import static frc.robot.Constants.FieldConstants.isValidFieldTranslation;
 import static frc.robot.Constants.QuestNavConstants.QUESTNAV_FAILURE_THRESHOLD;
 import static frc.robot.Constants.QuestNavConstants.QUESTNAV_STD_DEVS;
 import static frc.robot.Constants.QuestNavConstants.ROBOT_TO_QUEST;
 import static frc.robot.Constants.VisionConstants.ANGULAR_VELOCITY_THRESHOLD;
 import static frc.robot.Constants.VisionConstants.APRILTAG_CAMERA_NAMES;
 import static frc.robot.Constants.VisionConstants.APRILTAG_STD_DEVS;
+import static frc.robot.Constants.VisionConstants.LIMELIGHT_BLUE_PIPELINE;
+import static frc.robot.Constants.VisionConstants.LIMELIGHT_RED_PIPELINE;
 import static frc.robot.Constants.VisionConstants.QUESTNAV_ACTIVE_APRILTAG_STD_DEVS;
 import static frc.robot.Constants.VisionConstants.QUESTNAV_APRILTAG_ERROR_THRESHOLD;
 import static frc.robot.Constants.VisionConstants.ROBOT_TO_CAMERA_TRANSFORMS;
@@ -32,12 +34,12 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.RobotState;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.Constants.FieldConstants;
 import frc.robot.LimelightHelpers;
 import frc.robot.LimelightHelpers.PoseEstimate;
 import frc.robot.VisionMeasurementConsumer;
 import gg.questnav.questnav.PoseFrame;
 import gg.questnav.questnav.QuestNav;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -60,7 +62,7 @@ public class LocalizationSubsystem extends SubsystemBase {
       .getStructTopic("Quest Robot Pose", Pose3d.struct)
       .publish();
   private final BooleanPublisher trackingPublisher = localizationTable.getBooleanTopic("Quest Tracking").publish();
-  private final BooleanPublisher questHealthPublisher = localizationTable.getBooleanTopic("Quest Healthy?").publish();
+  private final BooleanPublisher questHealthPublisher = localizationTable.getBooleanTopic("Quest Healthy").publish();
   private final Supplier<Pose2d> poseSupplier;
   private final Supplier<AngularVelocity> robotAngularVelocitySupplier;
   @Logged
@@ -73,8 +75,7 @@ public class LocalizationSubsystem extends SubsystemBase {
    *
    * @param addVisionMeasurement the consumer for vision-based pose measurements
    * @param poseResetConsumer the consumer for resetting the robot's pose when the robot is disabled
-   * @param poseSupplier supplier for the robot's current yaw angle, NOT from the fused estimator but directly from the
-   *          IMU
+   * @param poseSupplier supplier for the robot's current pose estimate from the fused estimator
    * @param angularVelocitySupplier supplier for the robot's current angular velocity, NOT from the fused estimator but
    *          directly from the IMU
    */
@@ -115,9 +116,8 @@ public class LocalizationSubsystem extends SubsystemBase {
   /**
    * Periodically updates the localization system with vision and pose data.
    * <p>
-   * This method is called automatically by the scheduler. It updates IMU modes, sets robot orientation,
-   * retrieves and validates vision-based pose estimates from Limelight and QuestNav, and provides
-   * vision measurements to the consumer.
+   * This method is called automatically by the scheduler. It retrieves and validates vision-based pose estimates from
+   * Limelight and QuestNav, and provides vision measurements to the consumer.
    */
   @Override
   public void periodic() {
@@ -139,30 +139,36 @@ public class LocalizationSubsystem extends SubsystemBase {
    * @return true if the pose estimate meets basic validation criteria
    */
   private boolean isValidPoseEstimate(PoseEstimate poseEstimate) {
-    return poseEstimate != null && poseEstimate.tagCount > 0 && isValidFieldPosition(poseEstimate.pose.getTranslation())
+    return poseEstimate != null && poseEstimate.tagCount > 0
+        && isValidFieldTranslation(poseEstimate.pose.getTranslation())
         && poseEstimate.avgTagDist < TAG_DISTANCE_THRESHOLD.in(Meters);
   }
 
   /**
    * Handles periodic updates when the robot is disabled.
    * <p>
-   * Sets IMU and robot orientation for all cameras, validates AprilTag poses, and resets the pose estimator.
+   * Validates AprilTag poses from the camera, and resets the pose estimator and QuestNav
    */
   private void periodicDisabled() {
     for (String cameraName : APRILTAG_CAMERA_NAMES) {
-      if (RobotState.isAutonomous() || DriverStation.isFMSAttached()) {
-        LimelightHelpers.SetIMUMode(cameraName, 1);
-        var alliance = DriverStation.getAlliance();
-        var allianceStartingPose = (alliance.isEmpty() || alliance.get() == Alliance.Blue) ? startingPose
-            : FlippingUtil.flipFieldPose(startingPose);
-        LimelightHelpers
-            .SetRobotOrientation(cameraName, allianceStartingPose.getRotation().getDegrees(), 0, 0, 0, 0, 0);
-        PoseEstimate currentPose = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(cameraName);
+      Optional<Alliance> alliance = DriverStation.getAlliance();
+      boolean isBlueAlliance = alliance.isEmpty() || alliance.get() == Alliance.Blue;
+      // Set the pipeline based on alliance color
+      if (alliance.isEmpty() || alliance.get() == Alliance.Blue) {
+        LimelightHelpers.setPipelineIndex(cameraName, LIMELIGHT_BLUE_PIPELINE);
+      } else {
+        LimelightHelpers.setPipelineIndex(cameraName, LIMELIGHT_RED_PIPELINE);
+      }
 
-        if (isValidPoseEstimate(currentPose) && currentPose.pose.getTranslation()
+      if (RobotState.isAutonomous() || DriverStation.isFMSAttached()) {
+        // Preparing to run auto
+        Pose2d allianceStartingPose = isBlueAlliance ? startingPose : FlippingUtil.flipFieldPose(startingPose);
+        PoseEstimate poseEstimate = LimelightHelpers.getBotPoseEstimate_wpiBlue(cameraName);
+
+        if (isValidPoseEstimate(poseEstimate) && poseEstimate.pose.getTranslation()
             .getDistance(allianceStartingPose.getTranslation()) < STARTING_DISTANCE_THRESHOLD.in(Meters)) {
-          // The pose is valid and close to the starting position, use its translation but the alliance's rotation
-          Pose2d poseToUse = new Pose2d(currentPose.pose.getTranslation(), allianceStartingPose.getRotation());
+          // The pose is valid and close to the starting position, use its translation but the auto's rotation
+          Pose2d poseToUse = new Pose2d(poseEstimate.pose.getTranslation(), allianceStartingPose.getRotation());
           setQuestNavPose(poseToUse);
           poseResetConsumer.accept(poseToUse);
         } else {
@@ -172,16 +178,15 @@ public class LocalizationSubsystem extends SubsystemBase {
           poseResetConsumer.accept(allianceStartingPose);
         }
       } else {
-        // Not prepping for auto, so add the vision measurement from limelight MegaTag1
-        PoseEstimate currentPose = LimelightHelpers.getBotPoseEstimate_wpiBlue(cameraName);
+        // Not prepping for auto, so add the vision measurement from limelight
+        PoseEstimate limelightPose = LimelightHelpers.getBotPoseEstimate_wpiBlue(cameraName);
         visionMeasurementConsumer.addVisionMeasurement(
-            currentPose.pose,
-              currentPose.timestampSeconds,
-              VecBuilder.fill(APRILTAG_STD_DEVS, APRILTAG_STD_DEVS, Double.MAX_VALUE));
-        // Get the most recent fused pose estimate and give it to QuestNav and MegaTag2
+            limelightPose.pose,
+              limelightPose.timestampSeconds,
+              VecBuilder.fill(APRILTAG_STD_DEVS, APRILTAG_STD_DEVS, 0.01));
+        // Get the most recent fused pose estimate and give it to QuestNav
         Pose2d currentPoseEstimate = poseSupplier.get();
         setQuestNavPose(currentPoseEstimate);
-        LimelightHelpers.SetRobotOrientation(cameraName, currentPoseEstimate.getRotation().getDegrees(), 0, 0, 0, 0, 0);
       }
     }
   }
@@ -199,26 +204,23 @@ public class LocalizationSubsystem extends SubsystemBase {
     double bestDeviation = Double.MAX_VALUE;
 
     for (String cameraName : APRILTAG_CAMERA_NAMES) {
-      // When the robot is enabled, set IMU mode for each AprilTag camera
-      LimelightHelpers.SetIMUMode(cameraName, 4);
-      LimelightHelpers.SetRobotOrientation(cameraName, poseSupplier.get().getRotation().getDegrees(), 0, 0, 0, 0, 0);
-      PoseEstimate currentPose = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(cameraName);
+      PoseEstimate poseEstimate = LimelightHelpers.getBotPoseEstimate_wpiBlue(cameraName);
 
-      if (isValidPoseEstimate(currentPose)
+      if (isValidPoseEstimate(poseEstimate)
           && robotAngularVelocitySupplier.get().gt(ANGULAR_VELOCITY_THRESHOLD.unaryMinus())
           && robotAngularVelocitySupplier.get().lt(ANGULAR_VELOCITY_THRESHOLD)) {
 
         double baseStandardDeviations = (questNavFaultCounter > QUESTNAV_FAILURE_THRESHOLD) ? APRILTAG_STD_DEVS
             : QUESTNAV_ACTIVE_APRILTAG_STD_DEVS;
-        double adjustedXYDeviation = baseStandardDeviations + (0.01 * Math.pow(currentPose.avgTagDist, 2));
+        double adjustedXYDeviation = baseStandardDeviations + (0.01 * Math.pow(poseEstimate.avgTagDist, 2));
         Matrix<N3, N1> adjustedDeviations = VecBuilder.fill(adjustedXYDeviation, adjustedXYDeviation, Double.MAX_VALUE);
 
         visionMeasurementConsumer
-            .addVisionMeasurement(currentPose.pose, currentPose.timestampSeconds, adjustedDeviations);
+            .addVisionMeasurement(poseEstimate.pose, poseEstimate.timestampSeconds, adjustedDeviations);
 
         // Track the best estimate for QuestNav comparison
         if (bestDeviation > adjustedXYDeviation) {
-          bestEstimate = currentPose;
+          bestEstimate = poseEstimate;
           bestDeviation = adjustedXYDeviation;
         }
       }
@@ -267,8 +269,7 @@ public class LocalizationSubsystem extends SubsystemBase {
         questHealthPublisher.set(questNavFaultCounter < QUESTNAV_FAILURE_THRESHOLD);
 
         // Only use QuestNav measurements when fault counter is below threshold and pose is valid
-        if (questNavFaultCounter < QUESTNAV_FAILURE_THRESHOLD
-            && FieldConstants.isValidFieldPosition(robotPose.getTranslation())) {
+        if (questNavFaultCounter < QUESTNAV_FAILURE_THRESHOLD && isValidFieldTranslation(robotPose.getTranslation())) {
           visionMeasurementConsumer
               .addVisionMeasurement(robotPose.toPose2d(), frame.dataTimestamp(), QUESTNAV_STD_DEVS);
         }

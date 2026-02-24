@@ -53,24 +53,24 @@ public final class Constants {
     public static final Distance FIELD_WIDTH = Inches.of(317.7);
 
     /**
-     * Checks if a pose is within the field boundaries, and less than 3 meters high.
+     * Checks if a translation is within the field boundaries
      * 
-     * @param pose The pose to check
-     * @return True if the pose is within the field boundaries
+     * @param translation The translation to check
+     * @return true if the translation is within the field boundaries
      */
-    public static boolean isValidFieldPosition(Translation3d pose) {
-      return pose.getX() >= 0.0 && pose.getX() <= FIELD_LENGTH.in(Meters) && pose.getY() >= 0.0
-          && pose.getY() <= FIELD_WIDTH.in(Meters) && pose.getZ() >= 0.0 && pose.getZ() <= 3.0;
+    public static boolean isValidFieldTranslation(Translation3d translation) {
+      return isValidFieldTranslation(translation.toTranslation2d());
     }
 
     /**
-     * Checks if a 2D pose is within the field boundaries.
+     * Checks if a translation is within the field boundaries
      * 
-     * @param pose The pose to check
-     * @return True if the pose is within the field boundaries
+     * @param translation The translation to check
+     * @return true if the translation is within the field boundaries
      */
-    public static boolean isValidFieldPosition(Translation2d pose) {
-      return isValidFieldPosition(new Translation3d(pose));
+    public static boolean isValidFieldTranslation(Translation2d translation) {
+      return translation.getX() >= 0.0 && translation.getX() <= FIELD_LENGTH.in(Meters) && translation.getY() >= 0.0
+          && translation.getY() <= FIELD_WIDTH.in(Meters);
     }
   }
 
@@ -186,8 +186,11 @@ public final class Constants {
             new Translation3d(-0.241813, 0.349273, 0.203479),
             new Rotation3d(0.0, degreesToRadians(28), -Math.PI / 2.0)) };
 
+    public static final int LIMELIGHT_BLUE_PIPELINE = 0;
+    public static final int LIMELIGHT_RED_PIPELINE = 1;
+
     // The standard deviations of our vision estimated poses, which affect correction rate
-    public static final double APRILTAG_STD_DEVS = 0.001;
+    public static final double APRILTAG_STD_DEVS = 0.05;
     public static final double QUESTNAV_ACTIVE_APRILTAG_STD_DEVS = 1.5;
 
     /** The max average distance for AprilTag measurements to be considered valid */
