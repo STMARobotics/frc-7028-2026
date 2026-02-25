@@ -6,16 +6,23 @@ import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.ShooterSubsystem;
 
 /**
- * Default command for the hood. Holds the hood at its home position and stops the motor if within deadband.
+ * Default command for the shooter. Holds the hood at its home position and stops the motor if within deadband. Turns
+ * off yaw and flywheel.
  */
-public class DefaultHoodCommand extends Command {
+public class DefaultShooterCommand extends Command {
 
   private final ShooterSubsystem shooterSubsystem;
 
-  public DefaultHoodCommand(ShooterSubsystem shooterSubsystem) {
+  public DefaultShooterCommand(ShooterSubsystem shooterSubsystem) {
     this.shooterSubsystem = shooterSubsystem;
 
     addRequirements(shooterSubsystem);
+  }
+
+  @Override
+  public void initialize() {
+    shooterSubsystem.stopFlywheel();
+    shooterSubsystem.stopYaw();
   }
 
   @Override
@@ -25,5 +32,10 @@ public class DefaultHoodCommand extends Command {
     } else {
       shooterSubsystem.setPitchAngle(PITCH_HOME_ANGLE);
     }
+  }
+
+  @Override
+  public void end(boolean interrupted) {
+    shooterSubsystem.stopAll();
   }
 }
