@@ -139,14 +139,14 @@ public class TeleopShootCommand extends Command {
 
       var timeUntilScored = 0.0;
       var rps = shootingSettings.targetFlywheelSpeed().in(RotationsPerSecond);
-      var pitchRads = shootingSettings.targetPitch().in(Radians);
+      var pitch = shootingSettings.targetPitch();
 
       if (Math.abs(rps) > 1e-3) { // Prevents division by zero in flight time calc
         // Calculate flight time using horizontal velocity component:
         // Horizontal Velocity = Total Velocity * cos(pitch)
         // Time = Distance / Horizontal Velocity
         double fuelExitVelocity = FLYWHEEL_TO_FUEL_VELOCITY_MULTIPLIER * rps;
-        timeUntilScored = dist / (fuelExitVelocity * Math.cos(pitchRads));
+        timeUntilScored = dist / (fuelExitVelocity * Math.cos(ShooterSubsystem.getFuelPitch(pitch).in(Radians)));
       }
 
       // The offset is how far the robot's velocity vector moves the fuel relative to a static shot

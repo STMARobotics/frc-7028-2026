@@ -150,6 +150,7 @@ public final class Constants {
     public static final Angle PITCH_LIMIT_REVERSE = Rotations.of(0.00);
     public static final Angle PITCH_HOME_ANGLE = PITCH_LIMIT_REVERSE;
     public static final Angle PITCH_POSITION_TOLERANCE = Degrees.of(2.0);
+    public static final Angle FUEL_EXIT_ANGLE_OFFSET = Degrees.of(45.0);
     public static final AngularVelocity FLYWHEEL_VELOCITY_TOLERANCE = RotationsPerSecond.of(1.5);
 
     // TODO: Tune PID values

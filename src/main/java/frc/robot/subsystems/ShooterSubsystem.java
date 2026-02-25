@@ -16,6 +16,7 @@ import static frc.robot.Constants.ShooterConstants.FLYWHEEL_SLOT_CONFIGS;
 import static frc.robot.Constants.ShooterConstants.FLYWHEEL_STATOR_CURRENT_LIMIT;
 import static frc.robot.Constants.ShooterConstants.FLYWHEEL_SUPPLY_CURRENT_LIMIT;
 import static frc.robot.Constants.ShooterConstants.FLYWHEEL_VELOCITY_TOLERANCE;
+import static frc.robot.Constants.ShooterConstants.FUEL_EXIT_ANGLE_OFFSET;
 import static frc.robot.Constants.ShooterConstants.PITCH_ENCODER_ID;
 import static frc.robot.Constants.ShooterConstants.PITCH_HOME_ANGLE;
 import static frc.robot.Constants.ShooterConstants.PITCH_LIMIT_FORWARD;
@@ -528,6 +529,17 @@ public class ShooterSubsystem extends SubsystemBase {
    */
   public static Translation2d getShooterTranslation(Pose2d robotPose) {
     return robotPose.getTranslation().plus(ROBOT_TO_SHOOTER.rotateBy(robotPose.getRotation()));
+  }
+
+  /**
+   * Gets an estimated pitch of fuel exiting the shooter
+   * 
+   * @return fuel pitch angle
+   */
+  public static Angle getFuelPitch(Angle shooterPitch) {
+    // The hood moving up (positive) lowers the exit angle, so the angle has to be inverted.
+    // Turret 0 shoots fuel at FUEL_EXIT_ANGLE_OFFSET
+    return shooterPitch.unaryMinus().plus(FUEL_EXIT_ANGLE_OFFSET);
   }
 
   /**
