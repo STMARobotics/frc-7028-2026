@@ -255,7 +255,7 @@ public class RobotContainer {
               ShootingConstants.SHUTTLE_BLUE,
               ShootingConstants.SHUTTLE_TARGETS_BY_DISTANCE_METERS));
     NamedCommands.registerCommand("DeployIntake", new DeployIntakeCommand(intakeSubsystem));
-    NamedCommands.registerCommand("Intake", new IntakeCommand(intakeSubsystem));
+    NamedCommands.registerCommand("RunIntake", new IntakeCommand(intakeSubsystem));
   }
 
   public Command getAutonomousCommand() {
