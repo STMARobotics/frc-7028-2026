@@ -233,6 +233,8 @@ public class BallisticPrecomputer {
       }
     }
 
+    simulatedProjectileState.trajectory.push();
+
     return new SimulationResult(
         simulatedProjectileState.position,
         nearestPosition,

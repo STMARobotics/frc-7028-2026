@@ -41,7 +41,7 @@ class AppTest {
         0.5 // starting height
     );
     SimulatorResolution simRes = new SimulatorResolution(
-        Degrees.of(2), // 0.035 rad (~2°)
+        Degrees.of(2), // 0.035 rad (~2)
         0.5,
         0.1,
         0.1,
@@ -70,7 +70,6 @@ class AppTest {
     RobotState testingRobotState = new RobotState(new Translation2d(1, 1), new Translation2d(-1, -1));
 
     App unitTest = new App(simRes, intRes, env, testFieldMetrics, spinFunction, guessShotFunction, visualizer);
-    StringBuffer cvs = new StringBuffer("x_1, y_1, z_1");
 
     BallisticPrecomputer precomputer = unitTest.precomputer;
     RobotState state = testingRobotState;
@@ -85,7 +84,10 @@ class AppTest {
           testingRobotState,
           new BallisticPrecomputer.ShotParameters(Degrees.of(60), Radians.of(0.1), 10.0));
 
-    System.out.println("trajectories = " + unitTest.precomputer.visualizer.trajectories.size());
+    visualizer.trajectorySpace.finalize();
+    visualizer.putPoints();
+
+    System.out.println("points = " + visualizer.trajectorySpace.points.length);
 
     System.out.println("FINISHED");
     // assertNotNull(convergedShot, "Shot should converge to a solution");
@@ -94,9 +96,6 @@ class AppTest {
     // System.out.println("Yaw: " + convergedShot.yaw());
     // System.out.println("Pitch: " + convergedShot.pitch());
     // System.out.println("Speed: " + convergedShot.speed());
-
-    while (true) {
-    }
 
   }
 
