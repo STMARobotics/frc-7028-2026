@@ -1,6 +1,7 @@
 package com.frc7028.physics.sim;
 
 import com.frc7028.physics.sim.Integrator.forceInput;
+import com.frc7028.physics.sim.SimulatorVisualizer.Trajectory;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation3d;
 import java.util.function.Function;
@@ -12,18 +13,21 @@ public class BallisticProjectileState extends VectorState {
   public CollisionStatus collisionStatus;
   Translation3d error;
   Integrator ballisticIntegrator;
+  private SimulatorVisualizer visualizer;
+  public Trajectory trajectory;
 
   public BallisticProjectileState(
       BallisticPrecomputer simulator,
       IntegratorResolution integratorResolution,
-      Function<forceInput, Translation3d> forceFunction) {
+      Function<forceInput, Translation3d> forceFunction,
+      SimulatorVisualizer visualizer) {
     super(integratorResolution, forceFunction);
+    this.visualizer = visualizer;
     this.simulator = simulator;
   }
 
   public void launch(Translation3d position, Translation3d velocity, Rotation3d spin) {
     this.reset();
-    this.timeElapsed = 0;
     this.collisionStatus = CollisionStatus.NA;
     this.boundaryState = BoundaryState.IN_BOUNDS;
     this.position = position;
@@ -33,7 +37,12 @@ public class BallisticProjectileState extends VectorState {
 
   public void reset() {
     this.dt = this.integrator.integratorResolution.dtInitial();
-    this.clearTrajectory();
+    this.timeElapsed = 0;
+    this.refreshTrajectory();
+  }
+
+  private void refreshTrajectory() {
+    this.trajectory = visualizer.newTrajectory();
   }
 
   public enum BoundaryState {

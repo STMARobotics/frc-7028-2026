@@ -19,14 +19,16 @@ public class App {
       BallisticEnvironmentProfile environmentProfile,
       FieldMetrics fieldMetrics,
       Function<Double, Rotation3d> speedToSpin,
-      Function<RobotState, ShotParameters> computeGuessShot) {
+      Function<RobotState, ShotParameters> computeGuessShot,
+      SimulatorVisualizer visualizer) {
     this.precomputer = new BallisticPrecomputer(
         simulatorResolution,
         integratorResolution,
         environmentProfile,
         fieldMetrics,
         speedToSpin,
-        computeGuessShot);
+        computeGuessShot,
+        visualizer);
   }
 
   public static void main(String[] args) {

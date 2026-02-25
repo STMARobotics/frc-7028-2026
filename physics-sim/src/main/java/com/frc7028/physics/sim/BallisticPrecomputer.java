@@ -13,10 +13,6 @@ import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.units.measure.Angle;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.function.Function;
 import org.ejml.simple.SimpleMatrix;
@@ -47,6 +43,7 @@ public class BallisticPrecomputer {
   public BallisticEnvironmentProfile environmentProfile;
   public FieldMetrics fieldMetrics;
   private AdaptiveSystem<RobotState> adaptiveBallisticErrorSystem;
+  public SimulatorVisualizer visualizer;
 
   BallisticProjectileState projectileState;
 
@@ -111,11 +108,14 @@ public class BallisticPrecomputer {
       BallisticEnvironmentProfile environmentProfile,
       FieldMetrics fieldMetrics,
       Function<Double, Rotation3d> speedToSpin,
-      Function<RobotState, ShotParameters> computeShotGuess) {
+      Function<RobotState, ShotParameters> computeShotGuess,
+      SimulatorVisualizer visualizer) {
     this.simulatorResolution = simulatorResolution;
     this.integratorResolution = integratorResolution;
     this.environmentProfile = environmentProfile;
     this.fieldMetrics = fieldMetrics;
+
+    this.visualizer = visualizer;
 
     this.speedToSpin = speedToSpin;
 
@@ -153,18 +153,19 @@ public class BallisticPrecomputer {
           iter++;
           ShotParameters attemptShotParameters = MatrixToParameters(input);
 
-          SimulationResult simResult = this.simulateBall(this.projectileState, currentState, attemptShotParameters);
+          SimulationResult simResult = this
+              .simulateBall(this.projectileState, currentState, attemptShotParameters, visualizer);
 
           System.out.println(this.lastDebugEvent);
-          StringBuffer cvs = new StringBuffer("x_1, y_1, z_1");
-          this.projectileState.trajectory.forEach((Translation3d pos) -> {
-            cvs.append(String.format("%.6f,%.6f,%.6f%n", pos.getX(), pos.getY(), pos.getZ()));
-          });
-          Path outputPath = Paths.get("trajectory" + this.iter + ".csv");
-          try {
-            Files.writeString(outputPath, cvs.toString());
-          } catch (IOException e) {
-          }
+          // StringBuffer cvs = new StringBuffer("x_1, y_1, z_1");
+          // this.projectileState.trajectory.forEach((Translation3d pos) -> {
+          // cvs.append(String.format("%.6f,%.6f,%.6f%n", pos.getX(), pos.getY(), pos.getZ()));
+          // });
+          // Path outputPath = Paths.get("trajectory" + this.iter + ".csv");
+          // try {
+          // Files.writeString(outputPath, cvs.toString());
+          // } catch (IOException e) {
+          // }
 
           Translation3d closestErrorDisplacement = simResult.closestPosition
               .minus(this.fieldMetrics.targetRegion().center);
@@ -197,13 +198,14 @@ public class BallisticPrecomputer {
         3,
         3);
 
-    this.projectileState = new BallisticProjectileState(this, integratorResolution, forceFunction);
+    this.projectileState = new BallisticProjectileState(this, integratorResolution, forceFunction, visualizer);
   }
 
   public SimulationResult simulateBall(
       BallisticProjectileState simulatedProjectileState,
       RobotState state,
-      ShotParameters parameters) {
+      ShotParameters parameters,
+      SimulatorVisualizer visualizer) {
     Translation3d initialPosition = new Translation3d(
         state.position.getX(),
         state.position.getY(),
@@ -211,7 +213,6 @@ public class BallisticPrecomputer {
     Translation3d initialVelocity = new Translation3d(state.velocity.getX(), state.velocity.getY(), 0)
         .plus(anglesToUnitVec(parameters.yaw, parameters.pitch).times(parameters.speed));
 
-    // Launch the projectile
     simulatedProjectileState.launch(initialPosition, initialVelocity, this.speedToSpin.apply(parameters.speed()));
 
     Translation3d targetPosition = this.fieldMetrics.targetRegion().center;
@@ -222,6 +223,7 @@ public class BallisticPrecomputer {
     // Actually step the projectile over time, and stop when it either collides or is out of bounds
     while (simulatedProjectileState.completedTrajectory()) {
       simulatedProjectileState.step();
+      simulatedProjectileState.trajectory.step(simulatedProjectileState.position);
 
       // System.out.println(simulatedProjectileState.position);
 

@@ -14,10 +14,13 @@ import edu.wpi.first.math.geometry.Translation3d;
 import java.util.ArrayList;
 import java.util.function.Function;
 import org.junit.jupiter.api.Test;
+import org.jzy3d.plot3d.rendering.canvas.Quality;
 
 class AppTest {
 
+  @Test
   void unitTest_ConvergeSolution() {
+    SimulatorVisualizer visualizer = new SimulatorVisualizer(Quality.Advanced());
 
     Translation3d origin = new Translation3d(0, 0, 0);
     Region3d fieldBounds = new Region3d(origin, new Translation3d(10, 10, 5) // 10m x 10m x 5m cube
@@ -66,7 +69,7 @@ class AppTest {
         50.0);
     RobotState testingRobotState = new RobotState(new Translation2d(1, 1), new Translation2d(-1, -1));
 
-    App unitTest = new App(simRes, intRes, env, testFieldMetrics, spinFunction, guessShotFunction);
+    App unitTest = new App(simRes, intRes, env, testFieldMetrics, spinFunction, guessShotFunction, visualizer);
     StringBuffer cvs = new StringBuffer("x_1, y_1, z_1");
 
     BallisticPrecomputer precomputer = unitTest.precomputer;
@@ -82,6 +85,8 @@ class AppTest {
           testingRobotState,
           new BallisticPrecomputer.ShotParameters(Degrees.of(60), Radians.of(0.1), 10.0));
 
+    System.out.println("trajectories = " + unitTest.precomputer.visualizer.trajectories.size());
+
     System.out.println("FINISHED");
     // assertNotNull(convergedShot, "Shot should converge to a solution");
     // assertTrue(convergedShot.speed() > 0, "Speed should be positive");
@@ -90,13 +95,11 @@ class AppTest {
     // System.out.println("Pitch: " + convergedShot.pitch());
     // System.out.println("Speed: " + convergedShot.speed());
 
+    while (true) {
+    }
+
   }
 
-  @Test
   void testGraphicsLibrary() {
-    DebugVisualOutput outputTest = new DebugVisualOutput();
-    while (true) {
-
-    }
   }
 }
