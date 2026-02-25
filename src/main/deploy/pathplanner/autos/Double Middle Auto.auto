@@ -1,0 +1,43 @@
+{
+  "version": "2025.0",
+  "command": {
+    "type": "sequential",
+    "data": {
+      "commands": [
+        {
+          "type": "path",
+          "data": {
+            "pathName": "First Intake"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "First Intake Middle"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "First Prepare to Shoot"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Move To Hub"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Rotate and Feed"
+          }
+        }
+      ]
+    }
+  },
+  "resetOdom": true,
+  "folder": null,
+  "choreoAuto": false
+}
