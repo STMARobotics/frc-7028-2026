@@ -342,7 +342,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
   /** Moves yaw/pitch to home angles and stops the flywheel */
   public void stow() {
-    setYawAngle(YAW_HOME_ANGLE);
+    // setYawAngle(YAW_HOME_ANGLE);
     setPitchAngle(PITCH_HOME_ANGLE);
     flywheelLeaderMotor.stopMotor();
   }
@@ -449,6 +449,27 @@ public class ShooterSubsystem extends SubsystemBase {
         flywheelVelocityRequest.Velocity,
           currentSpeed.in(RotationsPerSecond),
           FLYWHEEL_VELOCITY_TOLERANCE.in(RotationsPerSecond));
+  }
+
+  @Logged
+  public boolean isPitchStowed() {
+    BaseStatusSignal.refreshAll(pitchPosition, pitchVelocity);
+    Angle currentPitch = BaseStatusSignal.getLatencyCompensatedValue(pitchPosition, pitchVelocity);
+    return MathUtil
+        .isNear(PITCH_HOME_ANGLE.in(Rotations), currentPitch.in(Rotations), PITCH_POSITION_TOLERANCE.in(Rotations));
+  }
+
+  @Logged
+  public boolean isYawStowed() {
+    BaseStatusSignal.refreshAll(yawPosition, yawVelocity);
+    Angle currentYaw = BaseStatusSignal.getLatencyCompensatedValue(yawPosition, yawVelocity);
+    return MathUtil
+        .isNear(YAW_HOME_ANGLE.in(Rotations), currentYaw.in(Rotations), YAW_POSITION_TOLERANCE.in(Rotations));
+  }
+
+  @Logged
+  public boolean isStowed() {
+    return isPitchStowed() && isYawStowed();
   }
 
   /**
