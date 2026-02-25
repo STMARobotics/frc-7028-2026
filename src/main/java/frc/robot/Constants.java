@@ -11,12 +11,14 @@ import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static edu.wpi.first.units.Units.Seconds;
 import static edu.wpi.first.units.Units.Volts;
 import static frc.robot.Constants.FeederConstants.FEEDER_FEED_VELOCITY;
+import static frc.robot.Constants.FieldConstants.FIELD_WIDTH;
 import static frc.robot.Constants.SpindexerConstants.SPINDEXER_FEED_VELOCITY;
 
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.SlotConfigs;
 import com.ctre.phoenix6.signals.GravityTypeValue;
+import com.pathplanner.lib.util.FlippingUtil;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Rotation3d;
@@ -419,6 +421,22 @@ public final class Constants {
     }
 
     public static final InterpolatingTreeMap<Double, ShooterSubsystem.ShooterSetpoints> SHOOTER_TARGETS_BY_DISTANCE_METERS = createShooterInterpolator();
+
+    private static InterpolatingTreeMap<Double, ShooterSubsystem.ShooterSetpoints> createShuttleInterpolator() {
+      var map = new InterpolatingTreeMap<>(InverseInterpolator.forDouble(), ShooterSetpoints::interpolate);
+      map.put(
+          1.548,
+            new ShooterSetpoints(
+                Degrees.zero(),
+                RotationsPerSecond.of(20),
+                SPINDEXER_FEED_VELOCITY,
+                FEEDER_FEED_VELOCITY));
+
+      return map;
+    }
+
+    public static final InterpolatingTreeMap<Double, ShooterSubsystem.ShooterSetpoints> SHUTTLE_TARGETS_BY_DISTANCE_METERS = createShuttleInterpolator();
+
     /** A constant used applied to estimate the fuel's time of flight */
     public static final double FLYWHEEL_TO_FUEL_VELOCITY_MULTIPLIER = 4;
 
@@ -427,5 +445,13 @@ public final class Constants {
 
     /** Translation of the hub on the red side */
     public static final Translation2d TARGET_RED = new Translation2d(Inches.of(469.078905), Inches.of(158.84375));
+
+    /** Translation of the hub on the blue side */
+    public static final Translation2d SHUTTLE_BLUE = new Translation2d(
+        Inches.of(6.0),
+        FIELD_WIDTH.minus(Inches.of(6.0)));
+
+    /** Translation of the hub on the red side */
+    public static final Translation2d SHUTTLE_RED = FlippingUtil.flipFieldPosition(SHUTTLE_BLUE);
   }
 }

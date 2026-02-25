@@ -1,0 +1,179 @@
+package frc.robot.commands;
+
+import static edu.wpi.first.units.Units.Radians;
+import static edu.wpi.first.units.Units.RadiansPerSecond;
+import static edu.wpi.first.units.Units.Rotations;
+import static edu.wpi.first.units.Units.RotationsPerSecond;
+import static edu.wpi.first.wpilibj.DriverStation.Alliance.Blue;
+import static edu.wpi.first.wpilibj.util.Color.kBlue;
+import static edu.wpi.first.wpilibj.util.Color.kGreen;
+import static frc.robot.Constants.ShootingConstants.FLYWHEEL_TO_FUEL_VELOCITY_MULTIPLIER;
+
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.interpolation.InterpolatingTreeMap;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.units.measure.MutAngle;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.LEDPattern;
+import edu.wpi.first.wpilibj2.command.Command;
+import frc.robot.subsystems.FeederSubsystem;
+import frc.robot.subsystems.LEDSubsystem;
+import frc.robot.subsystems.ShooterSubsystem;
+import frc.robot.subsystems.ShooterSubsystem.ShooterSetpoints;
+import frc.robot.subsystems.SpindexerSubsystem;
+import java.util.function.Supplier;
+
+/**
+ * This command automatically shoots at a target
+ */
+public class AutoShootCommand extends Command {
+
+  private final ShooterSubsystem shooterSubsystem;
+  private final FeederSubsystem feederSubsystem;
+  private final SpindexerSubsystem spindexerSubsystem;
+  private final Supplier<ChassisSpeeds> robotSpeedSupplier;
+  private final LEDSubsystem ledSubsystem;
+
+  private final Supplier<Pose2d> robotPoseSupplier;
+
+  // Reusable object to prevent reallocation (to reduce memory pressure)
+  private final MutAngle turretYawTarget = Rotations.mutable(0);
+
+  private final Translation2d targetRed;
+  private final Translation2d targetBlue;
+  private final InterpolatingTreeMap<Double, ShooterSetpoints> lookupTable;
+
+  private Translation2d targetTranslation;
+  private boolean isShooting;
+
+  public AutoShootCommand(
+      ShooterSubsystem shooter,
+      FeederSubsystem feederSubsystem,
+      SpindexerSubsystem spindexerSubsystem,
+      LEDSubsystem ledSubsystem,
+      Supplier<Pose2d> robotPoseSupplier,
+      Supplier<ChassisSpeeds> robotSpeedSupplier,
+      Translation2d targetRed,
+      Translation2d targetBlue,
+      InterpolatingTreeMap<Double, ShooterSetpoints> lookupTable) {
+    this.shooterSubsystem = shooter;
+    this.feederSubsystem = feederSubsystem;
+    this.spindexerSubsystem = spindexerSubsystem;
+    this.ledSubsystem = ledSubsystem;
+    this.robotPoseSupplier = robotPoseSupplier;
+    this.robotSpeedSupplier = robotSpeedSupplier;
+    this.targetRed = targetRed;
+    this.targetBlue = targetBlue;
+    this.lookupTable = lookupTable;
+
+    addRequirements(shooter, feederSubsystem, spindexerSubsystem, ledSubsystem);
+  }
+
+  @Override
+  public void initialize() {
+    var alliance = DriverStation.getAlliance();
+    targetTranslation = (alliance.isEmpty() || alliance.get() == Blue) ? targetBlue : targetRed;
+    ledSubsystem.off();
+    isShooting = false;
+  }
+
+  @Override
+  public void execute() {
+    var robotPose = robotPoseSupplier.get();
+    var currentChassisSpeeds = robotSpeedSupplier.get();
+
+    // Translation to the shooter
+    var shooterTranslation = ShooterSubsystem.getShooterTranslation(robotPose);
+
+    // 1. Calculate the TOTAL effective velocity vector that gets imparted to the fuel.
+
+    // A. Robot Linear Velocity (field-relative)
+    var vRobot = new Translation2d(currentChassisSpeeds.vxMetersPerSecond, currentChassisSpeeds.vyMetersPerSecond);
+
+    // B. Total Angular Velocity (field-relative)
+    // The shooter rotates due to both robot rotation AND turret rotation
+    var omegaRobot = currentChassisSpeeds.omegaRadiansPerSecond;
+    var turretVelocity = shooterSubsystem.getYawVelocity().in(RadiansPerSecond);
+    var totalOmega = omegaRobot + turretVelocity;
+
+    // C. Tangential Velocity at Shooter due to Total Rotation
+    // The shooter is offset from the robot center, so rotation imparts tangential velocity
+    var robotToShooter = shooterTranslation.minus(robotPose.getTranslation());
+    var vTanTotal = new Translation2d(-totalOmega * robotToShooter.getY(), totalOmega * robotToShooter.getX());
+
+    // Sum all velocity vectors to get the "Effective Injection Velocity"
+    var effectiveShooterVelocity = vRobot.plus(vTanTotal);
+
+    // 2. Iteratively solve for the correct aim point (Fixes circular dependency)
+    var predictedTargetTranslation = targetTranslation;
+
+    // Iterate 4 times to converge on the intersection of trajectory and target
+    ShooterSetpoints shootingSettings;
+    for (int i = 0; i < 4; i++) {
+      var dist = robotPose.getTranslation().getDistance(shooterTranslation);
+      shootingSettings = lookupTable.get(dist);
+
+      var timeUntilScored = 0.0;
+      var rps = shootingSettings.targetFlywheelSpeed().in(RotationsPerSecond);
+      var pitchRads = shootingSettings.targetPitch().in(Radians);
+
+      if (Math.abs(rps) > 1e-3) { // Prevents division by zero in flight time calc
+        // Calculate flight time using horizontal velocity component:
+        // Horizontal Velocity = Total Velocity * cos(pitch)
+        // Time = Distance / Horizontal Velocity
+        double fuelExitVelocity = FLYWHEEL_TO_FUEL_VELOCITY_MULTIPLIER * rps;
+        timeUntilScored = dist / (fuelExitVelocity * Math.cos(pitchRads));
+      }
+
+      // The offset is how far the robot's velocity vector moves the fuel relative to a static shot
+      var targetPredictedOffset = effectiveShooterVelocity.times(timeUntilScored);
+
+      // Shift the virtual target opposite to the motion so we shoot "ahead"
+      predictedTargetTranslation = targetTranslation.minus(targetPredictedOffset);
+    }
+
+    shootingSettings = lookupTable.get(predictedTargetTranslation.getDistance(shooterTranslation));
+
+    // Calculate the angle to the target
+    var angleToTarget = predictedTargetTranslation.minus(shooterTranslation).getAngle();
+
+    // Calculate required turret angle, accounting for the robot heading
+    turretYawTarget.mut_replace(angleToTarget.minus(robotPose.getRotation()).getRotations(), Rotations);
+
+    // Prepare shooter
+    // shooterSubsystem.setYawAngle(turretYawTarget);
+    shooterSubsystem.setPitchAngle(shootingSettings.targetPitch());
+    shooterSubsystem.setFlywheelSpeed(shootingSettings.targetFlywheelSpeed());
+
+    // Calculate ready state
+    var isFlywheelReady = shooterSubsystem.isFlywheelAtSpeed();
+    var isPitchReady = shooterSubsystem.isPitchAtSetpoint();
+    var isYawReady = true; // shooterSubsystem.isYawAtSetpoint();
+    if (isShooting || isFlywheelReady && isPitchReady && isYawReady) {
+      // Shooter is spun up, robot is slowed, and the turret is aimed - shoot continuously until interupted
+      spindexerSubsystem.runSpindexer(shootingSettings.spindexerVelocity());
+      feederSubsystem.runFeeder(shootingSettings.feederVelocity());
+      ledSubsystem.runPattern(LEDPattern.solid(kGreen));
+      isShooting = true;
+    } else {
+      ledSubsystem
+          .runPattern(LEDSubsystem.ledSegments(kBlue, () -> isFlywheelReady, () -> isPitchReady, () -> isYawReady));
+      spindexerSubsystem.stop();
+      feederSubsystem.stop();
+    }
+  }
+
+  @Override
+  public boolean isFinished() {
+    return false;
+  }
+
+  @Override
+  public void end(boolean interrupted) {
+    shooterSubsystem.stopAll();
+    feederSubsystem.stop();
+    spindexerSubsystem.stop();
+    ledSubsystem.off();
+  }
+}

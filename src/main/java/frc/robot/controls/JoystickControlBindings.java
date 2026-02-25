@@ -82,4 +82,9 @@ public class JoystickControlBindings extends ControlBindings {
     return Optional.of(rightJoystick.povDown());
   }
 
+  @Override
+  public Optional<Trigger> shuttle() {
+    return Optional.of(rightJoystick.button(3));
+  }
+
 }

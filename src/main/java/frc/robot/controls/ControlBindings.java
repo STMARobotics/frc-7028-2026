@@ -144,4 +144,13 @@ public abstract class ControlBindings {
     return Optional.empty();
   }
 
+  /**
+   * Trigger to run the shuttling command
+   * 
+   * @return optional trigger
+   */
+  public Optional<Trigger> shuttle() {
+    return Optional.empty();
+  }
+
 }

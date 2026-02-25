@@ -32,6 +32,7 @@ import frc.robot.Constants.OdometryConstants;
 import frc.robot.Constants.QuestNavConstants;
 import frc.robot.Constants.ShootingConstants;
 import frc.robot.Constants.TeleopDriveConstants;
+import frc.robot.commands.AutoShootCommand;
 import frc.robot.commands.ClimbToL1Command;
 import frc.robot.commands.DeployIntakeCommand;
 import frc.robot.commands.IntakeCommand;
@@ -196,6 +197,23 @@ public class RobotContainer {
                     ShootingConstants.SHOOTER_TARGETS_BY_DISTANCE_METERS,
                     TeleopDriveConstants.SHOOT_VELOCITY_MULTIPLIER)));
 
+    controlBindings.shuttle()
+        .ifPresent(
+            trigger -> trigger.whileTrue(
+                new TeleopShootCommand(
+                    drivetrain,
+                    shooterSubsystem,
+                    feederSubsystem,
+                    spindexerSubsystem,
+                    ledSubsystem,
+                    () -> controlBindings.translationX().get(),
+                    () -> controlBindings.translationY().get(),
+                    () -> drivetrain.getState().Pose,
+                    ShootingConstants.SHUTTLE_RED,
+                    ShootingConstants.SHUTTLE_BLUE,
+                    ShootingConstants.SHUTTLE_TARGETS_BY_DISTANCE_METERS,
+                    1.0)));
+
     // Climb controls
     controlBindings.climbForward()
         .ifPresent(
@@ -224,6 +242,18 @@ public class RobotContainer {
 
   private void configurePathPlannerCommands() {
     NamedCommands.registerCommand("ClimbToL1", new ClimbToL1Command(climbSubsystem));
+    NamedCommands.registerCommand(
+        "Shoot",
+          new AutoShootCommand(
+              shooterSubsystem,
+              feederSubsystem,
+              spindexerSubsystem,
+              ledSubsystem,
+              () -> drivetrain.getState().Pose,
+              drivetrain::getCurrentFieldChassisSpeeds,
+              ShootingConstants.SHUTTLE_RED,
+              ShootingConstants.SHUTTLE_BLUE,
+              ShootingConstants.SHUTTLE_TARGETS_BY_DISTANCE_METERS));
     NamedCommands.registerCommand("DeployIntake", new DeployIntakeCommand(intakeSubsystem));
     NamedCommands.registerCommand("Intake", new IntakeCommand(intakeSubsystem));
   }
