@@ -138,7 +138,7 @@ public final class Constants {
     public static final double PITCH_SENSOR_TO_MECHANISM_RATIO = 375.0 / 32.0;
 
     public static final Angle YAW_MAGNETIC_OFFSET = Rotations.of(0.109131);
-    public static final Angle PITCH_MAGNETIC_OFFSET = Rotations.of(-0.233643);
+    public static final Angle PITCH_MAGNETIC_OFFSET = Rotations.of(-0.492676);
 
     public static final Angle YAW_LIMIT_FORWARD = Rotations.of(0.147705);
     public static final Angle YAW_LIMIT_REVERSE = Rotations.of(-0.869385);

@@ -241,7 +241,7 @@ public class LocalizationSubsystem extends SubsystemBase {
     questNav.commandPeriodic();
     boolean isTracking = questNav.isTracking();
     trackingPublisher.set(isTracking);
-    if (!isTracking) {
+    if (!isTracking && questNavFaultCounter < QUESTNAV_FAILURE_THRESHOLD) {
       questNavFaultCounter++;
     }
     PoseFrame[] frames = questNav.getAllUnreadPoseFrames();
@@ -258,7 +258,9 @@ public class LocalizationSubsystem extends SubsystemBase {
 
         if (bestVisionEstimateDistance > QUESTNAV_APRILTAG_ERROR_THRESHOLD.in(Meters)) {
           // QuestNav disagrees with AprilTag vision - increment fault counter
-          questNavFaultCounter += Math.pow(bestVisionEstimateDistance, 2);
+          if (questNavFaultCounter < QUESTNAV_FAILURE_THRESHOLD) {
+            questNavFaultCounter += Math.pow(bestVisionEstimateDistance, 2);
+          }
         } else {
           // QuestNav agrees with AprilTag vision - decrement fault counter to allow recovery
           if (questNavFaultCounter > 0.0) {

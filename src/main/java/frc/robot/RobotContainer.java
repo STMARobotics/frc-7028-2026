@@ -4,6 +4,7 @@
 
 package frc.robot;
 
+import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction.kForward;
 import static edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction.kReverse;
 import static frc.robot.Constants.TeleopDriveConstants.MAX_TELEOP_ANGULAR_VELOCITY;
@@ -165,7 +166,8 @@ public class RobotContainer {
     // Shooting controls
     controlBindings.manualShoot()
         .ifPresent(
-            trigger -> trigger.whileTrue(new ShootCommand(spindexerSubsystem, feederSubsystem, shooterSubsystem)));
+            trigger -> trigger
+                .whileTrue(new ShootCommand(spindexerSubsystem, feederSubsystem, shooterSubsystem, Meters.of(2.0))));
 
     controlBindings.tuneShoot()
         .ifPresent(

@@ -1,11 +1,13 @@
 package frc.robot.commands;
 
-import static edu.wpi.first.units.Units.RotationsPerSecond;
+import static edu.wpi.first.units.Units.Meters;
 
+import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj2.command.Command;
-import frc.robot.Constants;
+import frc.robot.Constants.ShootingConstants;
 import frc.robot.subsystems.FeederSubsystem;
 import frc.robot.subsystems.ShooterSubsystem;
+import frc.robot.subsystems.ShooterSubsystem.ShooterSetpoints;
 import frc.robot.subsystems.SpindexerSubsystem;
 
 /*
@@ -15,6 +17,8 @@ public class ShootCommand extends Command {
   private final SpindexerSubsystem spindexerSubsystem;
   private final FeederSubsystem feederSubsystem;
   private final ShooterSubsystem shooterSubsystem;
+  private final ShooterSetpoints setpoints;
+  private boolean isShooting = false;
 
   /**
    * Constructor for ShootCommand
@@ -22,16 +26,25 @@ public class ShootCommand extends Command {
    * @param spindexerSubsystem the spindexer subsystem
    * @param feederSubsystem the feeder subsystem
    * @param shooterSubsystem the shooter subsystem
+   * @param targetDistance the distance of the target to use for setpoints
    */
   public ShootCommand(
       SpindexerSubsystem spindexerSubsystem,
       FeederSubsystem feederSubsystem,
-      ShooterSubsystem shooterSubsystem) {
+      ShooterSubsystem shooterSubsystem,
+      Distance targetDistance) {
     this.feederSubsystem = feederSubsystem;
     this.spindexerSubsystem = spindexerSubsystem;
     this.shooterSubsystem = shooterSubsystem;
 
+    setpoints = ShootingConstants.SHOOTER_TARGETS_BY_DISTANCE_METERS.get(targetDistance.in(Meters));
+
     addRequirements(feederSubsystem, spindexerSubsystem, shooterSubsystem);
+  }
+
+  @Override
+  public void initialize() {
+    isShooting = false;
   }
 
   @Override
@@ -39,16 +52,17 @@ public class ShootCommand extends Command {
     /*
      * sets the Yaw, Pitch, and Angle
      */
-    shooterSubsystem.setYawAngle(Constants.ShooterConstants.YAW_HOME_ANGLE);
-    shooterSubsystem.setPitchAngle(Constants.ShooterConstants.PITCH_HOME_ANGLE);
-    shooterSubsystem.setFlywheelSpeed(RotationsPerSecond.of(40));
+    // shooterSubsystem.setYawAngle(Constants.ShooterConstants.YAW_HOME_ANGLE);
+    shooterSubsystem.setPitchAngle(setpoints.targetPitch());
+    shooterSubsystem.setFlywheelSpeed(setpoints.targetFlywheelSpeed());
     /*
      * Checks to make sure the shooter is ready and up to speed
      * before runnig the spindexer and feeder
      */
-    if (shooterSubsystem.isReadyToShoot()) {
-      spindexerSubsystem.feedShooter();
-      feederSubsystem.feedShooter();
+    if (isShooting || shooterSubsystem.isPitchAtSetpoint() && shooterSubsystem.isFlywheelAtSpeed()) {
+      isShooting = true;
+      spindexerSubsystem.runSpindexer(setpoints.spindexerVelocity());
+      feederSubsystem.runFeeder(setpoints.feederVelocity());
     }
   }
 
