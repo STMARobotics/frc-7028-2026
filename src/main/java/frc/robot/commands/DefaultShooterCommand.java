@@ -1,7 +1,5 @@
 package frc.robot.commands;
 
-import static frc.robot.Constants.ShooterConstants.PITCH_HOME_ANGLE;
-
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.ShooterSubsystem;
 
@@ -30,7 +28,7 @@ public class DefaultShooterCommand extends Command {
     if (shooterSubsystem.isPitchStowed()) {
       shooterSubsystem.stopPitch();
     } else {
-      shooterSubsystem.setPitchAngle(PITCH_HOME_ANGLE);
+      shooterSubsystem.stowPitch();
     }
   }
 

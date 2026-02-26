@@ -1,12 +1,19 @@
 package frc.robot.commands;
 
+import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
+import static edu.wpi.first.units.Units.Seconds;
 import static edu.wpi.first.wpilibj.DriverStation.Alliance.Blue;
 import static edu.wpi.first.wpilibj.util.Color.kBlue;
 import static edu.wpi.first.wpilibj.util.Color.kGreen;
+import static edu.wpi.first.wpilibj.util.Color.kRed;
+import static frc.robot.Constants.ShootingConstants.DANGER_ZONE_MAX_BLUE;
+import static frc.robot.Constants.ShootingConstants.DANGER_ZONE_MAX_RED;
+import static frc.robot.Constants.ShootingConstants.DANGER_ZONE_MIN_BLUE;
+import static frc.robot.Constants.ShootingConstants.DANGER_ZONE_MIN_RED;
 import static frc.robot.Constants.ShootingConstants.FLYWHEEL_TO_FUEL_VELOCITY_MULTIPLIER;
 
 import edu.wpi.first.math.geometry.Pose2d;
@@ -101,6 +108,20 @@ public class ShootAtTargetCommand extends Command {
 
     // Translation of the shooter on the field (used for distance/angle calculations).
     var shooterTranslation = ShooterSubsystem.getShooterTranslation(robotPose);
+    var actualTargetDistance = shooterTranslation.getDistance(targetTranslation);
+
+    // If the shooter is under the trench or over the bump, don't shoot
+    var shooterX = shooterTranslation.getX();
+    if ((shooterX > DANGER_ZONE_MIN_BLUE.in(Meters) && shooterX < DANGER_ZONE_MAX_BLUE.in(Meters))
+        || (shooterX > DANGER_ZONE_MIN_RED.in(Meters) && shooterX < DANGER_ZONE_MAX_RED.in(Meters))) {
+      shooterSubsystem.stowPitch();
+      shooterSubsystem.stopYaw();
+      shooterSubsystem.setFlywheelSpeed(lookupTable.get(actualTargetDistance).targetFlywheelSpeed());
+      spindexerSubsystem.stop();
+      feederSubsystem.stop();
+      ledSubsystem.runPattern(LEDPattern.solid(kRed).blink(Seconds.of(0.1)));
+      return;
+    }
 
     // 1. Compute the velocity of the fuel at the shooter's location on the field.
     //
@@ -138,7 +159,6 @@ public class ShootAtTargetCommand extends Command {
     var predictedTargetTranslation = targetTranslation;
     Translation2d targetPredictedOffset = null;
 
-    var actualTargetDistance = shooterTranslation.getDistance(targetTranslation);
     ShooterSetpoints shootingSettings;
     for (int i = 0; i < 4; i++) {
       // Distance from the shooter to the currently predicted target point.

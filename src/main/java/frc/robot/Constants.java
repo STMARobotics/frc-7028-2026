@@ -11,6 +11,7 @@ import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static edu.wpi.first.units.Units.Seconds;
 import static edu.wpi.first.units.Units.Volts;
 import static frc.robot.Constants.FeederConstants.FEEDER_FEED_VELOCITY;
+import static frc.robot.Constants.FieldConstants.FIELD_LENGTH;
 import static frc.robot.Constants.FieldConstants.FIELD_WIDTH;
 import static frc.robot.Constants.SpindexerConstants.SPINDEXER_FEED_VELOCITY;
 
@@ -348,6 +349,12 @@ public final class Constants {
    */
   public static class ShootingConstants {
     public static final Angle AIM_TOLERANCE = Degrees.of(1.5);
+
+    // Danger zone is the region on the X axis where we don't want to shoot or shuttle from because of the trench
+    public static final Distance DANGER_ZONE_MIN_BLUE = Meters.of(4.375941);
+    public static final Distance DANGER_ZONE_MAX_BLUE = Meters.of(4.875168);
+    public static final Distance DANGER_ZONE_MIN_RED = FIELD_LENGTH.minus(DANGER_ZONE_MAX_BLUE);
+    public static final Distance DANGER_ZONE_MAX_RED = FIELD_LENGTH.minus(DANGER_ZONE_MIN_BLUE);
 
     private static InterpolatingTreeMap<Double, ShooterSubsystem.ShooterSetpoints> createShooterInterpolator() {
       var map = new InterpolatingTreeMap<>(InverseInterpolator.forDouble(), ShooterSetpoints::interpolate);

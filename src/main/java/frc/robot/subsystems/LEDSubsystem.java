@@ -108,6 +108,10 @@ public class LEDSubsystem extends SubsystemBase {
           writer.setLED(ledIndex, segmentValues[segmentId].getAsBoolean() ? color : Color.kBlack);
         }
       }
+      // In case the LEDs can't be perfectly divided into segments, turn off any remaining LEDs
+      for (; ledIndex < reader.getLength(); ledIndex++) {
+        writer.setLED(ledIndex, Color.kBlack);
+      }
     };
   }
 

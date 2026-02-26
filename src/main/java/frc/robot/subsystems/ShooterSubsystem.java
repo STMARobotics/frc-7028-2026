@@ -348,6 +348,13 @@ public class ShooterSubsystem extends SubsystemBase {
     flywheelLeaderMotor.stopMotor();
   }
 
+  /**
+   * Moves the pitch to the stow position so it fits under the trench
+   */
+  public void stowPitch() {
+    setPitchAngle(PITCH_HOME_ANGLE);
+  }
+
   /** Stops the yaw */
   public void stopYaw() {
     yawMotor.stopMotor();
