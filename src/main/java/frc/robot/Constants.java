@@ -438,7 +438,7 @@ public final class Constants {
       return map;
     }
 
-    public static final InterpolatingTreeMap<Double, ShooterSubsystem.ShooterSetpoints> SHOOTER_TARGETS_BY_DISTANCE_METERS = createShooterInterpolator();
+    public static final InterpolatingTreeMap<Double, ShooterSubsystem.ShooterSetpoints> HUB_SETPOINTS_BY_DISTANCE_METERS = createShooterInterpolator();
 
     private static InterpolatingTreeMap<Double, ShooterSubsystem.ShooterSetpoints> createShuttleInterpolator() {
       var map = new InterpolatingTreeMap<>(InverseInterpolator.forDouble(), ShooterSetpoints::interpolate);
@@ -453,7 +453,7 @@ public final class Constants {
       return map;
     }
 
-    public static final InterpolatingTreeMap<Double, ShooterSubsystem.ShooterSetpoints> SHUTTLE_TARGETS_BY_DISTANCE_METERS = createShuttleInterpolator();
+    public static final InterpolatingTreeMap<Double, ShooterSubsystem.ShooterSetpoints> SHUTTLE_SETPOINTS_BY_DISTANCE_METERS = createShuttleInterpolator();
 
     /** A constant multipied by the flywheel's velocity to estimate the fuel's exit velocity */
     public static final double FLYWHEEL_TO_FUEL_VELOCITY_MULTIPLIER = 0.5;
@@ -464,12 +464,16 @@ public final class Constants {
     /** Translation of the hub on the red side */
     public static final Translation2d TARGET_RED = new Translation2d(Inches.of(469.078905), Inches.of(158.84375));
 
-    /** Translation of the hub on the blue side */
-    public static final Translation2d SHUTTLE_BLUE = new Translation2d(
+    /** Translations for shuttling on the blue side, with Z > 1/2 of the field */
+    public static final Translation2d SHUTTLE_BLUE_HIGH = new Translation2d(
         Inches.of(6.0),
         FIELD_WIDTH.minus(Inches.of(6.0)));
+    /** Translations for shuttling on the blue side, with Z < 1/2 of the field */
+    public static final Translation2d SHUTTLE_BLUE_LOW = new Translation2d(Inches.of(6.0), Inches.of(6.0));
 
-    /** Translation of the hub on the red side */
-    public static final Translation2d SHUTTLE_RED = FlippingUtil.flipFieldPosition(SHUTTLE_BLUE);
+    /** Translations for shuttling on the red side, with Z > 1/2 of the field */
+    public static final Translation2d SHUTTLE_RED_HIGH = FlippingUtil.flipFieldPosition(SHUTTLE_BLUE_LOW);
+    /** Translations for shuttling on the red side, with Z < 1/2 of the field */
+    public static final Translation2d SHUTTLE_RED_LOW = FlippingUtil.flipFieldPosition(SHUTTLE_BLUE_HIGH);
   }
 }

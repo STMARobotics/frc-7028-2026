@@ -6,7 +6,6 @@ import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static edu.wpi.first.units.Units.Seconds;
-import static edu.wpi.first.wpilibj.DriverStation.Alliance.Blue;
 import static edu.wpi.first.wpilibj.util.Color.kBlue;
 import static edu.wpi.first.wpilibj.util.Color.kGreen;
 import static edu.wpi.first.wpilibj.util.Color.kRed;
@@ -21,7 +20,6 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.interpolation.InterpolatingTreeMap;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.units.measure.MutAngle;
-import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.LEDPattern;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -30,12 +28,16 @@ import frc.robot.subsystems.LEDSubsystem;
 import frc.robot.subsystems.ShooterSubsystem;
 import frc.robot.subsystems.ShooterSubsystem.ShooterSetpoints;
 import frc.robot.subsystems.SpindexerSubsystem;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
  * This command automatically shoots at a target until interrupted. It takes current robot velocity into account to
  * "shoot on the move". This command must be interrupted to stop, most likely by the driver releasing a button or by an
  * autonomous routine setting an end condition.
+ * <p>
+ * This command has configurability to be used for both shooting at the hub and shooting while shuttling fuel across the
+ * field. The target to shoot at is determined by a function, and the shooter settings lookup table is a parameter.
  */
 public class ShootAtTargetCommand extends Command {
 
@@ -45,8 +47,7 @@ public class ShootAtTargetCommand extends Command {
   private final LEDSubsystem ledSubsystem;
   private final Supplier<Pose2d> robotPoseSupplier;
   private final Supplier<ChassisSpeeds> robotSpeedSupplier;
-  private final Translation2d targetRed;
-  private final Translation2d targetBlue;
+  private final Function<Translation2d, Translation2d> targetSelector;
   private final InterpolatingTreeMap<Double, ShooterSetpoints> lookupTable;
 
   // Reusable object to prevent reallocation (to reduce memory pressure)
@@ -64,8 +65,7 @@ public class ShootAtTargetCommand extends Command {
    * @param ledSubsystem led subsystem
    * @param robotPoseSupplier robot pose supplier
    * @param robotSpeedSupplier robot speed supplier
-   * @param targetRed target red to shoot at if on red alliance
-   * @param targetBlue target blue to shoot at if on blue alliance
+   * @param targetSelector function that takes the shooter's translation and returns the target translation to shoot at
    * @param lookupTable lookup table mapping distance to shooter setpoints
    */
   public ShootAtTargetCommand(
@@ -75,8 +75,7 @@ public class ShootAtTargetCommand extends Command {
       LEDSubsystem ledSubsystem,
       Supplier<Pose2d> robotPoseSupplier,
       Supplier<ChassisSpeeds> robotSpeedSupplier,
-      Translation2d targetRed,
-      Translation2d targetBlue,
+      Function<Translation2d, Translation2d> targetSelector,
       InterpolatingTreeMap<Double, ShooterSetpoints> lookupTable) {
     this.shooterSubsystem = shooterSubsystem;
     this.feederSubsystem = feederSubsystem;
@@ -84,8 +83,7 @@ public class ShootAtTargetCommand extends Command {
     this.ledSubsystem = ledSubsystem;
     this.robotPoseSupplier = robotPoseSupplier;
     this.robotSpeedSupplier = robotSpeedSupplier;
-    this.targetRed = targetRed;
-    this.targetBlue = targetBlue;
+    this.targetSelector = targetSelector;
     this.lookupTable = lookupTable;
 
     addRequirements(shooterSubsystem, feederSubsystem, spindexerSubsystem, ledSubsystem);
@@ -93,9 +91,6 @@ public class ShootAtTargetCommand extends Command {
 
   @Override
   public void initialize() {
-    // Set the target based on the current alliance color, since it's different for each match
-    var alliance = DriverStation.getAlliance();
-    targetTranslation = (alliance.isEmpty() || alliance.get() == Blue) ? targetBlue : targetRed;
     // Reset states
     ledSubsystem.off();
     isShooting = false;
@@ -122,6 +117,9 @@ public class ShootAtTargetCommand extends Command {
       ledSubsystem.runPattern(LEDPattern.solid(kRed).blink(Seconds.of(0.1)));
       return;
     }
+
+    // Get the target to shoot at
+    targetTranslation = targetSelector.apply(shooterTranslation);
 
     // 1. Compute the velocity of the fuel at the shooter's location on the field.
     //

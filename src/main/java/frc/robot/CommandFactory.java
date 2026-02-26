@@ -1,15 +1,25 @@
 package frc.robot;
 
+import static edu.wpi.first.units.Units.Meters;
+import static frc.robot.Constants.FieldConstants.FIELD_WIDTH;
+import static frc.robot.Constants.ShootingConstants.HUB_SETPOINTS_BY_DISTANCE_METERS;
+import static frc.robot.Constants.ShootingConstants.SHUTTLE_BLUE_HIGH;
+import static frc.robot.Constants.ShootingConstants.SHUTTLE_BLUE_LOW;
+import static frc.robot.Constants.ShootingConstants.SHUTTLE_RED_HIGH;
+import static frc.robot.Constants.ShootingConstants.SHUTTLE_RED_LOW;
+import static frc.robot.Constants.ShootingConstants.SHUTTLE_SETPOINTS_BY_DISTANCE_METERS;
+import static frc.robot.Constants.ShootingConstants.TARGET_BLUE;
+import static frc.robot.Constants.ShootingConstants.TARGET_RED;
 import static frc.robot.Constants.TeleopDriveConstants.MAX_TELEOP_ANGULAR_VELOCITY;
 import static frc.robot.Constants.TeleopDriveConstants.MAX_TELEOP_VELOCITY;
 
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveModule.SteerRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
-import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.interpolation.InterpolatingTreeMap;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.LinearVelocity;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.commands.ShootAtTargetCommand;
 import frc.robot.subsystems.ClimbSubsystem;
@@ -18,7 +28,6 @@ import frc.robot.subsystems.FeederSubsystem;
 import frc.robot.subsystems.IntakeSubsytem;
 import frc.robot.subsystems.LEDSubsystem;
 import frc.robot.subsystems.ShooterSubsystem;
-import frc.robot.subsystems.ShooterSubsystem.ShooterSetpoints;
 import frc.robot.subsystems.SpindexerSubsystem;
 import java.util.function.Supplier;
 
@@ -63,17 +72,11 @@ public class CommandFactory {
   }
 
   /**
-   * Creates a new ShootAtTargetCommand
+   * Creates a command to shoot at the hub
    * 
-   * @param redTarget red target to shoot at when on the red alliance
-   * @param blueTarget blue target to shoot at when on the blue alliance
-   * @param lookupTable lookup table to use for determining shooter setpoints based on distance to target
-   * @return a new ShootAtTargetCommand
+   * @return a new command to shoot at the hub
    */
-  public Command createShootAtTargetCommand(
-      Translation2d redTarget,
-      Translation2d blueTarget,
-      InterpolatingTreeMap<Double, ShooterSetpoints> lookupTable) {
+  public Command shootAtHub() {
     return new ShootAtTargetCommand(
         shooterSubsystem,
         feederSubsystem,
@@ -81,32 +84,16 @@ public class CommandFactory {
         ledSubsystem,
         () -> drivetrainSubsystem.getState().Pose,
         drivetrainSubsystem::getCurrentFieldChassisSpeeds,
-        redTarget,
-        blueTarget,
-        lookupTable);
+        t -> DriverStation.getAlliance().map(a -> a == Alliance.Blue ? TARGET_BLUE : TARGET_RED).orElse(TARGET_BLUE),
+        HUB_SETPOINTS_BY_DISTANCE_METERS);
   }
 
   /**
-   * Creates a new ShootAtTargetCommand that also drives the robot using the passed translation and rotation suppliers.
-   * The velocities from the suppliers are reduced by the specified velocity reduction factor to allow for more accurate
-   * shooting while moving.
+   * Creates a command to shuttle fuel from any location to the nearest alliance-specific corner.
    * 
-   * @param redTarget red target to shoot at when on the red alliance
-   * @param blueTarget blue target to shoot at when on the blue alliance
-   * @param lookupTable lookup table to use for determining shooter setpoints based on distance to target
-   * @param translationXSupplier supplier for the robot's x translation velocity
-   * @param translationYSupplier supplier for the robot's y translation velocity
-   * @param omegaSupplier supplier for the robot's rotational velocity
-   * @param velocityReductionFactor factor by which to reduce the velocities from the suppliers
-   * @return a new ShootAtTargetCommand that also drives the robot
+   * @return a new command to shuttle fuel to the corner
    */
-  public Command createShootAtTargetWhileDrivingCommand(
-      Translation2d redTarget,
-      Translation2d blueTarget,
-      InterpolatingTreeMap<Double, ShooterSetpoints> lookupTable,
-      Supplier<LinearVelocity> translationXSupplier,
-      Supplier<LinearVelocity> translationYSupplier,
-      Supplier<AngularVelocity> omegaSupplier) {
+  public Command shuttleToCorner() {
     return new ShootAtTargetCommand(
         shooterSubsystem,
         feederSubsystem,
@@ -114,9 +101,29 @@ public class CommandFactory {
         ledSubsystem,
         () -> drivetrainSubsystem.getState().Pose,
         drivetrainSubsystem::getCurrentFieldChassisSpeeds,
-        redTarget,
-        blueTarget,
-        lookupTable).alongWith(createDriveCommand(translationXSupplier, translationYSupplier, omegaSupplier));
+        t -> {
+          if (DriverStation.getAlliance().map(a -> a == Alliance.Blue).orElse(true)) {
+            return t.getY() > FIELD_WIDTH.in(Meters) / 2.0 ? SHUTTLE_BLUE_HIGH : SHUTTLE_BLUE_LOW;
+          } else {
+            return t.getY() > FIELD_WIDTH.in(Meters) / 2.0 ? SHUTTLE_RED_HIGH : SHUTTLE_RED_LOW;
+          }
+        },
+        SHUTTLE_SETPOINTS_BY_DISTANCE_METERS);
+  }
+
+  /**
+   * Creates a command to shoot at the hub and also drive the robot using the passed translation and rotation suppliers.
+   * 
+   * @param translationXSupplier supplier for the robot's x translation velocity
+   * @param translationYSupplier supplier for the robot's y translation velocity
+   * @param omegaSupplier supplier for the robot's rotational velocity
+   * @return a new ShootAtTargetCommand that also drives the robot
+   */
+  public Command shootAtHubWhileDriving(
+      Supplier<LinearVelocity> translationXSupplier,
+      Supplier<LinearVelocity> translationYSupplier,
+      Supplier<AngularVelocity> omegaSupplier) {
+    return shootAtHub().alongWith(drive(translationXSupplier, translationYSupplier, omegaSupplier));
   }
 
   /**
@@ -127,7 +134,7 @@ public class CommandFactory {
    * @param omegaSupplier supplier for the robot's rotational velocity
    * @return a new Command to control the drivetrain
    */
-  public Command createDriveCommand(
+  public Command drive(
       Supplier<LinearVelocity> translationXSupplier,
       Supplier<LinearVelocity> translationYSupplier,
       Supplier<AngularVelocity> omegaSupplier) {

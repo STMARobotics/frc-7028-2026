@@ -8,12 +8,6 @@ import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.wpilibj.DriverStation.Alliance.Blue;
 import static edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction.kForward;
 import static edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction.kReverse;
-import static frc.robot.Constants.ShootingConstants.SHOOTER_TARGETS_BY_DISTANCE_METERS;
-import static frc.robot.Constants.ShootingConstants.SHUTTLE_BLUE;
-import static frc.robot.Constants.ShootingConstants.SHUTTLE_RED;
-import static frc.robot.Constants.ShootingConstants.SHUTTLE_TARGETS_BY_DISTANCE_METERS;
-import static frc.robot.Constants.ShootingConstants.TARGET_BLUE;
-import static frc.robot.Constants.ShootingConstants.TARGET_RED;
 import static frc.robot.Constants.TeleopDriveConstants.RESET_POSE_BLUE;
 import static frc.robot.Constants.TeleopDriveConstants.RESET_POSE_RED;
 import static frc.robot.Constants.TeleopDriveConstants.SHOOT_VELOCITY_MULTIPLIER;
@@ -139,10 +133,7 @@ public class RobotContainer {
   private void configureBindings() {
     // Default drivetrain command for teleop control
     drivetrain.setDefaultCommand(
-        commandFactory.createDriveCommand(
-            controlBindings.translationX(),
-              controlBindings.translationY(),
-              controlBindings.omega()));
+        commandFactory.drive(controlBindings.translationX(), controlBindings.translationY(), controlBindings.omega()));
 
     controlBindings.wheelsToX().ifPresent(trigger -> trigger.whileTrue(drivetrain.applyRequest(() -> brake)));
     controlBindings.resetFieldPosition().ifPresent(trigger -> trigger.onTrue(Commands.runOnce(() -> {
@@ -190,24 +181,12 @@ public class RobotContainer {
     controlBindings.autoShoot()
         .ifPresent(
             trigger -> trigger.whileTrue(
-                commandFactory.createShootAtTargetWhileDrivingCommand(
-                    TARGET_RED,
-                      TARGET_BLUE,
-                      SHOOTER_TARGETS_BY_DISTANCE_METERS,
-                      () -> controlBindings.translationX().get().times(SHOOT_VELOCITY_MULTIPLIER),
+                commandFactory.shootAtHubWhileDriving(
+                    () -> controlBindings.translationX().get().times(SHOOT_VELOCITY_MULTIPLIER),
                       () -> controlBindings.translationY().get().times(SHOOT_VELOCITY_MULTIPLIER),
                       () -> controlBindings.omega().get().times(SHOOT_VELOCITY_MULTIPLIER))));
 
-    controlBindings.shuttle()
-        .ifPresent(
-            trigger -> trigger.whileTrue(
-                commandFactory.createShootAtTargetWhileDrivingCommand(
-                    SHUTTLE_RED,
-                      SHUTTLE_BLUE,
-                      SHUTTLE_TARGETS_BY_DISTANCE_METERS,
-                      controlBindings.translationX(),
-                      controlBindings.translationY(),
-                      controlBindings.omega())));
+    controlBindings.shuttle().ifPresent(trigger -> trigger.whileTrue(commandFactory.shuttleToCorner()));
 
     // Climb controls
     controlBindings.climbForward()
@@ -237,9 +216,7 @@ public class RobotContainer {
 
   private void configurePathPlannerCommands() {
     NamedCommands.registerCommand("ClimbToL1", new ClimbToL1Command(climbSubsystem));
-    NamedCommands.registerCommand(
-        "Shoot",
-          commandFactory.createShootAtTargetCommand(TARGET_BLUE, TARGET_RED, SHUTTLE_TARGETS_BY_DISTANCE_METERS));
+    NamedCommands.registerCommand("Shoot", commandFactory.shootAtHub());
     NamedCommands.registerCommand("DeployIntake", new DeployIntakeCommand(intakeSubsystem));
     NamedCommands.registerCommand("RunIntake", new IntakeCommand(intakeSubsystem));
   }

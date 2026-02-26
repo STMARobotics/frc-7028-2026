@@ -1,10 +1,10 @@
 package frc.robot.commands;
 
 import static edu.wpi.first.units.Units.Meters;
+import static frc.robot.Constants.ShootingConstants.HUB_SETPOINTS_BY_DISTANCE_METERS;
 
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj2.command.Command;
-import frc.robot.Constants.ShootingConstants;
 import frc.robot.subsystems.FeederSubsystem;
 import frc.robot.subsystems.ShooterSubsystem;
 import frc.robot.subsystems.ShooterSubsystem.ShooterSetpoints;
@@ -37,7 +37,7 @@ public class ShootCommand extends Command {
     this.spindexerSubsystem = spindexerSubsystem;
     this.shooterSubsystem = shooterSubsystem;
 
-    setpoints = ShootingConstants.SHOOTER_TARGETS_BY_DISTANCE_METERS.get(targetDistance.in(Meters));
+    setpoints = HUB_SETPOINTS_BY_DISTANCE_METERS.get(targetDistance.in(Meters));
 
     addRequirements(feederSubsystem, spindexerSubsystem, shooterSubsystem);
   }
