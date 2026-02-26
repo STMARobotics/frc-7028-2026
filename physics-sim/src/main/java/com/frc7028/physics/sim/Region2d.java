@@ -1,6 +1,7 @@
 package com.frc7028.physics.sim;
 
 import edu.wpi.first.math.geometry.Translation2d;
+import org.jzy3d.maths.BoundingBox2d;
 
 public class Region2d {
   Translation2d min;
@@ -17,6 +18,10 @@ public class Region2d {
     this.maxX = max.getX();
     this.minY = min.getY();
     this.maxY = max.getY();
+  }
+
+  public BoundingBox2d toBoundingBox() {
+    return new BoundingBox2d((float) minX, (float) minY, (float) maxX, (float) maxY);
   }
 
   public boolean testPosition(Translation2d position) {

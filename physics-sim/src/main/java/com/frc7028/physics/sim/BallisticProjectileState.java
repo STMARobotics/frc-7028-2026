@@ -5,6 +5,7 @@ import com.frc7028.physics.sim.SimulatorVisualizer.Trajectory;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation3d;
 import java.util.function.Function;
+import org.jzy3d.colors.Color;
 
 public class BallisticProjectileState extends VectorState {
 
@@ -26,8 +27,8 @@ public class BallisticProjectileState extends VectorState {
     this.simulator = simulator;
   }
 
-  public void launch(Translation3d position, Translation3d velocity, Rotation3d spin) {
-    this.reset();
+  public void launch(Translation3d position, Translation3d velocity, Rotation3d spin, Color trajectoryColor) {
+    this.reset(trajectoryColor);
     this.collisionStatus = CollisionStatus.NA;
     this.boundaryState = BoundaryState.IN_BOUNDS;
     this.position = position;
@@ -35,14 +36,15 @@ public class BallisticProjectileState extends VectorState {
     this.spin = spin;
   }
 
-  public void reset() {
+  public void reset(Color trajectoryColor) {
     this.dt = this.integrator.integratorResolution.dtInitial();
     this.timeElapsed = 0;
-    this.refreshTrajectory();
+    this.refreshTrajectory(trajectoryColor);
   }
 
-  private void refreshTrajectory() {
-    this.trajectory = visualizer.newTrajectory();
+  private void refreshTrajectory(Color trajectoryColor) {
+    // System.out.println(trajectoryColor);
+    this.trajectory = visualizer.newTrajectory(trajectoryColor);
   }
 
   public enum BoundaryState {

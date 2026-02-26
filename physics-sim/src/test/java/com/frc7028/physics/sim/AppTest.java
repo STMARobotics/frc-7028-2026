@@ -14,6 +14,7 @@ import edu.wpi.first.math.geometry.Translation3d;
 import java.util.ArrayList;
 import java.util.function.Function;
 import org.junit.jupiter.api.Test;
+import org.jzy3d.colors.Color;
 import org.jzy3d.plot3d.rendering.canvas.Quality;
 
 class AppTest {
@@ -26,9 +27,9 @@ class AppTest {
     Region3d fieldBounds = new Region3d(origin, new Translation3d(10, 10, 5) // 10m x 10m x 5m cube
     );
     ArrayList<Region3d> obstacles = new ArrayList<>();
-    obstacles.add(new Region3d(new Translation3d(4, 4, 0), new Translation3d(6, 6, 3)));
+    obstacles.add(new Region3d(new Translation3d(2.5, 0, 0), new Translation3d(3, 6, 4)));
     ArrayList<Region3d> rejectRegions = new ArrayList<>();
-    Region3d targetRegion = new Region3d(new Translation3d(4, 4, 0), new Translation3d(5, 5, 2));
+    Region3d targetRegion = new Region3d(new Translation3d(4, 1, 0), new Translation3d(5, 2, 2));
     Region2d fieldPlane = new Region2d(new Translation2d(0, 0), new Translation2d(10, 10));
     System.out.println();
     System.out.println(targetRegion.center);
@@ -47,7 +48,7 @@ class AppTest {
         0.1,
         0.2,
         2.0,
-        1);
+        10);
     IntegratorResolution intRes = new IntegratorResolution(
         0.01, // dt initial
         0.01, // epsilon
@@ -85,7 +86,9 @@ class AppTest {
           new BallisticPrecomputer.ShotParameters(Degrees.of(60), Radians.of(0.1), 10.0));
 
     visualizer.trajectorySpace.finalize();
-    visualizer.putPoints();
+
+    visualizer.putRegions(obstacles, Color.BLUE);
+    visualizer.putRegion(targetRegion, Color.GREEN);
 
     System.out.println("points = " + visualizer.trajectorySpace.points.length);
 

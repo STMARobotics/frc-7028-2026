@@ -13,9 +13,11 @@ import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.units.measure.Angle;
+import java.awt.color.*;
 import java.util.HashMap;
 import java.util.function.Function;
 import org.ejml.simple.SimpleMatrix;
+import org.jzy3d.colors.Color;
 
 public class BallisticPrecomputer {
 
@@ -44,6 +46,9 @@ public class BallisticPrecomputer {
   public FieldMetrics fieldMetrics;
   private AdaptiveSystem<RobotState> adaptiveBallisticErrorSystem;
   public SimulatorVisualizer visualizer;
+
+  private Color trajColor = Color.random();
+  private int batch = 0;
 
   BallisticProjectileState projectileState;
 
@@ -154,7 +159,7 @@ public class BallisticPrecomputer {
           ShotParameters attemptShotParameters = MatrixToParameters(input);
 
           SimulationResult simResult = this
-              .simulateBall(this.projectileState, currentState, attemptShotParameters, visualizer);
+              .simulateBall(this.projectileState, currentState, attemptShotParameters, visualizer, trajColor);
 
           System.out.println(this.lastDebugEvent);
           // StringBuffer cvs = new StringBuffer("x_1, y_1, z_1");
@@ -182,6 +187,12 @@ public class BallisticPrecomputer {
           switch (dbo.type()) {
             case DebugType.Event: {
               this.lastDebugEvent = dbo.event();
+              switch (dbo.event()) {
+                case DebugEventType.IterationStart: {
+                  batch++;
+                  trajColor = new Color(30 + 30 * batch, 59 + batch * 29, batch + 100);
+                }
+              }
               System.out.println(dbo.event().getColor() + dbo.type() + " | " + dbo.event() + ANSI_RESET);
             }
             case DebugType.Display: {
@@ -205,7 +216,8 @@ public class BallisticPrecomputer {
       BallisticProjectileState simulatedProjectileState,
       RobotState state,
       ShotParameters parameters,
-      SimulatorVisualizer visualizer) {
+      SimulatorVisualizer visualizer,
+      Color trajectoryColor) {
     Translation3d initialPosition = new Translation3d(
         state.position.getX(),
         state.position.getY(),
@@ -213,7 +225,8 @@ public class BallisticPrecomputer {
     Translation3d initialVelocity = new Translation3d(state.velocity.getX(), state.velocity.getY(), 0)
         .plus(anglesToUnitVec(parameters.yaw, parameters.pitch).times(parameters.speed));
 
-    simulatedProjectileState.launch(initialPosition, initialVelocity, this.speedToSpin.apply(parameters.speed()));
+    simulatedProjectileState
+        .launch(initialPosition, initialVelocity, this.speedToSpin.apply(parameters.speed()), trajectoryColor);
 
     Translation3d targetPosition = this.fieldMetrics.targetRegion().center;
 
@@ -233,7 +246,7 @@ public class BallisticPrecomputer {
       }
     }
 
-    simulatedProjectileState.trajectory.push();
+    simulatedProjectileState.trajectory.put();
 
     return new SimulationResult(
         simulatedProjectileState.position,

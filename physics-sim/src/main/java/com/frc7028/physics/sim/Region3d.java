@@ -1,6 +1,7 @@
 package com.frc7028.physics.sim;
 
 import edu.wpi.first.math.geometry.Translation3d;
+import org.jzy3d.maths.BoundingBox3d;
 
 public class Region3d {
   double minX;
@@ -21,6 +22,10 @@ public class Region3d {
     this.maxZ = max.getZ();
 
     this.center = min.plus(max.minus(min).times(0.5));
+  }
+
+  BoundingBox3d toBoundingBox() {
+    return new BoundingBox3d((float) minX, (float) maxX, (float) minY, (float) maxY, (float) minZ, (float) maxZ);
   }
 
   public boolean testPosition(Translation3d position) {

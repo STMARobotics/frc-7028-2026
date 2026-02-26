@@ -1,18 +1,24 @@
 package com.frc7028.physics.sim;
 
 import edu.wpi.first.math.geometry.Translation3d;
+
+import java.awt.event.MouseAdapter;
 import java.util.ArrayList;
 import java.util.List;
 import org.jzy3d.chart.Chart;
+import org.jzy3d.chart.controllers.mouse.camera.ICameraMouseController;
+import org.jzy3d.chart.controllers.mouse.picking.IMousePickingController;
 import org.jzy3d.chart.factories.ChartFactory;
 import org.jzy3d.chart.factories.EmulGLChartFactory;
+import org.jzy3d.colors.Color;
 import org.jzy3d.maths.Coord3d;
-import org.jzy3d.plot3d.primitives.Scatter;
+import org.jzy3d.plot3d.primitives.CubeComposite;
+import org.jzy3d.plot3d.primitives.LineStrip;
 import org.jzy3d.plot3d.rendering.canvas.Quality;
 
 public class SimulatorVisualizer {
-  private Chart baseChart;
-  private Scatter scatterPlot;
+  public Chart baseChart;
+  private LineStrip lineStrip;
   private ChartFactory chartFactory = new EmulGLChartFactory();
 
   public PointSpace trajectorySpace;
@@ -28,12 +34,16 @@ public class SimulatorVisualizer {
     baseChart.addKeyboard();
     baseChart.open();
 
-    scatterPlot = new Scatter();
+    lineStrip = new LineStrip();
 
+    baseChart.add(lineStrip);
+
+    IMousePickingController mouse = baseChart.getMousePicking();
+    mouse.getPickingSupport().addObjectPickedListener()
   };
 
-  public Trajectory newTrajectory() {
-    Trajectory trajectory = new Trajectory(trajectorySpace);
+  public Trajectory newTrajectory(Color trajectoryColor) {
+    Trajectory trajectory = new Trajectory(trajectorySpace, trajectoryColor);
     this.trajectories.add(trajectory);
     return trajectory;
   }
@@ -42,14 +52,14 @@ public class SimulatorVisualizer {
     this.trajectorySpace.unfinalizedPoints.addAll(trajectory.points);
   }
 
-  public void putPoints() {
-    scatterPlot.setData(this.trajectorySpace.unfinalizedPoints);
-    scatterPlot.setDisplayed(true);
-    scatterPlot.updateBounds();
-    scatterPlot.setWidth(4);
+  public void putRegions(ArrayList<Region3d> regions, Color regionColor) {
+    regions.forEach((Region3d region) -> {
+      baseChart.add(new CubeComposite(region.toBoundingBox(), regionColor, regionColor));
+    });
+  }
 
-    baseChart.add(scatterPlot);
-
+  public void putRegion(Region3d region, Color regionColor) {
+    baseChart.add(new CubeComposite(region.toBoundingBox(), regionColor, regionColor));
   }
 
   public class PointSpace {
@@ -72,18 +82,25 @@ public class SimulatorVisualizer {
   public class Trajectory {
     List<Coord3d> points;
     PointSpace parentSpace;
+    Color color;
 
-    public Trajectory(PointSpace parentSpace) {
+    public Trajectory(PointSpace parentSpace, Color trajectoryColor) {
       this.points = new ArrayList<>();
       this.parentSpace = parentSpace;
+      this.color = trajectoryColor;
     }
 
     public void step(Translation3d position) {
       this.points.add(new Coord3d(position.getX(), position.getY(), position.getZ()));
     }
 
-    public void push() {
-      this.parentSpace.insertCurve(this);
+    public void put() {
+      LineStrip line = new LineStrip();
+      line.add(points);
+      line.setColor(this.color);
+      line.setDisplayed(true);
+
+      baseChart.add(line);
     }
   }
 }
