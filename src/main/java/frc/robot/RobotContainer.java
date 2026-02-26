@@ -5,13 +5,19 @@
 package frc.robot;
 
 import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.wpilibj.DriverStation.Alliance.Blue;
 import static edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction.kForward;
 import static edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction.kReverse;
-import static frc.robot.Constants.TeleopDriveConstants.MAX_TELEOP_ANGULAR_VELOCITY;
-import static frc.robot.Constants.TeleopDriveConstants.MAX_TELEOP_VELOCITY;
+import static frc.robot.Constants.ShootingConstants.SHOOTER_TARGETS_BY_DISTANCE_METERS;
+import static frc.robot.Constants.ShootingConstants.SHUTTLE_BLUE;
+import static frc.robot.Constants.ShootingConstants.SHUTTLE_RED;
+import static frc.robot.Constants.ShootingConstants.SHUTTLE_TARGETS_BY_DISTANCE_METERS;
+import static frc.robot.Constants.ShootingConstants.TARGET_BLUE;
+import static frc.robot.Constants.ShootingConstants.TARGET_RED;
+import static frc.robot.Constants.TeleopDriveConstants.RESET_POSE_BLUE;
+import static frc.robot.Constants.TeleopDriveConstants.RESET_POSE_RED;
+import static frc.robot.Constants.TeleopDriveConstants.SHOOT_VELOCITY_MULTIPLIER;
 
-import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
-import com.ctre.phoenix6.swerve.SwerveModule.SteerRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
@@ -19,6 +25,7 @@ import com.pathplanner.lib.commands.FollowPathCommand;
 import com.pathplanner.lib.commands.PathPlannerAuto;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -30,15 +37,11 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import frc.robot.Constants.OdometryConstants;
 import frc.robot.Constants.QuestNavConstants;
-import frc.robot.Constants.ShootingConstants;
-import frc.robot.Constants.TeleopDriveConstants;
-import frc.robot.commands.AutoShootCommand;
 import frc.robot.commands.ClimbToL1Command;
 import frc.robot.commands.DeployIntakeCommand;
 import frc.robot.commands.IntakeCommand;
 import frc.robot.commands.RetractIntakeCommand;
 import frc.robot.commands.ShootCommand;
-import frc.robot.commands.TeleopShootCommand;
 import frc.robot.commands.TuneShootingCommand;
 import frc.robot.commands.led.DefaultLEDCommand;
 import frc.robot.commands.led.LEDBootAnimationCommand;
@@ -57,12 +60,6 @@ import frc.robot.subsystems.SpindexerSubsystem;
 
 @Logged(strategy = Logged.Strategy.OPT_IN)
 public class RobotContainer {
-  /* Setting up bindings for necessary control of the swerve drive platform */
-  private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
-      .withDeadband(MAX_TELEOP_VELOCITY.times(0.01))
-      .withRotationalDeadband(MAX_TELEOP_ANGULAR_VELOCITY.times(0.01))
-      .withDriveRequestType(DriveRequestType.Velocity)
-      .withSteerRequestType(SteerRequestType.MotionMagicExpo);
   private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
 
   private final DrivetrainTelemetry drivetrainTelemetry = new DrivetrainTelemetry();
@@ -96,6 +93,15 @@ public class RobotContainer {
   private final ShooterSubsystem shooterSubsystem = new ShooterSubsystem();
   private final LEDSubsystem ledSubsystem = new LEDSubsystem();
 
+  private final CommandFactory commandFactory = new CommandFactory(
+      drivetrain,
+      shooterSubsystem,
+      spindexerSubsystem,
+      feederSubsystem,
+      intakeSubsystem,
+      ledSubsystem,
+      climbSubsystem);
+
   /* Path follower */
   private final SendableChooser<Command> autoChooser;
 
@@ -111,7 +117,9 @@ public class RobotContainer {
 
     // Configure and populate the auto command chooser with autos from PathPlanner
     configurePathPlannerCommands();
-    autoChooser = AutoBuilder.buildAutoChooser();
+    autoChooser = AutoBuilder.buildAutoChooserWithOptionsModifier(
+        "Double Middle Auto",
+          stream -> stream.filter(item -> !item.getRequirements().isEmpty()));
     SmartDashboard.putData("Auto Mode", autoChooser);
     autoChooser.onChange(this::setStartingPose);
 
@@ -131,17 +139,16 @@ public class RobotContainer {
   private void configureBindings() {
     // Default drivetrain command for teleop control
     drivetrain.setDefaultCommand(
-        drivetrain.applyRequest(
-            () -> drive.withVelocityX(controlBindings.translationX().get())
-                .withVelocityY(controlBindings.translationY().get())
-                .withRotationalRate(controlBindings.omega().get())));
+        commandFactory.createDriveCommand(
+            controlBindings.translationX(),
+              controlBindings.translationY(),
+              controlBindings.omega()));
 
     controlBindings.wheelsToX().ifPresent(trigger -> trigger.whileTrue(drivetrain.applyRequest(() -> brake)));
-    controlBindings.seedFieldCentric().ifPresent(trigger -> trigger.onTrue(Commands.runOnce(() -> {
-      Pose2d robotCurrentPose = drivetrain.getState().Pose;
-      Pose2d robotNewPose = new Pose2d(robotCurrentPose.getTranslation(), drivetrain.getOperatorForwardDirection());
-      localizationSubsystem.setQuestNavPose(robotNewPose);
-      drivetrain.resetPose(robotNewPose);
+    controlBindings.resetFieldPosition().ifPresent(trigger -> trigger.onTrue(Commands.runOnce(() -> {
+      var alliance = DriverStation.getAlliance();
+      Pose3d newPose = (alliance.isEmpty() || alliance.get() == Blue) ? RESET_POSE_BLUE : RESET_POSE_RED;
+      localizationSubsystem.resetPose(newPose);
     })));
 
     // Intake controls
@@ -183,36 +190,24 @@ public class RobotContainer {
     controlBindings.autoShoot()
         .ifPresent(
             trigger -> trigger.whileTrue(
-                new TeleopShootCommand(
-                    drivetrain,
-                    shooterSubsystem,
-                    feederSubsystem,
-                    spindexerSubsystem,
-                    ledSubsystem,
-                    () -> controlBindings.translationX().get(),
-                    () -> controlBindings.translationY().get(),
-                    () -> drivetrain.getState().Pose,
-                    ShootingConstants.TARGET_RED,
-                    ShootingConstants.TARGET_BLUE,
-                    ShootingConstants.SHOOTER_TARGETS_BY_DISTANCE_METERS,
-                    TeleopDriveConstants.SHOOT_VELOCITY_MULTIPLIER)));
+                commandFactory.createShootAtTargetWhileDrivingCommand(
+                    TARGET_RED,
+                      TARGET_BLUE,
+                      SHOOTER_TARGETS_BY_DISTANCE_METERS,
+                      () -> controlBindings.translationX().get().times(SHOOT_VELOCITY_MULTIPLIER),
+                      () -> controlBindings.translationY().get().times(SHOOT_VELOCITY_MULTIPLIER),
+                      () -> controlBindings.omega().get().times(SHOOT_VELOCITY_MULTIPLIER))));
 
     controlBindings.shuttle()
         .ifPresent(
             trigger -> trigger.whileTrue(
-                new TeleopShootCommand(
-                    drivetrain,
-                    shooterSubsystem,
-                    feederSubsystem,
-                    spindexerSubsystem,
-                    ledSubsystem,
-                    () -> controlBindings.translationX().get(),
-                    () -> controlBindings.translationY().get(),
-                    () -> drivetrain.getState().Pose,
-                    ShootingConstants.SHUTTLE_RED,
-                    ShootingConstants.SHUTTLE_BLUE,
-                    ShootingConstants.SHUTTLE_TARGETS_BY_DISTANCE_METERS,
-                    1.0)));
+                commandFactory.createShootAtTargetWhileDrivingCommand(
+                    SHUTTLE_RED,
+                      SHUTTLE_BLUE,
+                      SHUTTLE_TARGETS_BY_DISTANCE_METERS,
+                      controlBindings.translationX(),
+                      controlBindings.translationY(),
+                      controlBindings.omega())));
 
     // Climb controls
     controlBindings.climbForward()
@@ -244,16 +239,7 @@ public class RobotContainer {
     NamedCommands.registerCommand("ClimbToL1", new ClimbToL1Command(climbSubsystem));
     NamedCommands.registerCommand(
         "Shoot",
-          new AutoShootCommand(
-              shooterSubsystem,
-              feederSubsystem,
-              spindexerSubsystem,
-              ledSubsystem,
-              () -> drivetrain.getState().Pose,
-              drivetrain::getCurrentFieldChassisSpeeds,
-              ShootingConstants.SHUTTLE_RED,
-              ShootingConstants.SHUTTLE_BLUE,
-              ShootingConstants.SHUTTLE_TARGETS_BY_DISTANCE_METERS));
+          commandFactory.createShootAtTargetCommand(TARGET_BLUE, TARGET_RED, SHUTTLE_TARGETS_BY_DISTANCE_METERS));
     NamedCommands.registerCommand("DeployIntake", new DeployIntakeCommand(intakeSubsystem));
     NamedCommands.registerCommand("RunIntake", new IntakeCommand(intakeSubsystem));
   }

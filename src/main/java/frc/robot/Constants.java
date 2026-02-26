@@ -21,6 +21,7 @@ import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.pathplanner.lib.util.FlippingUtil;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -46,6 +47,9 @@ public final class Constants {
   } // prevent instantiation
 
   public static final CANBus CANIVORE_BUS = new CANBus("canivore");
+  // Robot dimensions INCLUDING bumpers
+  public static final Distance ROBOT_WIDTH = Meters.of(0.932);
+  public static final Distance ROBOT_LENGTH = Meters.of(0.776288);
 
   /**
    * Constants for the field dimensions of the WELDED field.
@@ -86,6 +90,12 @@ public final class Constants {
     public static final AngularVelocity MAX_TELEOP_ANGULAR_VELOCITY = RotationsPerSecond.of(1.75);
     /** Multiplier for shooting in teleop to reduce driver speed while shooting */
     public static final double SHOOT_VELOCITY_MULTIPLIER = 0.5;
+    /** Blue reset pose is the blue corner, bumpers against the walls, facing downfield. */
+    public static final Pose3d RESET_POSE_BLUE = new Pose3d(
+        new Translation3d(ROBOT_LENGTH.in(Meters) / 2.0, ROBOT_WIDTH.in(Meters) / 2.0, 0.0),
+        new Rotation3d(0.0, 0.0, 0.0));
+    /** Red reset pose is the red corner, bumpers against the walls, facing downfield. */
+    public static final Pose3d RESET_POSE_RED = new Pose3d(FlippingUtil.flipFieldPose(RESET_POSE_BLUE.toPose2d()));
   }
 
   /**
@@ -134,8 +144,8 @@ public final class Constants {
     public static final Current FLYWHEEL_STATOR_CURRENT_LIMIT = Amps.of(170);
     public static final Current FLYWHEEL_SUPPLY_CURRENT_LIMIT = Amps.of(80);
 
-    public static final double YAW_ROTOR_TO_SENSOR_RATIO = (52.0 / 12.0) * (52.0 / 18.0);
-    public static final double YAW_SENSOR_TO_MECHANISM_RATIO = (18.0 / 52.0) * (12.0 / 52.0) * (170.0 / 34.0);
+    public static final double YAW_ROTOR_TO_SENSOR_RATIO = (34.0 / 8.0) * (44.0 / 20.0) * (52.0 / 18.0);
+    public static final double YAW_SENSOR_TO_MECHANISM_RATIO = (18.0 / 52.0) * (20.0 / 44.0) * (170.0 / 34.0);
     public static final double PITCH_ROTOR_TO_SENSOR_RATIO = (40.0 / 10.0) * (40.0 / 18.0);
     public static final double PITCH_SENSOR_TO_MECHANISM_RATIO = 375.0 / 32.0;
 
@@ -150,7 +160,7 @@ public final class Constants {
     public static final Angle PITCH_LIMIT_REVERSE = Rotations.of(0.00);
     public static final Angle PITCH_HOME_ANGLE = PITCH_LIMIT_REVERSE;
     public static final Angle PITCH_POSITION_TOLERANCE = Degrees.of(2.0);
-    public static final Angle FUEL_EXIT_ANGLE_OFFSET = Degrees.of(45.0);
+    public static final Angle FUEL_EXIT_ANGLE_OFFSET = Degrees.of(75.0);
     public static final AngularVelocity FLYWHEEL_VELOCITY_TOLERANCE = RotationsPerSecond.of(1.5);
 
     // TODO: Tune PID values
@@ -438,8 +448,8 @@ public final class Constants {
 
     public static final InterpolatingTreeMap<Double, ShooterSubsystem.ShooterSetpoints> SHUTTLE_TARGETS_BY_DISTANCE_METERS = createShuttleInterpolator();
 
-    /** A constant used applied to estimate the fuel's time of flight */
-    public static final double FLYWHEEL_TO_FUEL_VELOCITY_MULTIPLIER = 4;
+    /** A constant multipied by the flywheel's velocity to estimate the fuel's exit velocity */
+    public static final double FLYWHEEL_TO_FUEL_VELOCITY_MULTIPLIER = 0.5;
 
     /** Translation of the hub on the blue side */
     public static final Translation2d TARGET_BLUE = new Translation2d(Inches.of(182.143595), Inches.of(158.84375));

@@ -14,7 +14,6 @@ import static frc.robot.Constants.VisionConstants.LIMELIGHT_RED_PIPELINE;
 import static frc.robot.Constants.VisionConstants.QUESTNAV_ACTIVE_APRILTAG_STD_DEVS;
 import static frc.robot.Constants.VisionConstants.QUESTNAV_APRILTAG_ERROR_THRESHOLD;
 import static frc.robot.Constants.VisionConstants.ROBOT_TO_CAMERA_TRANSFORMS;
-import static frc.robot.Constants.VisionConstants.STARTING_DISTANCE_THRESHOLD;
 import static frc.robot.Constants.VisionConstants.TAG_DISTANCE_THRESHOLD;
 
 import com.pathplanner.lib.util.FlippingUtil;
@@ -63,7 +62,6 @@ public class LocalizationSubsystem extends SubsystemBase {
       .publish();
   private final BooleanPublisher trackingPublisher = localizationTable.getBooleanTopic("Quest Tracking").publish();
   private final BooleanPublisher questHealthPublisher = localizationTable.getBooleanTopic("Quest Healthy").publish();
-  private final Supplier<Pose2d> poseSupplier;
   private final Supplier<AngularVelocity> robotAngularVelocitySupplier;
   @Logged
   private Pose2d startingPose = new Pose2d();
@@ -86,7 +84,6 @@ public class LocalizationSubsystem extends SubsystemBase {
       Supplier<AngularVelocity> angularVelocitySupplier) {
     this.visionMeasurementConsumer = addVisionMeasurement;
     this.poseResetConsumer = poseResetConsumer;
-    this.poseSupplier = poseSupplier;
     this.robotAngularVelocitySupplier = angularVelocitySupplier;
 
     for (int i = 0; i < APRILTAG_CAMERA_NAMES.length; i++) {
@@ -103,14 +100,21 @@ public class LocalizationSubsystem extends SubsystemBase {
 
   /**
    * Sets the starting pose for the robot at the beginning of a match.
-   * <p>
-   * This pose is used to initialize robot orientation and serves as a fallback
-   * for translation if vision-based localization is unavailable.
    * 
-   * @param pose starting pose ALWAYS on the blue side
+   * @param pose starting pose ALWAYS on the blue side, this will be flipped if on the red alliance
    */
   public void setInitialPose(Pose2d pose) {
     startingPose = pose;
+  }
+
+  /**
+   * Resets the robot's pose to the given new pose.
+   * 
+   * @param newPose the new pose to reset to (this is absolute and will not be flipped based on the alliance)
+   */
+  public void resetPose(Pose3d newPose) {
+    setQuestNavPose(newPose);
+    poseResetConsumer.accept(newPose.toPose2d());
   }
 
   /**
@@ -161,32 +165,10 @@ public class LocalizationSubsystem extends SubsystemBase {
       }
 
       if (RobotState.isAutonomous() || DriverStation.isFMSAttached()) {
-        // Preparing to run auto
+        // Preparing to run auto, set the starting pose to the start pose
         Pose2d allianceStartingPose = isBlueAlliance ? startingPose : FlippingUtil.flipFieldPose(startingPose);
-        PoseEstimate poseEstimate = LimelightHelpers.getBotPoseEstimate_wpiBlue(cameraName);
-
-        if (isValidPoseEstimate(poseEstimate) && poseEstimate.pose.getTranslation()
-            .getDistance(allianceStartingPose.getTranslation()) < STARTING_DISTANCE_THRESHOLD.in(Meters)) {
-          // The pose is valid and close to the starting position, use its translation but the auto's rotation
-          Pose2d poseToUse = new Pose2d(poseEstimate.pose.getTranslation(), allianceStartingPose.getRotation());
-          setQuestNavPose(poseToUse);
-          poseResetConsumer.accept(poseToUse);
-        } else {
-          // The pose is valid but far from the starting position, likely a bad reading - use the alliance's starting
-          // pose
-          setQuestNavPose(allianceStartingPose);
-          poseResetConsumer.accept(allianceStartingPose);
-        }
-      } else {
-        // Not prepping for auto, so add the vision measurement from limelight
-        PoseEstimate limelightPose = LimelightHelpers.getBotPoseEstimate_wpiBlue(cameraName);
-        visionMeasurementConsumer.addVisionMeasurement(
-            limelightPose.pose,
-              limelightPose.timestampSeconds,
-              VecBuilder.fill(APRILTAG_STD_DEVS, APRILTAG_STD_DEVS, 0.01));
-        // Get the most recent fused pose estimate and give it to QuestNav
-        Pose2d currentPoseEstimate = poseSupplier.get();
-        setQuestNavPose(currentPoseEstimate);
+        setQuestNavPose(allianceStartingPose);
+        poseResetConsumer.accept(allianceStartingPose);
       }
     }
   }
@@ -285,7 +267,7 @@ public class LocalizationSubsystem extends SubsystemBase {
    * 
    * @param robotPose robot pose
    */
-  public void setQuestNavPose(Pose3d robotPose) {
+  private void setQuestNavPose(Pose3d robotPose) {
     Pose3d questPose = robotPose.transformBy(ROBOT_TO_QUEST);
     questNav.setPose(questPose);
   }
@@ -297,7 +279,7 @@ public class LocalizationSubsystem extends SubsystemBase {
    *
    * @param pose2d the robot's 2D pose
    */
-  public void setQuestNavPose(Pose2d pose2d) {
+  private void setQuestNavPose(Pose2d pose2d) {
     setQuestNavPose(new Pose3d(pose2d));
   }
 

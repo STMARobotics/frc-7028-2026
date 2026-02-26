@@ -51,7 +51,7 @@ public class XBoxControlBindings extends ControlBindings {
   }
 
   @Override
-  public Optional<Trigger> seedFieldCentric() {
+  public Optional<Trigger> resetFieldPosition() {
     return Optional.of(driverController.start());
   }
 
