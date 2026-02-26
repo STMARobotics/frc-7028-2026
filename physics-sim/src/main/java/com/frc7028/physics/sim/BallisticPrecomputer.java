@@ -14,10 +14,13 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.units.measure.Angle;
 import java.awt.color.*;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.function.Function;
 import org.ejml.simple.SimpleMatrix;
 import org.jzy3d.colors.Color;
+import org.jzy3d.plot3d.primitives.CubeComposite;
+import org.jzy3d.plot3d.primitives.LineStrip;
 
 public class BallisticPrecomputer {
 
@@ -61,7 +64,11 @@ public class BallisticPrecomputer {
   public record RobotState(Translation2d position, Translation2d velocity) {
   }
 
-  public record SimulationResult(Translation3d endPosition, Translation3d closestPosition, double flightTime) {
+  public record SimulationResult(
+      Translation3d endPosition,
+      Translation3d closestPosition,
+      Translation3d startPosition,
+      double flightTime) {
 
   }
 
@@ -144,6 +151,7 @@ public class BallisticPrecomputer {
       acceleration = acceleration.plus(unitDirection.times(-0 * drag))
           .plus((new Translation3d(spinAxis.cross(stateVel))).times(0))
           .plus(new Translation3d(0, 0, environmentProfile.gravitationalAcceleration));
+
       return acceleration;
     };
 
@@ -157,6 +165,8 @@ public class BallisticPrecomputer {
         (SimpleMatrix input, RobotState currentState) -> {
           iter++;
           ShotParameters attemptShotParameters = MatrixToParameters(input);
+
+          System.out.println(projectileState.position);
 
           SimulationResult simResult = this
               .simulateBall(this.projectileState, currentState, attemptShotParameters, visualizer, trajColor);
@@ -172,14 +182,22 @@ public class BallisticPrecomputer {
           // } catch (IOException e) {
           // }
 
+          var A = simResult.endPosition().minus(simResult.startPosition);
+          var B = fieldMetrics.targetRegion().center.minus(simResult.startPosition);
+          var C = B.minus(A);
+
+          var errorYaw = Math.atan2(C.getY(), C.getX());
+          var errorRadial = A.getNorm() - B.getNorm();
+          System.out.println("r " + errorRadial);
+
           Translation3d closestErrorDisplacement = simResult.closestPosition
               .minus(this.fieldMetrics.targetRegion().center);
           Translation3d endErrorDisplacement = simResult.endPosition.minus(this.fieldMetrics.targetRegion().center);
+          System.out.println("err");
+          System.out
+              .println((360 / (2 * Math.PI)) * Math.atan2(endErrorDisplacement.getY(), endErrorDisplacement.getX()));
 
-          double[] errorVector = {
-              endErrorDisplacement.getX(),
-              endErrorDisplacement.getY(),
-              endErrorDisplacement.getZ() };
+          double[] errorVector = { errorYaw, errorRadial, 0 };
           return new SimpleMatrix(errorVector);
         },
         (SimpleMatrix output) -> (double) output.normF(),
@@ -205,7 +223,7 @@ public class BallisticPrecomputer {
         },
         new SimpleMatrix(deltas),
         0,
-        10,
+        simulatorResolution.maxIterations(),
         3,
         3);
 
@@ -222,9 +240,15 @@ public class BallisticPrecomputer {
         state.position.getX(),
         state.position.getY(),
         this.fieldMetrics.startingHeight());
+    /// System.out.println();
+    /// System.out.println(parameters.yaw);
+    /// System.out.println(parameters.pitch);
+    /// System.out.println(anglesToUnitVec(parameters.yaw, parameters.pitch));
+    /// System.out.println();
     Translation3d initialVelocity = new Translation3d(state.velocity.getX(), state.velocity.getY(), 0)
         .plus(anglesToUnitVec(parameters.yaw, parameters.pitch).times(parameters.speed));
-
+    // System.out.println(initialVelocity);
+    // System.out.println();
     simulatedProjectileState
         .launch(initialPosition, initialVelocity, this.speedToSpin.apply(parameters.speed()), trajectoryColor);
 
@@ -233,24 +257,49 @@ public class BallisticPrecomputer {
     Translation3d nearestPosition = this.fieldMetrics.targetRegion().center.minus(initialPosition);
     double nearestDistance = nearestPosition.getDistance(targetPosition);
 
+    CubeComposite visualClosestPoint = new CubeComposite(SimulatorVisualizer.translationToCoord(initialPosition), 0.2f);
+    visualClosestPoint.setColor(Color.MAGENTA);
+    visualizer.baseChart.add(visualClosestPoint);
+
+    ArrayList<LineStrip> lines = new ArrayList<>();
+
     // Actually step the projectile over time, and stop when it either collides or is out of bounds
     while (simulatedProjectileState.completedTrajectory()) {
       simulatedProjectileState.step();
       simulatedProjectileState.trajectory.step(simulatedProjectileState.position);
+      Translation3d currentPosition = simulatedProjectileState.position;
+      double currentDistance = currentPosition.getDistance(targetPosition);
+      lines.add(
+          visualizer.newSegment(
+              simulatedProjectileState.position,
+                targetPosition,
+                new Color(360 / (int) (1 + currentDistance), 10, 10)));
 
       // System.out.println(simulatedProjectileState.position);
-
-      Translation3d currentPosition = simulatedProjectileState.position;
       if (currentPosition.getDistance(targetPosition) < nearestDistance) {
         nearestPosition = currentPosition;
+        // visualizer.baseChart.remove(visualClosestPoint);
+        // var pos = visualizer.translationToCoord(simulatedProjectileState.position);
+        // visualClosestPoint = new CubeComposite(pos, 1);
+        // visualClosestPoint.setColor(Color.MAGENTA);
+        // visualizer.baseChart.add(visualClosestPoint);
       }
     }
+
+    CubeComposite endPoint = new CubeComposite(
+        SimulatorVisualizer.translationToCoord(simulatedProjectileState.position),
+        0.2f);
+    endPoint.setColor(Color.MAGENTA);
+    visualizer.baseChart.add(endPoint);
+
+    visualizer.baseChart.add(lines);
 
     simulatedProjectileState.trajectory.put();
 
     return new SimulationResult(
         simulatedProjectileState.position,
         nearestPosition,
+        initialPosition,
         simulatedProjectileState.timeElapsed);
 
     // System.out.println(simulatedProjectileState.dt);
@@ -271,6 +320,7 @@ public class BallisticPrecomputer {
 
     SimpleMatrix convergedInputs = convergedSolution.output().inputs();
 
+    System.out.println("AHHHHHHHHHHHHHHHHHHHH" + this.adaptiveBallisticErrorSystem.maxIterations);
     return MatrixToParameters(convergedInputs);
   }
 

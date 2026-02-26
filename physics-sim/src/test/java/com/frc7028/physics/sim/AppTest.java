@@ -4,7 +4,6 @@
 package com.frc7028.physics.sim;
 
 import static edu.wpi.first.units.Units.Degrees;
-import static edu.wpi.first.units.Units.Radians;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.frc7028.physics.sim.BallisticPrecomputer.RobotState;
@@ -21,18 +20,20 @@ class AppTest {
 
   @Test
   void unitTest_ConvergeSolution() {
-    SimulatorVisualizer visualizer = new SimulatorVisualizer(Quality.Advanced());
 
     Translation3d origin = new Translation3d(0, 0, 0);
-    Region3d fieldBounds = new Region3d(origin, new Translation3d(10, 10, 5) // 10m x 10m x 5m cube
+    Region3d fieldBounds = new Region3d(new Translation3d(0, -10, 0), new Translation3d(10, 10, 10) // 10m x 10m x 5m
+                                                                                                    // cube
     );
     ArrayList<Region3d> obstacles = new ArrayList<>();
-    obstacles.add(new Region3d(new Translation3d(2.5, 0, 0), new Translation3d(3, 6, 4)));
+    obstacles.add(new Region3d(new Translation3d(2.5, 0, 0), new Translation3d(3, -6, 4)));
     ArrayList<Region3d> rejectRegions = new ArrayList<>();
-    Region3d targetRegion = new Region3d(new Translation3d(4, 1, 0), new Translation3d(5, 2, 2));
+    Region3d targetRegion = new Region3d(new Translation3d(4, -3, 0), new Translation3d(5, -4, 2));
     Region2d fieldPlane = new Region2d(new Translation2d(0, 0), new Translation2d(10, 10));
     System.out.println();
     System.out.println(targetRegion.center);
+
+    SimulatorVisualizer visualizer = new SimulatorVisualizer(Quality.Advanced(), fieldBounds);
     FieldMetrics testFieldMetrics = new FieldMetrics(
         fieldPlane,
         fieldBounds,
@@ -41,14 +42,7 @@ class AppTest {
         targetRegion,
         0.5 // starting height
     );
-    SimulatorResolution simRes = new SimulatorResolution(
-        Degrees.of(2), // 0.035 rad (~2)
-        0.5,
-        0.1,
-        0.1,
-        0.2,
-        2.0,
-        10);
+    SimulatorResolution simRes = new SimulatorResolution(Degrees.of(0.1), 0.1, 0.1, 0.1, 0.2, 2.0, 8);
     IntegratorResolution intRes = new IntegratorResolution(
         0.01, // dt initial
         0.01, // epsilon
@@ -66,9 +60,9 @@ class AppTest {
     Function<Double, Rotation3d> spinFunction = speed -> new Rotation3d(); // no spin
     Function<BallisticPrecomputer.RobotState, BallisticPrecomputer.ShotParameters> guessShotFunction = state -> new BallisticPrecomputer.ShotParameters(
         Degrees.of(5),
-        Degrees.of(10),
+        Degrees.of(50),
         50.0);
-    RobotState testingRobotState = new RobotState(new Translation2d(1, 1), new Translation2d(-1, -1));
+    RobotState testingRobotState = new RobotState(new Translation2d(1, 1), new Translation2d(0, 0));
 
     App unitTest = new App(simRes, intRes, env, testFieldMetrics, spinFunction, guessShotFunction, visualizer);
 
@@ -77,13 +71,16 @@ class AppTest {
 
     BallisticPrecomputer.ShotParameters baseShot = new BallisticPrecomputer.ShotParameters(
         Degrees.of(45),
-        Degrees.of(70),
-        15.0);
+        Degrees.of(80), // pit
+        12.5);
 
-    unitTest.precomputer.convergeSolution(
-        unitTest.precomputer.projectileState,
-          testingRobotState,
-          new BallisticPrecomputer.ShotParameters(Degrees.of(60), Radians.of(0.1), 10.0));
+    unitTest.precomputer.convergeSolution(unitTest.precomputer.projectileState, testingRobotState, baseShot);
+
+    // unitTest.precomputer
+    // .simulateBall(unitTest.precomputer.projectileState, testingRobotState, baseShot, visualizer, Color.random());
+
+    System.out.println(unitTest.precomputer.projectileState.collisionStatus);
+    System.out.println(unitTest.precomputer.projectileState.boundaryState);
 
     visualizer.trajectorySpace.finalize();
 
@@ -99,7 +96,6 @@ class AppTest {
     // System.out.println("Yaw: " + convergedShot.yaw());
     // System.out.println("Pitch: " + convergedShot.pitch());
     // System.out.println("Speed: " + convergedShot.speed());
-
   }
 
   void testGraphicsLibrary() {

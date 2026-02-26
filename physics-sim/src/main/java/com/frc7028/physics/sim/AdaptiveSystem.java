@@ -37,7 +37,7 @@ public class AdaptiveSystem<context> {
 
   SimpleMatrix inputDeltas;
 
-  private int maxIterations;
+  public int maxIterations;
   int N;
   int M;
 
@@ -117,6 +117,12 @@ public class AdaptiveSystem<context> {
 
     for (int inputIndex = 0; inputIndex < this.N; inputIndex++) {
 
+      try {
+        // Thread.sleep(100);
+      } catch (Exception x) {
+
+      }
+
       SimpleMatrix shiftedInputs = baselineInputs.copy();
       double delta = inputDeltas.get(inputIndex, 0);
       shiftedInputs.set(inputIndex, 0, shiftedInputs.get(inputIndex, 0) - delta);
@@ -126,14 +132,14 @@ public class AdaptiveSystem<context> {
       shiftedInputs.set(inputIndex, 0, shiftedInputs.get(inputIndex, 0) + 2 * delta);
 
       SimpleMatrix shiftErrorB = this.computeError.apply(shiftedInputs, Context);
-      SimpleMatrix epsilon = shiftErrorB.minus(shiftErrorA);
+      SimpleMatrix epsilon = shiftErrorA.minus(baselineErrors);
 
       for (int outputIndex = 0; outputIndex < this.M; outputIndex++) {
-        Jacobian.set(outputIndex, inputIndex, epsilon.get(outputIndex, 0) / (2 * delta));
+        Jacobian.set(outputIndex, inputIndex, epsilon.get(outputIndex, 0) / (delta));
       }
     }
     debug(DebugType.Display, DebugDisplayEvent.Jacobian, Jacobian);
-    SimpleMatrix correction = Jacobian.pseudoInverse().mult(baselineErrors).scale(-1.0);
+    SimpleMatrix correction = Jacobian.pseudoInverse().mult(baselineErrors).scale(-0.1);
     SimpleMatrix correctedInput = baselineInputs.plus(correction);
     SimpleMatrix correctedOutput = this.computeError.apply(correctedInput, Context);
     double error = this.errorQuantifier.apply(correctedOutput);
