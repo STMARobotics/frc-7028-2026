@@ -150,11 +150,14 @@ public final class Constants {
     public static final double PITCH_ROTOR_TO_SENSOR_RATIO = (40.0 / 10.0) * (40.0 / 18.0);
     public static final double PITCH_SENSOR_TO_MECHANISM_RATIO = 375.0 / 32.0;
 
-    public static final Angle YAW_MAGNETIC_OFFSET = Rotations.of(0.109131);
+    public static final Angle YAW_MAGNETIC_OFFSET = Rotations.of(0.220459);
     public static final Angle PITCH_MAGNETIC_OFFSET = Rotations.of(-0.492676);
 
-    public static final Angle YAW_LIMIT_FORWARD = Rotations.of(0.147705);
-    public static final Angle YAW_LIMIT_REVERSE = Rotations.of(-0.869385);
+    public static final Angle YAW_LIMIT_FORWARD = Rotations.of(0.259);
+    public static final Angle YAW_LIMIT_REVERSE = Rotations.of(-0.768);
+    public static final Angle YAW_ENCODER_DISCONTINUITY_POINT = YAW_LIMIT_REVERSE.plus(YAW_LIMIT_FORWARD)
+        .div(2)
+        .plus(Rotations.of(0.5));
     public static final Angle YAW_HOME_ANGLE = Rotations.of(0.0);
     public static final Angle YAW_POSITION_TOLERANCE = Degrees.of(2.0);
     public static final Angle PITCH_LIMIT_FORWARD = Rotations.of(0.085);
@@ -164,17 +167,11 @@ public final class Constants {
     public static final Angle FUEL_EXIT_ANGLE_OFFSET = Degrees.of(75.0);
     public static final AngularVelocity FLYWHEEL_VELOCITY_TOLERANCE = RotationsPerSecond.of(1.5);
 
-    // TODO: Tune PID values
-    public static final SlotConfigs YAW_SLOT_CONFIGS = new SlotConfigs().withKP(0.0)
-        .withKI(0.0)
-        .withKD(0.0)
-        .withKS(0.0)
-        .withKV(0.5)
-        .withKA(0.0);
+    public static final SlotConfigs YAW_SLOT_CONFIGS = new SlotConfigs().withKP(35.0).withKS(1.0).withKV(0.5);
 
     public static final MotionMagicConfigs YAW_MOTION_MAGIC_CONFIGS = new MotionMagicConfigs()
-        .withMotionMagicAcceleration(1.0) // placeholder
-        .withMotionMagicCruiseVelocity(1.0); // placeholder
+        .withMotionMagicAcceleration(16.0)
+        .withMotionMagicCruiseVelocity(6.0);
 
     public static final SlotConfigs PITCH_SLOT_CONFIGS = new SlotConfigs().withKP(200.0)
         .withKS(0.6)
@@ -351,8 +348,8 @@ public final class Constants {
     public static final Angle AIM_TOLERANCE = Degrees.of(1.5);
 
     // Danger zone is the region on the X axis where we don't want to shoot or shuttle from because of the trench
-    public static final Distance DANGER_ZONE_MIN_BLUE = Meters.of(4.375941);
-    public static final Distance DANGER_ZONE_MAX_BLUE = Meters.of(4.875168);
+    public static final Distance DANGER_ZONE_MIN_BLUE = Meters.of(4.25);
+    public static final Distance DANGER_ZONE_MAX_BLUE = Meters.of(4.95);
     public static final Distance DANGER_ZONE_MIN_RED = FIELD_LENGTH.minus(DANGER_ZONE_MAX_BLUE);
     public static final Distance DANGER_ZONE_MAX_RED = FIELD_LENGTH.minus(DANGER_ZONE_MIN_BLUE);
 

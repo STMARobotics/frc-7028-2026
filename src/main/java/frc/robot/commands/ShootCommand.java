@@ -5,6 +5,7 @@ import static frc.robot.Constants.ShootingConstants.HUB_SETPOINTS_BY_DISTANCE_ME
 
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj2.command.Command;
+import frc.robot.Constants.ShooterConstants;
 import frc.robot.subsystems.FeederSubsystem;
 import frc.robot.subsystems.ShooterSubsystem;
 import frc.robot.subsystems.ShooterSubsystem.ShooterSetpoints;
@@ -52,14 +53,14 @@ public class ShootCommand extends Command {
     /*
      * sets the Yaw, Pitch, and Angle
      */
-    // shooterSubsystem.setYawAngle(Constants.ShooterConstants.YAW_HOME_ANGLE);
+    shooterSubsystem.setYawAngle(ShooterConstants.YAW_HOME_ANGLE);
     shooterSubsystem.setPitchAngle(setpoints.targetPitch());
     shooterSubsystem.setFlywheelSpeed(setpoints.targetFlywheelSpeed());
     /*
      * Checks to make sure the shooter is ready and up to speed
      * before runnig the spindexer and feeder
      */
-    if (isShooting || shooterSubsystem.isPitchAtSetpoint() && shooterSubsystem.isFlywheelAtSpeed()) {
+    if (isShooting || shooterSubsystem.isReadyToShoot()) {
       isShooting = true;
       spindexerSubsystem.runSpindexer(setpoints.spindexerVelocity());
       feederSubsystem.runFeeder(setpoints.feederVelocity());

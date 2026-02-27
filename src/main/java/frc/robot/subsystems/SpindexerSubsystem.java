@@ -74,6 +74,7 @@ public class SpindexerSubsystem extends SubsystemBase {
    * Creates a new Subsystem for the Spindexer
    */
   public SpindexerSubsystem() {
+    PhotonCamera.setVersionCheckEnabled(false);
     var spinTalonconfig = new TalonFXConfiguration().withSlot0(Slot0Configs.from(SPINDEXER_SLOT_CONFIGS))
         .withMotorOutput(
             new MotorOutputConfigs().withInverted(InvertedValue.CounterClockwise_Positive)

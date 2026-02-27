@@ -32,6 +32,7 @@ import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import frc.robot.Constants.OdometryConstants;
 import frc.robot.Constants.QuestNavConstants;
 import frc.robot.commands.ClimbToL1Command;
+import frc.robot.commands.DefaultShooterCommand;
 import frc.robot.commands.DeployIntakeCommand;
 import frc.robot.commands.IntakeCommand;
 import frc.robot.commands.RetractIntakeCommand;
@@ -128,6 +129,7 @@ public class RobotContainer {
 
     // Set up default commmands
     ledSubsystem.setDefaultCommand(new DefaultLEDCommand(ledSubsystem));
+    shooterSubsystem.setDefaultCommand(new DefaultShooterCommand(shooterSubsystem));
   }
 
   private void configureBindings() {
@@ -147,8 +149,7 @@ public class RobotContainer {
 
     controlBindings.stopIntake().ifPresent(trigger -> trigger.onTrue(Commands.runOnce(() -> {
       intakeSubsystem.stop();
-      spindexerSubsystem.stop();
-    }, intakeSubsystem, spindexerSubsystem)));
+    }, intakeSubsystem)));
 
     controlBindings.eject().ifPresent(trigger -> trigger.whileTrue(Commands.run(() -> {
       intakeSubsystem.reverseIntake();

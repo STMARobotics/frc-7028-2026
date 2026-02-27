@@ -196,9 +196,10 @@ public class LocalizationSubsystem extends SubsystemBase {
             : QUESTNAV_ACTIVE_APRILTAG_STD_DEVS;
         double adjustedXYDeviation = baseStandardDeviations + (0.01 * Math.pow(poseEstimate.avgTagDist, 2));
         Matrix<N3, N1> adjustedDeviations = VecBuilder.fill(adjustedXYDeviation, adjustedXYDeviation, Double.MAX_VALUE);
-
-        visionMeasurementConsumer
-            .addVisionMeasurement(poseEstimate.pose, poseEstimate.timestampSeconds, adjustedDeviations);
+        if (questNavFaultCounter > QUESTNAV_FAILURE_THRESHOLD) {
+          visionMeasurementConsumer
+              .addVisionMeasurement(poseEstimate.pose, poseEstimate.timestampSeconds, adjustedDeviations);
+        }
 
         // Track the best estimate for QuestNav comparison
         if (bestDeviation > adjustedXYDeviation) {

@@ -53,7 +53,6 @@ public class ShootAtTargetCommand extends Command {
   // Reusable object to prevent reallocation (to reduce memory pressure)
   private final MutAngle turretYawTarget = Rotations.mutable(0);
 
-  private Translation2d targetTranslation;
   private boolean isShooting;
 
   /**
@@ -103,6 +102,9 @@ public class ShootAtTargetCommand extends Command {
 
     // Translation of the shooter on the field (used for distance/angle calculations).
     var shooterTranslation = ShooterSubsystem.getShooterTranslation(robotPose);
+
+    // Get the target to shoot at
+    var targetTranslation = targetSelector.apply(shooterTranslation);
     var actualTargetDistance = shooterTranslation.getDistance(targetTranslation);
 
     // If the shooter is under the trench or over the bump, don't shoot
@@ -117,9 +119,6 @@ public class ShootAtTargetCommand extends Command {
       ledSubsystem.runPattern(LEDPattern.solid(kRed).blink(Seconds.of(0.1)));
       return;
     }
-
-    // Get the target to shoot at
-    targetTranslation = targetSelector.apply(shooterTranslation);
 
     // 1. Compute the velocity of the fuel at the shooter's location on the field.
     //
@@ -155,7 +154,7 @@ public class ShootAtTargetCommand extends Command {
     // - We therefore perform a few iterations: estimate distance -> choose shooter setpoints -> compute flight time ->
     // predict where the target will appear after that flight -> repeat.
     var predictedTargetTranslation = targetTranslation;
-    Translation2d targetPredictedOffset = null;
+    Translation2d targetPredictedOffset = new Translation2d();
 
     ShooterSetpoints shootingSettings;
     for (int i = 0; i < 4; i++) {
@@ -202,16 +201,17 @@ public class ShootAtTargetCommand extends Command {
     turretYawTarget.mut_replace(angleToTarget.minus(robotPose.getRotation()).getRotations(), Rotations);
 
     // Command the shooter pitch, yaw, and flywheel speed from the lookup table.
-    // shooterSubsystem.setYawAngle(turretYawTarget); // TODO restore when yaw is implemented
+    shooterSubsystem.setYawAngle(turretYawTarget);
     shooterSubsystem.setPitchAngle(shootingSettings.targetPitch());
     shooterSubsystem.setFlywheelSpeed(shootingSettings.targetFlywheelSpeed());
 
     // Check if all of the conditions are met to be ready to shoot
     var isFlywheelReady = shooterSubsystem.isFlywheelAtSpeed();
     var isPitchReady = shooterSubsystem.isPitchAtSetpoint();
-    var isYawReady = true; // shooterSubsystem.isYawAtSetpoint(); TODO restore when yaw is implemented
-    if (isShooting || isFlywheelReady && isPitchReady && isYawReady) {
-      // All conditions met. Continuously feeding until the command is interrupted.
+    var isYawReady = shooterSubsystem.isYawAtSetpoint();
+    if (isShooting || (isFlywheelReady && isPitchReady && isYawReady)) {
+      // All conditions met. Continuously feeding until the command is interrupted
+      // TODO - handle the turret wrapping around, don't shoot all over
       spindexerSubsystem.runSpindexer(shootingSettings.spindexerVelocity());
       feederSubsystem.runFeeder(shootingSettings.feederVelocity());
       ledSubsystem.runPattern(LEDPattern.solid(kGreen));
