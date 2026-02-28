@@ -44,10 +44,23 @@ public abstract class ControlBindings {
 
   /**
    * Trigger to reset the robot position to the current alliance stations righthand corner, facing downfield.
-   *
+   * <p>
+   * This is only intended to be used for practice, not in competition
+   * 
    * @return optional trigger
    */
   public Optional<Trigger> resetFieldPosition() {
+    return Optional.empty();
+  }
+
+  /**
+   * Trigger to reset the robot position using AprilTags on the field.
+   * <p>
+   * This is only intended to be used for practice, not in competition
+   * 
+   * @return optional trigger
+   */
+  public Optional<Trigger> resetFieldPositionFromAprilTags() {
     return Optional.empty();
   }
 

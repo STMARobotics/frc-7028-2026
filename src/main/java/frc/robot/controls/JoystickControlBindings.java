@@ -69,7 +69,7 @@ public class JoystickControlBindings extends ControlBindings {
 
   @Override
   public Optional<Trigger> retractIntake() {
-    return Optional.empty();
+    return Optional.of(leftJoystick.button(2));
   }
 
   @Override
@@ -90,6 +90,11 @@ public class JoystickControlBindings extends ControlBindings {
   @Override
   public Optional<Trigger> resetFieldPosition() {
     return Optional.of(leftJoystick.button(11));
+  }
+
+  @Override
+  public Optional<Trigger> resetFieldPositionFromAprilTags() {
+    return Optional.of(leftJoystick.button(16));
   }
 
 }

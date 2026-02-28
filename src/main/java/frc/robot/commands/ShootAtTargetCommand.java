@@ -2,7 +2,6 @@ package frc.robot.commands;
 
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.Radians;
-import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static edu.wpi.first.units.Units.Seconds;
@@ -126,25 +125,22 @@ public class ShootAtTargetCommand extends Command {
     // predict where the fuel will land we must account for that initial velocity.
     // - There are two contributions:
     // A) vRobot: the robot's linear translation velocity
-    // B) vTanTotal: tangential velocity at the shooter from angular rotation (robot yaw + turret yaw velocity)
-    // acting on the shooter
+    // B) vTan: tangential velocity at the shooter from angular rotation acting on the shooter
     //
     // The sum of these gives the initial velocity of the fuel relative to the field, which we use to compute how far
     // the projectile will shift during its flight.
     var vRobot = new Translation2d(currentChassisSpeeds.vxMetersPerSecond, currentChassisSpeeds.vyMetersPerSecond);
 
     // Total angular rate that affects the shooter (robot yaw + turret yaw rate).
-    var omegaRobot = currentChassisSpeeds.omegaRadiansPerSecond;
-    var turretVelocity = shooterSubsystem.getYawVelocity().in(RadiansPerSecond);
-    var totalOmega = omegaRobot + turretVelocity;
+    var omega = currentChassisSpeeds.omegaRadiansPerSecond;
 
     // Convert rotation about the robot center into a tangential linear velocity at the shooter.
     // This creates a tangential velocity at the shooter mount because the shooter is offset from the robot center.
     var robotToShooter = shooterTranslation.minus(robotPose.getTranslation());
-    var vTanTotal = new Translation2d(-totalOmega * robotToShooter.getY(), totalOmega * robotToShooter.getX());
+    var vTan = new Translation2d(-omega * robotToShooter.getY(), omega * robotToShooter.getX());
 
     // Effective shooter velocity = robot linear + tangential from rotation.
-    var effectiveShooterVelocity = vRobot.plus(vTanTotal);
+    var effectiveShooterVelocity = vRobot.plus(vTan);
 
     // 2. Iteratively solve for the aim point that compensates for time-of-flight.
     //
@@ -209,9 +205,8 @@ public class ShootAtTargetCommand extends Command {
     var isFlywheelReady = shooterSubsystem.isFlywheelAtSpeed();
     var isPitchReady = shooterSubsystem.isPitchAtSetpoint();
     var isYawReady = shooterSubsystem.isYawAtSetpoint();
-    if (isShooting || (isFlywheelReady && isPitchReady && isYawReady)) {
+    if ((isShooting && isYawReady) || (isFlywheelReady && isPitchReady && isYawReady)) {
       // All conditions met. Continuously feeding until the command is interrupted
-      // TODO - handle the turret wrapping around, don't shoot all over
       spindexerSubsystem.runSpindexer(shootingSettings.spindexerVelocity());
       feederSubsystem.runFeeder(shootingSettings.feederVelocity());
       ledSubsystem.runPattern(LEDPattern.solid(kGreen));

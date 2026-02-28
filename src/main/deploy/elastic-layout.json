@@ -85,7 +85,7 @@
             "height": 256.0,
             "type": "Boolean Box",
             "properties": {
-              "topic": "/Localization-Robot/Quest Tracking",
+              "topic": "Robot/m_robotContainer/localizationSubsystem/isQuestConnectedAndTracking",
               "period": 0.06,
               "data_type": "boolean",
               "true_color": 4283215696,

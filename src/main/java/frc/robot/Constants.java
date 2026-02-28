@@ -90,7 +90,7 @@ public final class Constants {
     /** Max angular velocity the driver can request */
     public static final AngularVelocity MAX_TELEOP_ANGULAR_VELOCITY = RotationsPerSecond.of(1.75);
     /** Multiplier for shooting in teleop to reduce driver speed while shooting */
-    public static final double SHOOT_VELOCITY_MULTIPLIER = 0.5;
+    public static final double SHOOT_VELOCITY_MULTIPLIER = 0.3;
     /** Blue reset pose is the blue corner, bumpers against the walls, facing downfield. */
     public static final Pose3d RESET_POSE_BLUE = new Pose3d(
         new Translation3d(ROBOT_LENGTH.in(Meters) / 2.0, ROBOT_WIDTH.in(Meters) / 2.0, 0.0),
@@ -134,7 +134,7 @@ public final class Constants {
     public static final int FLYWHEEL_LEADER_MOTOR_ID = 27;
     public static final int FLYWHEEL_FOLLOWER_MOTOR_ID = 28;
 
-    public static final Current YAW_STATOR_CURRENT_LIMIT = Amps.of(100);
+    public static final Current YAW_STATOR_CURRENT_LIMIT = Amps.of(120);
     public static final Current YAW_SUPPLY_CURRENT_LIMIT = Amps.of(80);
     public static final Current PITCH_STATOR_CURRENT_LIMIT = Amps.of(80);
     public static final Current PITCH_SUPPLY_CURRENT_LIMIT = Amps.of(60);
@@ -153,13 +153,22 @@ public final class Constants {
     public static final Angle YAW_MAGNETIC_OFFSET = Rotations.of(0.220459);
     public static final Angle PITCH_MAGNETIC_OFFSET = Rotations.of(-0.492676);
 
+    // Actual limits to yaw motion
     public static final Angle YAW_LIMIT_FORWARD = Rotations.of(0.259);
     public static final Angle YAW_LIMIT_REVERSE = Rotations.of(-0.768);
+
+    // We're only going to use 1 rotation of the turret, so distribute the dead area to both sides equally
+    public static final Angle YAW_RANGE_FORWARD = YAW_LIMIT_FORWARD
+        .minus(YAW_LIMIT_FORWARD.minus(YAW_LIMIT_REVERSE).minus(Rotations.one()).div(2.0));
+    public static final Angle YAW_RANGE_REVERSE = YAW_LIMIT_REVERSE
+        .plus(YAW_LIMIT_FORWARD.minus(YAW_LIMIT_REVERSE).minus(Rotations.one()).div(2.0));
+
+    // Discontinuity point is the center of the unreachable region
     public static final Angle YAW_ENCODER_DISCONTINUITY_POINT = YAW_LIMIT_REVERSE.plus(YAW_LIMIT_FORWARD)
-        .div(2)
+        .div(2.0)
         .plus(Rotations.of(0.5));
     public static final Angle YAW_HOME_ANGLE = Rotations.of(0.0);
-    public static final Angle YAW_POSITION_TOLERANCE = Degrees.of(2.0);
+    public static final Angle YAW_POSITION_TOLERANCE = Degrees.of(2.5);
     public static final Angle PITCH_LIMIT_FORWARD = Rotations.of(0.085);
     public static final Angle PITCH_LIMIT_REVERSE = Rotations.of(0.00);
     public static final Angle PITCH_HOME_ANGLE = PITCH_LIMIT_REVERSE;
@@ -167,11 +176,11 @@ public final class Constants {
     public static final Angle FUEL_EXIT_ANGLE_OFFSET = Degrees.of(75.0);
     public static final AngularVelocity FLYWHEEL_VELOCITY_TOLERANCE = RotationsPerSecond.of(1.5);
 
-    public static final SlotConfigs YAW_SLOT_CONFIGS = new SlotConfigs().withKP(35.0).withKS(1.0).withKV(0.5);
+    public static final SlotConfigs YAW_SLOT_CONFIGS = new SlotConfigs().withKP(140.0).withKS(0.5).withKV(2.5);
 
     public static final MotionMagicConfigs YAW_MOTION_MAGIC_CONFIGS = new MotionMagicConfigs()
-        .withMotionMagicAcceleration(16.0)
-        .withMotionMagicCruiseVelocity(6.0);
+        .withMotionMagicAcceleration(12.0)
+        .withMotionMagicCruiseVelocity(10.0);
 
     public static final SlotConfigs PITCH_SLOT_CONFIGS = new SlotConfigs().withKP(200.0)
         .withKS(0.6)
@@ -243,22 +252,22 @@ public final class Constants {
     public static final double DEPLOY_SENSOR_TO_MECHANISM_RATIO = 64.0 / 50.0;
 
     public static final Angle DEPLOY_REVERSE_LIMIT = Rotations.of(0.0);
-    public static final Angle DEPLOY_FORWARD_LIMIT = Rotations.of(0.165);
+    public static final Angle DEPLOY_FORWARD_LIMIT = Rotations.of(0.161);
     // Discontinuity point is the center of the unreachable region
     public static final Angle DEPLOY_DISCONTINUITY_POINT = DEPLOY_REVERSE_LIMIT.plus(DEPLOY_FORWARD_LIMIT)
         .div(2)
         .plus(Rotations.of(0.5));
 
     public static final SlotConfigs DEPLOY_SLOT_CONFIGS = new SlotConfigs().withGravityType(GravityTypeValue.Arm_Cosine)
-        .withKP(20.0)
+        .withKP(25.0)
         .withKS(0.6)
         .withKV(0.0)
-        .withKG(0.7)
+        .withKG(0.5)
         .withGravityType(GravityTypeValue.Arm_Cosine);
     public static final MotionMagicConfigs DEPLOY_MOTION_MAGIC_CONFIGS = new MotionMagicConfigs()
         .withMotionMagicAcceleration(10.0)
         .withMotionMagicCruiseVelocity(15.0);
-    public static final Angle DEPLOY_CANCODER_OFFSET = Rotations.of(-0.31);
+    public static final Angle DEPLOY_CANCODER_OFFSET = Rotations.of(-0.149414);
 
     public static final Angle DEPLOYED_POSITION = DEPLOY_REVERSE_LIMIT;
     public static final Angle RETRACTED_POSITION = DEPLOY_FORWARD_LIMIT.minus(Degrees.of(2.0));
@@ -453,7 +462,7 @@ public final class Constants {
     public static final InterpolatingTreeMap<Double, ShooterSubsystem.ShooterSetpoints> SHUTTLE_SETPOINTS_BY_DISTANCE_METERS = createShuttleInterpolator();
 
     /** A constant multipied by the flywheel's velocity to estimate the fuel's exit velocity */
-    public static final double FLYWHEEL_TO_FUEL_VELOCITY_MULTIPLIER = 0.5;
+    public static final double FLYWHEEL_TO_FUEL_VELOCITY_MULTIPLIER = 0.3;
 
     /** Translation of the hub on the blue side */
     public static final Translation2d TARGET_BLUE = new Translation2d(Inches.of(182.143595), Inches.of(158.84375));

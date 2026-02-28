@@ -11,7 +11,6 @@ import static frc.robot.Constants.VisionConstants.APRILTAG_CAMERA_NAMES;
 import static frc.robot.Constants.VisionConstants.APRILTAG_STD_DEVS;
 import static frc.robot.Constants.VisionConstants.LIMELIGHT_BLUE_PIPELINE;
 import static frc.robot.Constants.VisionConstants.LIMELIGHT_RED_PIPELINE;
-import static frc.robot.Constants.VisionConstants.QUESTNAV_ACTIVE_APRILTAG_STD_DEVS;
 import static frc.robot.Constants.VisionConstants.QUESTNAV_APRILTAG_ERROR_THRESHOLD;
 import static frc.robot.Constants.VisionConstants.ROBOT_TO_CAMERA_TRANSFORMS;
 import static frc.robot.Constants.VisionConstants.TAG_DISTANCE_THRESHOLD;
@@ -129,9 +128,34 @@ public class LocalizationSubsystem extends SubsystemBase {
     if (RobotState.isDisabled()) {
       periodicDisabled();
     } else {
-      bestEstimate = periodicEnabled();
+      bestEstimate = periodicLimelightEnabled();
     }
     periodicQuestNav(bestEstimate);
+  }
+
+  /**
+   * Resets the robot's pose using the best available AprilTag pose estimate from the Limelight cameras
+   * <p>
+   * This isn't intended for regular use, it's for resetting for practice or if something goes very wrong
+   */
+  public void resetPoseFromAprilTags() {
+    PoseEstimate bestAprilTagPose = null;
+    double bestDeviation = Double.MAX_VALUE;
+
+    for (String cameraName : APRILTAG_CAMERA_NAMES) {
+      PoseEstimate poseEstimate = LimelightHelpers.getBotPoseEstimate_wpiBlue(cameraName);
+      if (isValidPoseEstimate(poseEstimate)) {
+        double adjustedXYDeviation = APRILTAG_STD_DEVS + (0.01 * Math.pow(poseEstimate.avgTagDist, 2));
+        if (bestDeviation > adjustedXYDeviation) {
+          bestAprilTagPose = poseEstimate;
+          bestDeviation = adjustedXYDeviation;
+        }
+      }
+    }
+
+    if (bestAprilTagPose != null) {
+      resetPose(new Pose3d(bestAprilTagPose.pose));
+    }
   }
 
   /**
@@ -144,14 +168,12 @@ public class LocalizationSubsystem extends SubsystemBase {
    */
   private boolean isValidPoseEstimate(PoseEstimate poseEstimate) {
     return poseEstimate != null && poseEstimate.tagCount > 0
-        && isValidFieldTranslation(poseEstimate.pose.getTranslation())
+        && isValidFieldTranslation(poseEstimate.pose.getTranslation()) && poseEstimate.tagCount > 1
         && poseEstimate.avgTagDist < TAG_DISTANCE_THRESHOLD.in(Meters);
   }
 
   /**
    * Handles periodic updates when the robot is disabled.
-   * <p>
-   * Validates AprilTag poses from the camera, and resets the pose estimator and QuestNav
    */
   private void periodicDisabled() {
     for (String cameraName : APRILTAG_CAMERA_NAMES) {
@@ -176,12 +198,12 @@ public class LocalizationSubsystem extends SubsystemBase {
   /**
    * Handles periodic updates when the robot is enabled.
    * <p>
-   * Processes all AprilTag cameras, validates poses, adds vision measurements with adjusted standard deviations,
+   * Processes all AprilTag cameras, validates poses, adds vision measurements (when QuestNav has failed),
    * and returns the best pose estimate for comparison with QuestNav.
    *
    * @return the best validated pose estimate from all cameras, or null if no valid estimates
    */
-  private PoseEstimate periodicEnabled() {
+  private PoseEstimate periodicLimelightEnabled() {
     PoseEstimate bestEstimate = null;
     double bestDeviation = Double.MAX_VALUE;
 
@@ -192,11 +214,11 @@ public class LocalizationSubsystem extends SubsystemBase {
           && robotAngularVelocitySupplier.get().gt(ANGULAR_VELOCITY_THRESHOLD.unaryMinus())
           && robotAngularVelocitySupplier.get().lt(ANGULAR_VELOCITY_THRESHOLD)) {
 
-        double baseStandardDeviations = (questNavFaultCounter > QUESTNAV_FAILURE_THRESHOLD) ? APRILTAG_STD_DEVS
-            : QUESTNAV_ACTIVE_APRILTAG_STD_DEVS;
-        double adjustedXYDeviation = baseStandardDeviations + (0.01 * Math.pow(poseEstimate.avgTagDist, 2));
-        Matrix<N3, N1> adjustedDeviations = VecBuilder.fill(adjustedXYDeviation, adjustedXYDeviation, Double.MAX_VALUE);
+        double adjustedXYDeviation = APRILTAG_STD_DEVS + (0.01 * Math.pow(poseEstimate.avgTagDist, 2));
         if (questNavFaultCounter > QUESTNAV_FAILURE_THRESHOLD) {
+          // QuestNav is considered unhealthy, fall back to LimeLight measurements
+          Matrix<N3, N1> adjustedDeviations = VecBuilder
+              .fill(adjustedXYDeviation, adjustedXYDeviation, Double.MAX_VALUE);
           visionMeasurementConsumer
               .addVisionMeasurement(poseEstimate.pose, poseEstimate.timestampSeconds, adjustedDeviations);
         }
@@ -282,6 +304,11 @@ public class LocalizationSubsystem extends SubsystemBase {
    */
   private void setQuestNavPose(Pose2d pose2d) {
     setQuestNavPose(new Pose3d(pose2d));
+  }
+
+  @Logged
+  public boolean isQuestConnectedAndTracking() {
+    return questNav.isConnected() && questNav.isTracking();
   }
 
 }

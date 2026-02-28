@@ -46,13 +46,13 @@ public class XBoxControlBindings extends ControlBindings {
   }
 
   @Override
-  public Optional<Trigger> wheelsToX() {
-    return Optional.of(driverController.back());
+  public Optional<Trigger> resetFieldPosition() {
+    return Optional.of(driverController.start());
   }
 
   @Override
-  public Optional<Trigger> resetFieldPosition() {
-    return Optional.of(driverController.start());
+  public Optional<Trigger> resetFieldPositionFromAprilTags() {
+    return Optional.of(driverController.back());
   }
 
   @Override
@@ -100,13 +100,13 @@ public class XBoxControlBindings extends ControlBindings {
     return Optional.of(driverController.povDown());
   }
 
-  private static double squareAxis(double value) {
-    return Math.copySign(value * value, value);
-  }
-
   @Override
   public Optional<Trigger> tuneShoot() {
     return Optional.of(driverController.y());
+  }
+
+  private static double squareAxis(double value) {
+    return Math.copySign(value * value, value);
   }
 
 }

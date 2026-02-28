@@ -116,6 +116,7 @@ public class RobotContainer {
         "Double Middle Auto",
           stream -> stream.filter(item -> !item.getRequirements().isEmpty()));
     SmartDashboard.putData("Auto Mode", autoChooser);
+    setStartingPose(getAutonomousCommand());
     autoChooser.onChange(this::setStartingPose);
 
     configureBindings();
@@ -143,6 +144,8 @@ public class RobotContainer {
       Pose3d newPose = (alliance.isEmpty() || alliance.get() == Blue) ? RESET_POSE_BLUE : RESET_POSE_RED;
       localizationSubsystem.resetPose(newPose);
     })));
+    controlBindings.resetFieldPositionFromAprilTags()
+        .ifPresent(trigger -> trigger.whileTrue(Commands.run(localizationSubsystem::resetPoseFromAprilTags)));
 
     // Intake controls
     controlBindings.runIntake().ifPresent(trigger -> trigger.onTrue(new IntakeCommand(intakeSubsystem)));
@@ -185,7 +188,10 @@ public class RobotContainer {
                 commandFactory.shootAtHubWhileDriving(
                     () -> controlBindings.translationX().get().times(SHOOT_VELOCITY_MULTIPLIER),
                       () -> controlBindings.translationY().get().times(SHOOT_VELOCITY_MULTIPLIER),
-                      () -> controlBindings.omega().get().times(SHOOT_VELOCITY_MULTIPLIER))));
+                      () -> controlBindings.omega()
+                          .get()
+                          .times(SHOOT_VELOCITY_MULTIPLIER)
+                          .times(SHOOT_VELOCITY_MULTIPLIER))));
 
     controlBindings.shuttle().ifPresent(trigger -> trigger.whileTrue(commandFactory.shuttleToCorner()));
 

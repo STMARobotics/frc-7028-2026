@@ -40,6 +40,8 @@ import static frc.robot.Constants.ShooterConstants.YAW_MAGNETIC_OFFSET;
 import static frc.robot.Constants.ShooterConstants.YAW_MOTION_MAGIC_CONFIGS;
 import static frc.robot.Constants.ShooterConstants.YAW_MOTOR_ID;
 import static frc.robot.Constants.ShooterConstants.YAW_POSITION_TOLERANCE;
+import static frc.robot.Constants.ShooterConstants.YAW_RANGE_FORWARD;
+import static frc.robot.Constants.ShooterConstants.YAW_RANGE_REVERSE;
 import static frc.robot.Constants.ShooterConstants.YAW_ROTOR_TO_SENSOR_RATIO;
 import static frc.robot.Constants.ShooterConstants.YAW_SENSOR_TO_MECHANISM_RATIO;
 import static frc.robot.Constants.ShooterConstants.YAW_SLOT_CONFIGS;
@@ -309,12 +311,11 @@ public class ShooterSubsystem extends SubsystemBase {
    * @param targetYaw requested yaw
    */
   public void setYawAngle(Angle targetYaw) {
-    yawMotor.setControl(
-        yawPositionRequest.withPosition(
-            MathUtil.inputModulus(
-                targetYaw.in(Rotations),
-                  YAW_LIMIT_REVERSE.in(Rotations),
-                  YAW_LIMIT_FORWARD.in(Rotations))));
+    // Wrap the input to match the range of the turret. The input is probably in the range of (-0.5, 0.5], but the
+    // turret range is more like [-0.75, 0.25].
+    double targetRotations = MathUtil
+        .inputModulus(targetYaw.in(Rotations), YAW_RANGE_REVERSE.in(Rotations), YAW_RANGE_FORWARD.in(Rotations));
+    yawMotor.setControl(yawPositionRequest.withPosition(targetRotations));
   }
 
   /**
