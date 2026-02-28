@@ -267,7 +267,7 @@ public final class Constants {
     public static final MotionMagicConfigs DEPLOY_MOTION_MAGIC_CONFIGS = new MotionMagicConfigs()
         .withMotionMagicAcceleration(10.0)
         .withMotionMagicCruiseVelocity(15.0);
-    public static final Angle DEPLOY_CANCODER_OFFSET = Rotations.of(-0.149414);
+    public static final Angle DEPLOY_CANCODER_OFFSET = Rotations.of(-0.150146);
 
     public static final Angle DEPLOYED_POSITION = DEPLOY_REVERSE_LIMIT;
     public static final Angle RETRACTED_POSITION = DEPLOY_FORWARD_LIMIT.minus(Degrees.of(2.0));
@@ -441,6 +441,14 @@ public final class Constants {
                 RotationsPerSecond.of(29.5),
                 SPINDEXER_FEED_VELOCITY,
                 FEEDER_FEED_VELOCITY));
+      // From here, these are guesses that need tuning
+      map.put(
+          6.5,
+            new ShooterSetpoints(
+                Degrees.of(14),
+                RotationsPerSecond.of(34),
+                SPINDEXER_FEED_VELOCITY,
+                FEEDER_FEED_VELOCITY));
       return map;
     }
 
@@ -451,8 +459,15 @@ public final class Constants {
       map.put(
           1.548,
             new ShooterSetpoints(
-                Degrees.zero(),
+                Degrees.of(30),
                 RotationsPerSecond.of(20),
+                SPINDEXER_FEED_VELOCITY,
+                FEEDER_FEED_VELOCITY));
+      map.put(
+          17.0,
+            new ShooterSetpoints(
+                Degrees.of(30),
+                RotationsPerSecond.of(50),
                 SPINDEXER_FEED_VELOCITY,
                 FEEDER_FEED_VELOCITY));
 
@@ -472,10 +487,10 @@ public final class Constants {
 
     /** Translations for shuttling on the blue side, with Z > 1/2 of the field */
     public static final Translation2d SHUTTLE_BLUE_HIGH = new Translation2d(
-        Inches.of(6.0),
-        FIELD_WIDTH.minus(Inches.of(6.0)));
+        Inches.of(18.0),
+        FIELD_WIDTH.minus(Inches.of(30)));
     /** Translations for shuttling on the blue side, with Z < 1/2 of the field */
-    public static final Translation2d SHUTTLE_BLUE_LOW = new Translation2d(Inches.of(6.0), Inches.of(6.0));
+    public static final Translation2d SHUTTLE_BLUE_LOW = new Translation2d(Inches.of(18.0), Inches.of(30));
 
     /** Translations for shuttling on the red side, with Z > 1/2 of the field */
     public static final Translation2d SHUTTLE_RED_HIGH = FlippingUtil.flipFieldPosition(SHUTTLE_BLUE_LOW);

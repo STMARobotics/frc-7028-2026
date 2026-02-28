@@ -1,0 +1,96 @@
+{
+  "version": "2025.0",
+  "waypoints": [
+    {
+      "anchor": {
+        "x": 3.761897983392646,
+        "y": 0.6081969157769855
+      },
+      "prevControl": null,
+      "nextControl": {
+        "x": 5.761420710665373,
+        "y": 0.4742082794133501
+      },
+      "isLocked": false,
+      "linkedName": "FirstPrepareToShootEnd"
+    },
+    {
+      "anchor": {
+        "x": 6.651829545454546,
+        "y": 1.5407500000000005
+      },
+      "prevControl": {
+        "x": 6.544346150356459,
+        "y": 1.315034870294018
+      },
+      "nextControl": {
+        "x": 6.759312940552633,
+        "y": 1.766465129705983
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "anchor": {
+        "x": 6.651829545454546,
+        "y": 4.5503409090909095
+      },
+      "prevControl": {
+        "x": 6.651829545454546,
+        "y": 3.499045454545455
+      },
+      "nextControl": null,
+      "isLocked": false,
+      "linkedName": "MoveToHubEnd"
+    }
+  ],
+  "rotationTargets": [],
+  "constraintZones": [
+    {
+      "name": "Constraints Zone",
+      "minWaypointRelativePos": 1.2607773851590067,
+      "maxWaypointRelativePos": 2.0,
+      "constraints": {
+        "maxVelocity": 2.0,
+        "maxAcceleration": 3.0,
+        "maxAngularVelocity": 540.0,
+        "maxAngularAcceleration": 720.0,
+        "nominalVoltage": 12.0,
+        "unlimited": false
+      }
+    }
+  ],
+  "pointTowardsZones": [],
+  "eventMarkers": [
+    {
+      "name": "RunIntake",
+      "waypointRelativePos": 0,
+      "endWaypointRelativePos": null,
+      "command": {
+        "type": "named",
+        "data": {
+          "name": "RunIntake"
+        }
+      }
+    }
+  ],
+  "globalConstraints": {
+    "maxVelocity": 5.0,
+    "maxAcceleration": 3.0,
+    "maxAngularVelocity": 540.0,
+    "maxAngularAcceleration": 720.0,
+    "nominalVoltage": 12.0,
+    "unlimited": false
+  },
+  "goalEndState": {
+    "velocity": 0,
+    "rotation": 90.0
+  },
+  "reversed": false,
+  "folder": "Double Middle Auto",
+  "idealStartingState": {
+    "velocity": 0,
+    "rotation": 90.0
+  },
+  "useDefaultConstraints": true
+}

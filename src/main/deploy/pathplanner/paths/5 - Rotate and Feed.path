@@ -3,37 +3,58 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 7.750787119856888,
-        "y": 1.9662611806812085
+        "x": 6.652,
+        "y": 4.5503409090909095
       },
       "prevControl": null,
       "nextControl": {
-        "x": 7.743785772973603,
-        "y": 1.7163592376278982
+        "x": 6.507534090909091,
+        "y": 3.5918068181818184
       },
       "isLocked": false,
-      "linkedName": "FirstMiddleEnd"
+      "linkedName": "MoveToHubEnd"
     },
     {
       "anchor": {
-        "x": 7.750787119856888,
-        "y": 3.395977272727273
+        "x": 6.048460264900663,
+        "y": 0.7752897350993384
       },
       "prevControl": {
-        "x": 7.795886363636363,
-        "y": 2.633272727272727
+        "x": 6.326744355809755,
+        "y": 1.0226533714629749
+      },
+      "nextControl": {
+        "x": 5.847700110661087,
+        "y": 0.5968362646641607
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "anchor": {
+        "x": 0.6017272727272727,
+        "y": 0.63375
+      },
+      "prevControl": {
+        "x": 3.9720568181818185,
+        "y": 0.726511363636364
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": "FirstIntakeMiddleEnd"
+      "linkedName": null
     }
   ],
-  "rotationTargets": [],
+  "rotationTargets": [
+    {
+      "waypointRelativePos": 0.6698113207547169,
+      "rotationDegrees": 178.0
+    }
+  ],
   "constraintZones": [
     {
       "name": "Constraints Zone",
-      "minWaypointRelativePos": 0,
-      "maxWaypointRelativePos": 1.0,
+      "minWaypointRelativePos": 1.6876325088339323,
+      "maxWaypointRelativePos": 2.0,
       "constraints": {
         "maxVelocity": 1.0,
         "maxAcceleration": 3.0,
@@ -47,19 +68,19 @@
   "pointTowardsZones": [],
   "eventMarkers": [
     {
-      "name": "RunIntake",
-      "waypointRelativePos": 0,
+      "name": "Shoot",
+      "waypointRelativePos": 1.696113074204957,
       "endWaypointRelativePos": null,
       "command": {
         "type": "named",
         "data": {
-          "name": "RunIntake"
+          "name": "Shoot"
         }
       }
     }
   ],
   "globalConstraints": {
-    "maxVelocity": 3.0,
+    "maxVelocity": 5.0,
     "maxAcceleration": 3.0,
     "maxAngularVelocity": 540.0,
     "maxAngularAcceleration": 720.0,
@@ -68,7 +89,7 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": 90.0
+    "rotation": 180.0
   },
   "reversed": false,
   "folder": "Double Middle Auto",
