@@ -95,7 +95,7 @@ public class TuneShootingCommand extends Command {
     distancePublisher.accept(turretDistanceToHub);
 
     shooterSubsystem.setPitchAngle(pitchMeasure.mut_replace(pitchSubscriber.get(0.0), Degrees));
-    // shooterSubsystem.setYawAngle(yawMeasure.mut_replace(yawSubscriber.get(180.0), Degrees));
+    shooterSubsystem.setYawAngle(yawMeasure.mut_replace(yawSubscriber.get(180.0), Degrees));
     shooterSubsystem.setFlywheelSpeed(topVelocityMeasure.mut_replace(flywheelSubscriber.get(0.0), RotationsPerSecond));
     if (shooting || (shooterSubsystem.isFlywheelAtSpeed() && shooterSubsystem.isPitchAtSetpoint())) {
       feederSubsystem
