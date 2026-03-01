@@ -16,13 +16,14 @@ import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.commands.FollowPathCommand;
-import com.pathplanner.lib.commands.PathPlannerAuto;
+import com.pathplanner.lib.config.PIDConstants;
+import com.pathplanner.lib.config.RobotConfig;
+import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 import edu.wpi.first.epilogue.Logged;
-import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
-import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -56,7 +57,8 @@ import frc.robot.subsystems.SpindexerSubsystem;
 @Logged(strategy = Logged.Strategy.OPT_IN)
 public class RobotContainer {
   private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
-
+  /** Swerve request to apply during robot-centric path following */
+  private final SwerveRequest.ApplyRobotSpeeds ppRobotSpeedsRequest = new SwerveRequest.ApplyRobotSpeeds();
   private final DrivetrainTelemetry drivetrainTelemetry = new DrivetrainTelemetry();
 
   // Create the drivetrain subsystem here instead of using TunerConstants.createDrivetrain() to set standard deviations
@@ -111,13 +113,12 @@ public class RobotContainer {
     }
 
     // Configure and populate the auto command chooser with autos from PathPlanner
+    configureAutoBuilder();
     configurePathPlannerCommands();
     autoChooser = AutoBuilder.buildAutoChooserWithOptionsModifier(
         "Double Middle Auto",
           stream -> stream.filter(item -> !item.getRequirements().isEmpty()));
     SmartDashboard.putData("Auto Mode", autoChooser);
-    setStartingPose(getAutonomousCommand());
-    autoChooser.onChange(this::setStartingPose);
 
     configureBindings();
 
@@ -140,12 +141,13 @@ public class RobotContainer {
 
     controlBindings.wheelsToX().ifPresent(trigger -> trigger.whileTrue(drivetrain.applyRequest(() -> brake)));
     controlBindings.resetFieldPosition().ifPresent(trigger -> trigger.onTrue(Commands.runOnce(() -> {
-      var alliance = DriverStation.getAlliance();
-      Pose3d newPose = (alliance.isEmpty() || alliance.get() == Blue) ? RESET_POSE_BLUE : RESET_POSE_RED;
+      Pose3d newPose = DriverStation.getAlliance().orElse(Blue) == Blue ? RESET_POSE_BLUE : RESET_POSE_RED;
       localizationSubsystem.resetPose(newPose);
     })));
     controlBindings.resetFieldPositionFromAprilTags()
-        .ifPresent(trigger -> trigger.whileTrue(Commands.run(localizationSubsystem::resetPoseFromAprilTags)));
+        .ifPresent(
+            trigger -> trigger
+                .whileTrue(Commands.run(localizationSubsystem::resetPoseFromAprilTags).ignoringDisable(true)));
 
     // Intake controls
     controlBindings.runIntake().ifPresent(trigger -> trigger.onTrue(new IntakeCommand(intakeSubsystem)));
@@ -213,11 +215,30 @@ public class RobotContainer {
     drivetrain.registerTelemetry(drivetrainTelemetry::telemeterize);
   }
 
-  public void setStartingPose(Command auto) {
-    if (auto instanceof PathPlannerAuto ppAuto) {
-      localizationSubsystem.setInitialPose(ppAuto.getStartingPose());
-    } else {
-      localizationSubsystem.setInitialPose(new Pose2d(new Translation2d(), new Rotation2d(0)));
+  private void configureAutoBuilder() {
+    try {
+      RobotConfig config = RobotConfig.fromGUISettings();
+      AutoBuilder.configure(
+          () -> drivetrain.getState().Pose, // Supplier of current robot pose
+            localizationSubsystem::resetPose, // Consumer for seeding pose against auto
+            () -> drivetrain.getState().Speeds, // Supplier of current robot speeds
+            // Consumer of ChassisSpeeds and feedforwards to drive the robot
+            (speeds, feedforwards) -> drivetrain.setControl(
+                ppRobotSpeedsRequest.withSpeeds(ChassisSpeeds.discretize(speeds, 0.020))
+                    .withWheelForceFeedforwardsX(feedforwards.robotRelativeForcesXNewtons())
+                    .withWheelForceFeedforwardsY(feedforwards.robotRelativeForcesYNewtons())),
+            new PPHolonomicDriveController(
+                // PID constants for translation
+                new PIDConstants(10, 0, 0),
+                // PID constants for rotation
+                new PIDConstants(6, 0, 0)),
+            config,
+            // Assume the path needs to be flipped for Red vs Blue, this is normally the case
+            () -> DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red,
+            drivetrain // Subsystem for requirements
+      );
+    } catch (Exception ex) {
+      DriverStation.reportError("Failed to load PathPlanner config and configure AutoBuilder", ex.getStackTrace());
     }
   }
 

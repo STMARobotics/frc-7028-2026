@@ -2,6 +2,7 @@ package frc.robot.subsystems;
 
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.wpilibj.DriverStation.Alliance.Blue;
 import static frc.robot.Constants.FieldConstants.isValidFieldTranslation;
 import static frc.robot.Constants.QuestNavConstants.QUESTNAV_FAILURE_THRESHOLD;
 import static frc.robot.Constants.QuestNavConstants.QUESTNAV_STD_DEVS;
@@ -15,7 +16,6 @@ import static frc.robot.Constants.VisionConstants.QUESTNAV_APRILTAG_ERROR_THRESH
 import static frc.robot.Constants.VisionConstants.ROBOT_TO_CAMERA_TRANSFORMS;
 import static frc.robot.Constants.VisionConstants.TAG_DISTANCE_THRESHOLD;
 
-import com.pathplanner.lib.util.FlippingUtil;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
@@ -23,13 +23,8 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
-import edu.wpi.first.networktables.BooleanPublisher;
-import edu.wpi.first.networktables.NetworkTable;
-import edu.wpi.first.networktables.NetworkTableInstance;
-import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.RobotState;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.LimelightHelpers;
@@ -37,7 +32,6 @@ import frc.robot.LimelightHelpers.PoseEstimate;
 import frc.robot.VisionMeasurementConsumer;
 import gg.questnav.questnav.PoseFrame;
 import gg.questnav.questnav.QuestNav;
-import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -55,17 +49,12 @@ public class LocalizationSubsystem extends SubsystemBase {
   private final VisionMeasurementConsumer visionMeasurementConsumer;
   private final Consumer<Pose2d> poseResetConsumer;
 
-  private final NetworkTable localizationTable = NetworkTableInstance.getDefault().getTable("Localization-Robot");
-  private final StructPublisher<Pose3d> questPublisher = localizationTable
-      .getStructTopic("Quest Robot Pose", Pose3d.struct)
-      .publish();
-  private final BooleanPublisher trackingPublisher = localizationTable.getBooleanTopic("Quest Tracking").publish();
-  private final BooleanPublisher questHealthPublisher = localizationTable.getBooleanTopic("Quest Healthy").publish();
   private final Supplier<AngularVelocity> robotAngularVelocitySupplier;
   @Logged
-  private Pose2d startingPose = new Pose2d();
-  @Logged
   private double questNavFaultCounter = 0.0;
+  // Last quest robot pose. Only an instance variable so it will be logged by Epilogue
+  @Logged
+  private Pose3d questRobotPose;
 
   /**
    * Constructs a new LocalizationSubsystem.
@@ -98,12 +87,13 @@ public class LocalizationSubsystem extends SubsystemBase {
   }
 
   /**
-   * Sets the starting pose for the robot at the beginning of a match.
+   * Resets the robot's pose to the given new pose.
    * 
-   * @param pose starting pose ALWAYS on the blue side, this will be flipped if on the red alliance
+   * @param newPose the new pose to reset to (this is absolute and will not be flipped based on the alliance)
    */
-  public void setInitialPose(Pose2d pose) {
-    startingPose = pose;
+  public void resetPose(Pose2d newPose) {
+    setQuestNavPose(newPose);
+    poseResetConsumer.accept(newPose);
   }
 
   /**
@@ -124,12 +114,10 @@ public class LocalizationSubsystem extends SubsystemBase {
    */
   @Override
   public void periodic() {
-    PoseEstimate bestEstimate = null;
     if (RobotState.isDisabled()) {
       periodicDisabled();
-    } else {
-      bestEstimate = periodicLimelightEnabled();
     }
+    PoseEstimate bestEstimate = periodicLimelight();
     periodicQuestNav(bestEstimate);
   }
 
@@ -154,7 +142,7 @@ public class LocalizationSubsystem extends SubsystemBase {
     }
 
     if (bestAprilTagPose != null) {
-      resetPose(new Pose3d(bestAprilTagPose.pose));
+      resetPose(bestAprilTagPose.pose);
     }
   }
 
@@ -176,21 +164,13 @@ public class LocalizationSubsystem extends SubsystemBase {
    * Handles periodic updates when the robot is disabled.
    */
   private void periodicDisabled() {
+    boolean isBlueAlliance = DriverStation.getAlliance().orElse(Blue) == Blue;
     for (String cameraName : APRILTAG_CAMERA_NAMES) {
-      Optional<Alliance> alliance = DriverStation.getAlliance();
-      boolean isBlueAlliance = alliance.isEmpty() || alliance.get() == Alliance.Blue;
       // Set the pipeline based on alliance color
-      if (alliance.isEmpty() || alliance.get() == Alliance.Blue) {
+      if (isBlueAlliance) {
         LimelightHelpers.setPipelineIndex(cameraName, LIMELIGHT_BLUE_PIPELINE);
       } else {
         LimelightHelpers.setPipelineIndex(cameraName, LIMELIGHT_RED_PIPELINE);
-      }
-
-      if (RobotState.isAutonomous() || DriverStation.isFMSAttached()) {
-        // Preparing to run auto, set the starting pose to the start pose
-        Pose2d allianceStartingPose = isBlueAlliance ? startingPose : FlippingUtil.flipFieldPose(startingPose);
-        setQuestNavPose(allianceStartingPose);
-        poseResetConsumer.accept(allianceStartingPose);
       }
     }
   }
@@ -203,7 +183,7 @@ public class LocalizationSubsystem extends SubsystemBase {
    *
    * @return the best validated pose estimate from all cameras, or null if no valid estimates
    */
-  private PoseEstimate periodicLimelightEnabled() {
+  private PoseEstimate periodicLimelight() {
     PoseEstimate bestEstimate = null;
     double bestDeviation = Double.MAX_VALUE;
 
@@ -244,9 +224,8 @@ public class LocalizationSubsystem extends SubsystemBase {
    */
   private void periodicQuestNav(PoseEstimate bestVisionEstimate) {
     questNav.commandPeriodic();
-    boolean isTracking = questNav.isTracking();
-    trackingPublisher.set(isTracking);
-    if (!isTracking && questNavFaultCounter < QUESTNAV_FAILURE_THRESHOLD) {
+    boolean isQuestWorking = questNav.isTracking() && questNav.isConnected();
+    if (!isQuestWorking && questNavFaultCounter < QUESTNAV_FAILURE_THRESHOLD) {
       questNavFaultCounter++;
     }
     PoseFrame[] frames = questNav.getAllUnreadPoseFrames();
@@ -254,11 +233,10 @@ public class LocalizationSubsystem extends SubsystemBase {
     for (int i = frames.length - 1; i >= 0; i--) {
       PoseFrame frame = frames[i];
       if (frame.isTracking()) {
-        Pose3d robotPose = frame.questPose3d().transformBy(ROBOT_TO_QUEST.inverse());
-        questPublisher.set(robotPose);
+        questRobotPose = frame.questPose3d().transformBy(ROBOT_TO_QUEST.inverse());
 
         double bestVisionEstimateDistance = (bestVisionEstimate != null)
-            ? robotPose.toPose2d().getTranslation().getDistance(bestVisionEstimate.pose.getTranslation())
+            ? questRobotPose.toPose2d().getTranslation().getDistance(bestVisionEstimate.pose.getTranslation())
             : 0;
 
         if (bestVisionEstimateDistance > QUESTNAV_APRILTAG_ERROR_THRESHOLD.in(Meters)) {
@@ -266,19 +244,16 @@ public class LocalizationSubsystem extends SubsystemBase {
           if (questNavFaultCounter < QUESTNAV_FAILURE_THRESHOLD) {
             questNavFaultCounter += Math.pow(bestVisionEstimateDistance, 2);
           }
-        } else {
+        } else if (bestVisionEstimate != null) {
           // QuestNav agrees with AprilTag vision - decrement fault counter to allow recovery
-          if (questNavFaultCounter > 0.0) {
-            questNavFaultCounter -= 1.0;
-          }
+          questNavFaultCounter = Math.max(questNavFaultCounter - 1.0, 0.0);
         }
 
-        questHealthPublisher.set(questNavFaultCounter < QUESTNAV_FAILURE_THRESHOLD);
-
         // Only use QuestNav measurements when fault counter is below threshold and pose is valid
-        if (questNavFaultCounter < QUESTNAV_FAILURE_THRESHOLD && isValidFieldTranslation(robotPose.getTranslation())) {
+        if (questNavFaultCounter < QUESTNAV_FAILURE_THRESHOLD
+            && isValidFieldTranslation(questRobotPose.getTranslation())) {
           visionMeasurementConsumer
-              .addVisionMeasurement(robotPose.toPose2d(), frame.dataTimestamp(), QUESTNAV_STD_DEVS);
+              .addVisionMeasurement(questRobotPose.toPose2d(), frame.dataTimestamp(), QUESTNAV_STD_DEVS);
         }
         break; // Found the most recent tracking frame, exit loop
       }
@@ -309,6 +284,11 @@ public class LocalizationSubsystem extends SubsystemBase {
   @Logged
   public boolean isQuestConnectedAndTracking() {
     return questNav.isConnected() && questNav.isTracking();
+  }
+
+  @Logged
+  public boolean isQuestBelowErrorThreshold() {
+    return questNavFaultCounter < QUESTNAV_FAILURE_THRESHOLD;
   }
 
 }
