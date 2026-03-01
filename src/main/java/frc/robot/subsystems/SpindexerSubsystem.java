@@ -10,7 +10,6 @@ import static frc.robot.Constants.SpindexerConstants.PIPELINE_RESULT_TTL;
 import static frc.robot.Constants.SpindexerConstants.SPINDEXER_AGITATE_BACKWARD_VELOCITY;
 import static frc.robot.Constants.SpindexerConstants.SPINDEXER_AGITATE_FORWARD_VELOCITY;
 import static frc.robot.Constants.SpindexerConstants.SPINDEXER_FEED_VELOCITY;
-import static frc.robot.Constants.SpindexerConstants.SPINDEXER_INTAKE_VELOCITY;
 import static frc.robot.Constants.SpindexerConstants.SPINDEXER_PEAK_TORQUE_CURRENT_FORWARD;
 import static frc.robot.Constants.SpindexerConstants.SPINDEXER_PEAK_TORQUE_CURRENT_REVERSE;
 import static frc.robot.Constants.SpindexerConstants.SPINDEXER_SLOT_CONFIGS;
@@ -108,13 +107,6 @@ public class SpindexerSubsystem extends SubsystemBase {
    */
   public void feedShooter() {
     spindexerMotor.setControl(spindexerVelocityTorque.withVelocity(SPINDEXER_FEED_VELOCITY));
-  }
-
-  /**
-   * Spins the spindexer backward well intakeing fuel
-   */
-  public void intake() {
-    spindexerMotor.setControl(spindexerVelocityTorque.withVelocity(SPINDEXER_INTAKE_VELOCITY));
   }
 
   /**
