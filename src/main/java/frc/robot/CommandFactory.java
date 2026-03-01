@@ -1,6 +1,7 @@
 package frc.robot;
 
 import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.wpilibj.DriverStation.Alliance.Blue;
 import static frc.robot.Constants.FieldConstants.FIELD_WIDTH;
 import static frc.robot.Constants.ShootingConstants.HUB_SETPOINTS_BY_DISTANCE_METERS;
 import static frc.robot.Constants.ShootingConstants.SHUTTLE_BLUE_HIGH;
@@ -19,7 +20,6 @@ import com.ctre.phoenix6.swerve.SwerveRequest;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.commands.ShootAtTargetCommand;
 import frc.robot.subsystems.ClimbSubsystem;
@@ -84,7 +84,7 @@ public class CommandFactory {
         ledSubsystem,
         () -> drivetrainSubsystem.getState().Pose,
         drivetrainSubsystem::getCurrentFieldChassisSpeeds,
-        t -> DriverStation.getAlliance().map(a -> a == Alliance.Blue ? TARGET_BLUE : TARGET_RED).orElse(TARGET_BLUE),
+        t -> DriverStation.getAlliance().orElse(Blue) == Blue ? TARGET_BLUE : TARGET_RED,
         HUB_SETPOINTS_BY_DISTANCE_METERS);
   }
 
@@ -102,7 +102,7 @@ public class CommandFactory {
         () -> drivetrainSubsystem.getState().Pose,
         drivetrainSubsystem::getCurrentFieldChassisSpeeds,
         t -> {
-          if (DriverStation.getAlliance().map(a -> a == Alliance.Blue).orElse(true)) {
+          if (DriverStation.getAlliance().orElse(Blue) == Blue) {
             return t.getY() > FIELD_WIDTH.in(Meters) / 2.0 ? SHUTTLE_BLUE_HIGH : SHUTTLE_BLUE_LOW;
           } else {
             return t.getY() > FIELD_WIDTH.in(Meters) / 2.0 ? SHUTTLE_RED_HIGH : SHUTTLE_RED_LOW;
