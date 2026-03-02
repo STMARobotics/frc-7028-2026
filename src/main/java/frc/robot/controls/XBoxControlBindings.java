@@ -105,6 +105,11 @@ public class XBoxControlBindings extends ControlBindings {
     return Optional.of(driverController.y());
   }
 
+  @Override
+  public Optional<Trigger> shuttle() {
+    return Optional.of(driverController.b());
+  }
+
   private static double squareAxis(double value) {
     return Math.copySign(value * value, value);
   }

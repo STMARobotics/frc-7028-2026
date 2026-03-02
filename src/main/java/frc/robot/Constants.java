@@ -486,14 +486,20 @@ public final class Constants {
 
     /** Translations for shuttling on the blue side, with Z > 1/2 of the field */
     public static final Translation2d SHUTTLE_BLUE_HIGH = new Translation2d(
-        Inches.of(18.0),
+        Inches.of(2.0),
         FIELD_WIDTH.minus(Inches.of(30)));
     /** Translations for shuttling on the blue side, with Z < 1/2 of the field */
-    public static final Translation2d SHUTTLE_BLUE_LOW = new Translation2d(Inches.of(18.0), Inches.of(30));
+    public static final Translation2d SHUTTLE_BLUE_LOW = new Translation2d(Inches.of(2.0), Inches.of(30));
 
     /** Translations for shuttling on the red side, with Z > 1/2 of the field */
     public static final Translation2d SHUTTLE_RED_HIGH = FlippingUtil.flipFieldPosition(SHUTTLE_BLUE_LOW);
     /** Translations for shuttling on the red side, with Z < 1/2 of the field */
     public static final Translation2d SHUTTLE_RED_LOW = FlippingUtil.flipFieldPosition(SHUTTLE_BLUE_HIGH);
+
+    /**
+     * The offset distance from the shuttle target where the robot will shoot. It will shoot offset distance short
+     * (closer to the robot) of the target
+     */
+    public static final Distance SHUTTLE_OFFSET_DISTANCE = Meters.of(3.125);
   }
 }

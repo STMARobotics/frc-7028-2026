@@ -6,6 +6,7 @@ import static frc.robot.Constants.FieldConstants.FIELD_WIDTH;
 import static frc.robot.Constants.ShootingConstants.HUB_SETPOINTS_BY_DISTANCE_METERS;
 import static frc.robot.Constants.ShootingConstants.SHUTTLE_BLUE_HIGH;
 import static frc.robot.Constants.ShootingConstants.SHUTTLE_BLUE_LOW;
+import static frc.robot.Constants.ShootingConstants.SHUTTLE_OFFSET_DISTANCE;
 import static frc.robot.Constants.ShootingConstants.SHUTTLE_RED_HIGH;
 import static frc.robot.Constants.ShootingConstants.SHUTTLE_RED_LOW;
 import static frc.robot.Constants.ShootingConstants.SHUTTLE_SETPOINTS_BY_DISTANCE_METERS;
@@ -17,6 +18,7 @@ import static frc.robot.Constants.TeleopDriveConstants.MAX_TELEOP_VELOCITY;
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveModule.SteerRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -101,12 +103,19 @@ public class CommandFactory {
         ledSubsystem,
         () -> drivetrainSubsystem.getState().Pose,
         drivetrainSubsystem::getCurrentFieldChassisSpeeds,
-        t -> {
+        shooterTranslation -> {
+          Translation2d target;
           if (DriverStation.getAlliance().orElse(Blue) == Blue) {
-            return t.getY() > FIELD_WIDTH.in(Meters) / 2.0 ? SHUTTLE_BLUE_HIGH : SHUTTLE_BLUE_LOW;
+            target = shooterTranslation.getY() > FIELD_WIDTH.in(Meters) / 2.0 ? SHUTTLE_BLUE_HIGH : SHUTTLE_BLUE_LOW;
           } else {
-            return t.getY() > FIELD_WIDTH.in(Meters) / 2.0 ? SHUTTLE_RED_HIGH : SHUTTLE_RED_LOW;
+            target = shooterTranslation.getY() > FIELD_WIDTH.in(Meters) / 2.0 ? SHUTTLE_RED_HIGH : SHUTTLE_RED_LOW;
           }
+          // Adjust the target to be "offset distance" short of target along the vector between the robot and the target
+          Translation2d vectorToTarget = target.minus(shooterTranslation);
+          double distanceToTarget = vectorToTarget.getNorm();
+          Translation2d adjustedTarget = shooterTranslation
+              .plus(vectorToTarget.times((distanceToTarget - SHUTTLE_OFFSET_DISTANCE.in(Meters)) / distanceToTarget));
+          return adjustedTarget;
         },
         SHUTTLE_SETPOINTS_BY_DISTANCE_METERS);
   }
