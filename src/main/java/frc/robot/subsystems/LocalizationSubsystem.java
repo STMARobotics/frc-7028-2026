@@ -55,6 +55,9 @@ public class LocalizationSubsystem extends SubsystemBase {
   // Last quest robot pose. Only an instance variable so it will be logged by Epilogue
   @Logged
   private Pose3d questRobotPose;
+  // Last best limelight pose. Only an instance variable so it will be logged by Epilogue
+  @Logged
+  private Pose3d bestLimelightPose;
 
   /**
    * Constructs a new LocalizationSubsystem.
@@ -142,7 +145,7 @@ public class LocalizationSubsystem extends SubsystemBase {
     }
 
     if (bestAprilTagPose != null) {
-      resetPose(bestAprilTagPose.pose);
+      resetPose(bestAprilTagPose.pose.toPose2d());
     }
   }
 
@@ -200,7 +203,7 @@ public class LocalizationSubsystem extends SubsystemBase {
           Matrix<N3, N1> adjustedDeviations = VecBuilder
               .fill(adjustedXYDeviation, adjustedXYDeviation, Double.MAX_VALUE);
           visionMeasurementConsumer
-              .addVisionMeasurement(poseEstimate.pose, poseEstimate.timestampSeconds, adjustedDeviations);
+              .addVisionMeasurement(poseEstimate.pose.toPose2d(), poseEstimate.timestampSeconds, adjustedDeviations);
         }
 
         // Track the best estimate for QuestNav comparison
@@ -210,6 +213,7 @@ public class LocalizationSubsystem extends SubsystemBase {
         }
       }
     }
+    bestLimelightPose = bestEstimate == null ? null : bestEstimate.pose;
 
     return bestEstimate;
   }
@@ -236,7 +240,9 @@ public class LocalizationSubsystem extends SubsystemBase {
         questRobotPose = frame.questPose3d().transformBy(ROBOT_TO_QUEST.inverse());
 
         double bestVisionEstimateDistance = (bestVisionEstimate != null)
-            ? questRobotPose.toPose2d().getTranslation().getDistance(bestVisionEstimate.pose.getTranslation())
+            ? questRobotPose.toPose2d()
+                .getTranslation()
+                .getDistance(bestVisionEstimate.pose.toPose2d().getTranslation())
             : 0;
 
         if (bestVisionEstimateDistance > QUESTNAV_APRILTAG_ERROR_THRESHOLD.in(Meters)) {
