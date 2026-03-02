@@ -247,6 +247,7 @@ public class RobotContainer {
     NamedCommands.registerCommand("Shoot", commandFactory.shootAtHub());
     NamedCommands.registerCommand("DeployIntake", new DeployIntakeCommand(intakeSubsystem));
     NamedCommands.registerCommand("RunIntake", new IntakeCommand(intakeSubsystem));
+    NamedCommands.registerCommand("Shuttle", commandFactory.shuttleToCorner());
   }
 
   public Command getAutonomousCommand() {
