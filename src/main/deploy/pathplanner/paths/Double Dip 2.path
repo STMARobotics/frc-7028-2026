@@ -3,68 +3,55 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 4.378677419354839,
-        "y": 7.584978494623655
+        "x": 4.371415562913907,
+        "y": 7.585107615894039
       },
       "prevControl": null,
       "nextControl": {
-        "x": 5.378677419354838,
-        "y": 7.584978494623655
+        "x": 6.164619205298013,
+        "y": 7.606887417218543
       },
       "isLocked": false,
-      "linkedName": null
+      "linkedName": "Double Dip 1 End"
     },
     {
       "anchor": {
-        "x": 7.860387096774193,
-        "y": 6.297623655913978
+        "x": 5.874221854304636,
+        "y": 6.619536423841059
       },
       "prevControl": {
-        "x": 7.84451608014747,
-        "y": 7.297497703397566
+        "x": 5.995431581726967,
+        "y": 7.38486065318536
       },
       "nextControl": {
-        "x": 7.899397849462368,
-        "y": 3.8399462365591397
+        "x": 4.995769867549668,
+        "y": 1.0729470198675495
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 4.378677419354839,
-        "y": 7.458193548387097
+        "x": 4.27703642384106,
+        "y": 7.628667218543047
       },
       "prevControl": {
-        "x": 7.7531075268817204,
-        "y": 7.541091397849463
+        "x": 8.576661931211277,
+        "y": 7.955493359680981
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": "Double Dip 1"
+      "linkedName": null
     }
   ],
   "rotationTargets": [],
   "constraintZones": [
     {
       "name": "Constraints Zone",
-      "minWaypointRelativePos": 0.9,
-      "maxWaypointRelativePos": 1.2,
+      "minWaypointRelativePos": 1.0,
+      "maxWaypointRelativePos": 1.3,
       "constraints": {
-        "maxVelocity": 1.0,
-        "maxAcceleration": 3.0,
-        "maxAngularVelocity": 540.0,
-        "maxAngularAcceleration": 720.0,
-        "nominalVoltage": 12.0,
-        "unlimited": false
-      }
-    },
-    {
-      "name": "Constraints Zone",
-      "minWaypointRelativePos": 2,
-      "maxWaypointRelativePos": 2.5,
-      "constraints": {
-        "maxVelocity": 1.0,
+        "maxVelocity": 1.5,
         "maxAcceleration": 3.0,
         "maxAngularVelocity": 540.0,
         "maxAngularAcceleration": 720.0,
@@ -74,14 +61,7 @@
     }
   ],
   "pointTowardsZones": [],
-  "eventMarkers": [
-    {
-      "name": "RunIntake",
-      "waypointRelativePos": 0,
-      "endWaypointRelativePos": null,
-      "command": null
-    }
-  ],
+  "eventMarkers": [],
   "globalConstraints": {
     "maxVelocity": 3.0,
     "maxAcceleration": 3.0,

@@ -21,7 +21,19 @@
                     {
                       "type": "path",
                       "data": {
-                        "pathName": "Double Dip 1"
+                        "pathName": "Double Middle 1"
+                      }
+                    },
+                    {
+                      "type": "path",
+                      "data": {
+                        "pathName": "Double Middle 2"
+                      }
+                    },
+                    {
+                      "type": "path",
+                      "data": {
+                        "pathName": "Double Middle 3"
                       }
                     },
                     {
@@ -46,7 +58,13 @@
                     {
                       "type": "path",
                       "data": {
-                        "pathName": "Double Dip 2"
+                        "pathName": "Double Middle 4"
+                      }
+                    },
+                    {
+                      "type": "path",
+                      "data": {
+                        "pathName": "Double Middle 5"
                       }
                     },
                     {

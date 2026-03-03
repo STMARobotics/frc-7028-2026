@@ -151,7 +151,7 @@ public final class Constants {
     public static final double PITCH_SENSOR_TO_MECHANISM_RATIO = 375.0 / 32.0;
 
     public static final Angle YAW_MAGNETIC_OFFSET = Rotations.of(0.220459);
-    public static final Angle PITCH_MAGNETIC_OFFSET = Rotations.of(-0.492676);
+    public static final Angle PITCH_MAGNETIC_OFFSET = Rotations.of(0.386230);
 
     // Actual limits to yaw motion
     public static final Angle YAW_LIMIT_FORWARD = Rotations.of(0.259);
@@ -440,11 +440,10 @@ public final class Constants {
                 RotationsPerSecond.of(29.5),
                 SPINDEXER_FEED_VELOCITY,
                 FEEDER_FEED_VELOCITY));
-      // From here, these are guesses that need tuning
       map.put(
-          6.5,
+          6.755,
             new ShooterSetpoints(
-                Degrees.of(14),
+                Degrees.of(19),
                 RotationsPerSecond.of(34),
                 SPINDEXER_FEED_VELOCITY,
                 FEEDER_FEED_VELOCITY));

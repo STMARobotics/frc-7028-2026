@@ -244,10 +244,11 @@ public class RobotContainer {
 
   private void configurePathPlannerCommands() {
     NamedCommands.registerCommand("ClimbToL1", new ClimbToL1Command(climbSubsystem));
-    NamedCommands.registerCommand("Shoot", commandFactory.shootAtHub());
-    NamedCommands.registerCommand("DeployIntake", new DeployIntakeCommand(intakeSubsystem));
-    NamedCommands.registerCommand("RunIntake", new IntakeCommand(intakeSubsystem));
-    NamedCommands.registerCommand("Shuttle", commandFactory.shuttleToCorner());
+    NamedCommands.registerCommand("Shoot", commandFactory.shootAtHub().finallyDo(shooterSubsystem::stow));
+    NamedCommands.registerCommand(
+        "Intake",
+          new DeployIntakeCommand(intakeSubsystem).andThen(new IntakeCommand(intakeSubsystem)));
+    NamedCommands.registerCommand("Shuttle", commandFactory.shuttleToCorner().finallyDo(shooterSubsystem::stow));
   }
 
   public Command getAutonomousCommand() {

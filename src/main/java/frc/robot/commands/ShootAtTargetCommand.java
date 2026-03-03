@@ -111,7 +111,10 @@ public class ShootAtTargetCommand extends Command {
     if ((shooterX > DANGER_ZONE_MIN_BLUE.in(Meters) && shooterX < DANGER_ZONE_MAX_BLUE.in(Meters))
         || (shooterX > DANGER_ZONE_MIN_RED.in(Meters) && shooterX < DANGER_ZONE_MAX_RED.in(Meters))) {
       shooterSubsystem.stowPitch();
-      shooterSubsystem.stopYaw();
+      shooterSubsystem.setYawAngle(
+          turretYawTarget.mut_replace(
+              targetTranslation.minus(shooterTranslation).getAngle().minus(robotPose.getRotation()).getRotations(),
+                Rotations));
       shooterSubsystem.setFlywheelSpeed(lookupTable.get(actualTargetDistance).targetFlywheelSpeed());
       spindexerSubsystem.stop();
       feederSubsystem.stop();

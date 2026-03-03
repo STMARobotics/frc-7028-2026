@@ -12,7 +12,7 @@
         "y": 0.4742082794133501
       },
       "isLocked": false,
-      "linkedName": "FirstPrepareToShootEnd"
+      "linkedName": "Double Middle 3 End"
     },
     {
       "anchor": {
@@ -41,7 +41,7 @@
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": "MoveToHubEnd"
+      "linkedName": "Double Middle 4 End"
     }
   ],
   "rotationTargets": [],
@@ -61,19 +61,7 @@
     }
   ],
   "pointTowardsZones": [],
-  "eventMarkers": [
-    {
-      "name": "RunIntake",
-      "waypointRelativePos": 0,
-      "endWaypointRelativePos": null,
-      "command": {
-        "type": "named",
-        "data": {
-          "name": "RunIntake"
-        }
-      }
-    }
-  ],
+  "eventMarkers": [],
   "globalConstraints": {
     "maxVelocity": 5.0,
     "maxAcceleration": 3.0,
@@ -87,7 +75,7 @@
     "rotation": 90.0
   },
   "reversed": false,
-  "folder": "Double Middle Auto",
+  "folder": "Double Middle",
   "idealStartingState": {
     "velocity": 0,
     "rotation": 90.0
