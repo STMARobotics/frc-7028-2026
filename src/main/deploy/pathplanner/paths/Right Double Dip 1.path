@@ -12,25 +12,41 @@
         "y": 0.7898096026490067
       },
       "isLocked": false,
+      "linkedName": "Start Right"
+    },
+    {
+      "anchor": {
+        "x": 7.544006622516555,
+        "y": 1.704561258278145
+      },
+      "prevControl": {
+        "x": 7.460289491482056,
+        "y": 1.3168187566446803
+      },
+      "nextControl": {
+        "x": 7.681945364238411,
+        "y": 2.343435430463577
+      },
+      "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
         "x": 7.750787119856888,
-        "y": 1.9662611806812085
+        "y": 2.953269867549669
       },
       "prevControl": {
-        "x": 7.420587748344372,
-        "y": 1.2326655629139076
+        "x": 7.63112582781457,
+        "y": 2.4450745033112584
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": "Double Middle 1 End"
+      "linkedName": "Right Double Dip 1 End"
     }
   ],
   "rotationTargets": [
     {
-      "waypointRelativePos": 0.5,
+      "waypointRelativePos": 1.0,
       "rotationDegrees": 90.0
     }
   ],
@@ -46,11 +62,11 @@
     "unlimited": false
   },
   "goalEndState": {
-    "velocity": 1.0,
+    "velocity": 0.0,
     "rotation": 90.0
   },
   "reversed": false,
-  "folder": "Double Middle",
+  "folder": "Right Double Dip",
   "idealStartingState": {
     "velocity": 0,
     "rotation": 90.0

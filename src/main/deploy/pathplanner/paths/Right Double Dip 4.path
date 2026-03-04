@@ -3,29 +3,29 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 6.652,
-        "y": 4.5503409090909095
+        "x": 6.3969370860927155,
+        "y": 3.693783112582781
       },
       "prevControl": null,
       "nextControl": {
-        "x": 6.507534090909091,
-        "y": 3.5918068181818184
+        "x": 6.375157284768211,
+        "y": 2.771771523178808
       },
       "isLocked": false,
-      "linkedName": "Double Middle 4 End"
+      "linkedName": "Right Double Dip 3 End"
     },
     {
       "anchor": {
-        "x": 6.048460264900663,
+        "x": 5.910521523178808,
         "y": 0.7752897350993384
       },
       "prevControl": {
-        "x": 6.326744355809755,
-        "y": 1.0226533714629749
+        "x": 7.042801224424315,
+        "y": 1.3511906176293833
       },
       "nextControl": {
-        "x": 5.847700110661087,
-        "y": 0.5968362646641607
+        "x": 5.068369205298012,
+        "y": 0.3469536423841044
       },
       "isLocked": false,
       "linkedName": null
@@ -46,30 +46,16 @@
   ],
   "rotationTargets": [
     {
-      "waypointRelativePos": 0.6698113207547169,
+      "waypointRelativePos": 0.9079903147699754,
       "rotationDegrees": 178.0
     }
   ],
-  "constraintZones": [
-    {
-      "name": "Constraints Zone",
-      "minWaypointRelativePos": 1.6876325088339323,
-      "maxWaypointRelativePos": 2.0,
-      "constraints": {
-        "maxVelocity": 1.0,
-        "maxAcceleration": 3.0,
-        "maxAngularVelocity": 540.0,
-        "maxAngularAcceleration": 720.0,
-        "nominalVoltage": 12.0,
-        "unlimited": false
-      }
-    }
-  ],
+  "constraintZones": [],
   "pointTowardsZones": [],
   "eventMarkers": [
     {
       "name": "Shoot",
-      "waypointRelativePos": 1.696113074204957,
+      "waypointRelativePos": 1.9194346289752828,
       "endWaypointRelativePos": null,
       "command": {
         "type": "named",
@@ -92,7 +78,7 @@
     "rotation": 180.0
   },
   "reversed": false,
-  "folder": "Double Middle",
+  "folder": "Right Double Dip",
   "idealStartingState": {
     "velocity": 0,
     "rotation": 90.0

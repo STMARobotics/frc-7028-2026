@@ -3,29 +3,29 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 4.45853476821192,
-        "y": 7.657706953642384
+        "x": 4.329913978497572,
+        "y": 7.619112903223373
       },
       "prevControl": null,
       "nextControl": {
-        "x": 5.458534768211919,
-        "y": 7.657706953642384
+        "x": 5.329913978497571,
+        "y": 7.619112903223373
       },
       "isLocked": false,
-      "linkedName": null
+      "linkedName": "Start Left"
     },
     {
       "anchor": {
-        "x": 8.603956953642383,
-        "y": 6.438038079470198
+        "x": 8.473278145695364,
+        "y": 6.452557947019867
       },
       "prevControl": {
-        "x": 8.929876066755384,
-        "y": 7.321534498840246
+        "x": 8.799197258808364,
+        "y": 7.336054366389915
       },
       "nextControl": {
-        "x": 7.122930463576159,
-        "y": 2.4232947019867552
+        "x": 6.99225165562914,
+        "y": 2.4378145695364237
       },
       "isLocked": false,
       "linkedName": null
@@ -41,7 +41,7 @@
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": "Double Dip 1 End"
+      "linkedName": "Left Double Dip 1 End"
     }
   ],
   "rotationTargets": [
@@ -92,7 +92,7 @@
     "rotation": -90.0
   },
   "reversed": false,
-  "folder": "Double Dip",
+  "folder": "Left Double Dip",
   "idealStartingState": {
     "velocity": 0,
     "rotation": -90.0

@@ -4,34 +4,46 @@
     {
       "anchor": {
         "x": 7.750787119856888,
-        "y": 3.395977272727273
+        "y": 2.953269867549669
       },
       "prevControl": null,
       "nextControl": {
         "x": 7.75465909090909,
-        "y": 2.3652954545454543
+        "y": 1.9225880493678504
       },
       "isLocked": false,
-      "linkedName": "Double Middle 2 End"
+      "linkedName": "Right Double Dip 1 End"
     },
     {
       "anchor": {
-        "x": 3.761897983392646,
-        "y": 0.6081969157769855
+        "x": 3.5800827814569542,
+        "y": 0.6591307947019869
       },
       "prevControl": {
-        "x": 7.317750256119918,
-        "y": 0.47420827941334875
+        "x": 7.135935054184227,
+        "y": 0.5251421583383501
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": "Double Middle 3 End"
+      "linkedName": "Right Double Dip 2 End"
     }
   ],
   "rotationTargets": [],
   "constraintZones": [],
   "pointTowardsZones": [],
-  "eventMarkers": [],
+  "eventMarkers": [
+    {
+      "name": "Shoot",
+      "waypointRelativePos": 0.9272084805653702,
+      "endWaypointRelativePos": null,
+      "command": {
+        "type": "named",
+        "data": {
+          "name": "Shoot"
+        }
+      }
+    }
+  ],
   "globalConstraints": {
     "maxVelocity": 5.0,
     "maxAcceleration": 3.0,
@@ -45,9 +57,9 @@
     "rotation": 90.0
   },
   "reversed": false,
-  "folder": "Double Middle",
+  "folder": "Right Double Dip",
   "idealStartingState": {
-    "velocity": 0,
+    "velocity": 0.0,
     "rotation": 90.0
   },
   "useDefaultConstraints": true

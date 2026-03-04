@@ -3,8 +3,8 @@
   "robotLength": 0.776288,
   "holonomicMode": true,
   "pathFolders": [
-    "Double Dip",
-    "Double Middle"
+    "Left Double Dip",
+    "Right Double Dip"
   ],
   "autoFolders": [],
   "defaultMaxVel": 5.0,
