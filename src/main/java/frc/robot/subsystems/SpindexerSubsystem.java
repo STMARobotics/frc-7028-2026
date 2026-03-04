@@ -4,9 +4,6 @@ import static edu.wpi.first.units.Units.Second;
 import static edu.wpi.first.units.Units.Volts;
 import static frc.robot.Constants.CANIVORE_BUS;
 import static frc.robot.Constants.SpindexerConstants.DEVICE_ID_SPINDEXER_MOTOR;
-import static frc.robot.Constants.SpindexerConstants.HOPPER_CAMERA_NAME;
-import static frc.robot.Constants.SpindexerConstants.HOPPER_FULL_THRESHOLD;
-import static frc.robot.Constants.SpindexerConstants.PIPELINE_RESULT_TTL;
 import static frc.robot.Constants.SpindexerConstants.SPINDEXER_AGITATE_BACKWARD_VELOCITY;
 import static frc.robot.Constants.SpindexerConstants.SPINDEXER_AGITATE_FORWARD_VELOCITY;
 import static frc.robot.Constants.SpindexerConstants.SPINDEXER_FEED_VELOCITY;
@@ -29,15 +26,10 @@ import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.units.measure.AngularVelocity;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
-import java.util.List;
-import org.photonvision.*;
-import org.photonvision.targeting.PhotonPipelineResult;
-import org.photonvision.targeting.PhotonTrackedTarget;
 
 /**
  * Subsystem for the Spindexer.
@@ -47,14 +39,8 @@ public class SpindexerSubsystem extends SubsystemBase {
 
   private final TalonFX spindexerMotor = new TalonFX(DEVICE_ID_SPINDEXER_MOTOR, CANIVORE_BUS);
 
-  private final PhotonCamera hopperCam = new PhotonCamera(HOPPER_CAMERA_NAME);
-
   private final VelocityTorqueCurrentFOC spindexerVelocityTorque = new VelocityTorqueCurrentFOC(0.0);
   private final TorqueCurrentFOC spindexerTorqueControl = new TorqueCurrentFOC(0.0);
-
-  private static final PhotonPipelineResult EMPTY_PHOTON_PIPELINE_RESULT = new PhotonPipelineResult();
-
-  private PhotonPipelineResult photonPipelineResult = EMPTY_PHOTON_PIPELINE_RESULT;
 
   // NOTE: the output type is amps, NOT volts (even though it says volts)
   // https://www.chiefdelphi.com/t/sysid-with-ctre-swerve-characterization/452631/8
@@ -73,7 +59,6 @@ public class SpindexerSubsystem extends SubsystemBase {
    * Creates a new Subsystem for the Spindexer
    */
   public SpindexerSubsystem() {
-    PhotonCamera.setVersionCheckEnabled(false);
     var spinTalonconfig = new TalonFXConfiguration().withSlot0(Slot0Configs.from(SPINDEXER_SLOT_CONFIGS))
         .withMotorOutput(
             new MotorOutputConfigs().withInverted(InvertedValue.CounterClockwise_Positive)
@@ -136,33 +121,6 @@ public class SpindexerSubsystem extends SubsystemBase {
   }
 
   /**
-   * Returns true if the hopper is empty
-   */
-  @Logged
-  public boolean isEmpty() {
-    return getLatestTarget().isEmpty();
-  }
-
-  /**
-   * Returns true if the hopper is full based on the area of the detected targets
-   */
-  @Logged
-  public boolean isFull() {
-    if (isEmpty()) {
-      return false;
-    }
-    double accumulatedArea = 0;
-    for (var target : getLatestTarget()) {
-      accumulatedArea += target.getArea();
-      if (accumulatedArea >= HOPPER_FULL_THRESHOLD) {
-        return true;
-      }
-    }
-
-    return false;
-  }
-
-  /**
    * Spins the spindexer forward
    */
   private void spinForward() {
@@ -176,27 +134,4 @@ public class SpindexerSubsystem extends SubsystemBase {
     spindexerMotor.setControl(spindexerVelocityTorque.withVelocity(SPINDEXER_AGITATE_BACKWARD_VELOCITY));
   }
 
-  private List<PhotonTrackedTarget> getLatestTarget() {
-    List<PhotonPipelineResult> photonResults = hopperCam.getAllUnreadResults();
-
-    /**
-     * If there are results this will grab the last item on the list
-     */
-    if (photonResults.size() >= 1) {
-      photonPipelineResult = photonResults.get(photonResults.size() - 1);
-    }
-
-    double currentTime = Timer.getFPGATimestamp();
-    double resultTime = photonPipelineResult.getTimestampSeconds();
-
-    /**
-     * since the results are cached, the value is checked against the Time To Live (TTL) to
-     * ensure that the value isn't to old
-     */
-    if (currentTime - resultTime >= PIPELINE_RESULT_TTL.in(Second)) {
-      photonPipelineResult = EMPTY_PHOTON_PIPELINE_RESULT;
-    }
-
-    return photonPipelineResult.targets;
-  }
 }
