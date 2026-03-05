@@ -128,24 +128,6 @@ public abstract class ControlBindings {
   }
 
   /**
-   * Trigger for moving the climb forward
-   * 
-   * @return optional trigger
-   */
-  public Optional<Trigger> climbForward() {
-    return Optional.empty();
-  }
-
-  /**
-   * Trigger for moving the climb in reverse
-   * 
-   * @return optional trigger
-   */
-  public Optional<Trigger> climbReverse() {
-    return Optional.empty();
-  }
-
-  /**
    * Trigger to run the shooting tuning command
    * 
    * @return optional trigger

@@ -32,7 +32,6 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import frc.robot.Constants.OdometryConstants;
 import frc.robot.Constants.QuestNavConstants;
-import frc.robot.commands.ClimbToL1Command;
 import frc.robot.commands.DefaultShooterCommand;
 import frc.robot.commands.DeployIntakeCommand;
 import frc.robot.commands.IntakeCommand;
@@ -45,7 +44,6 @@ import frc.robot.controls.ControlBindings;
 import frc.robot.controls.JoystickControlBindings;
 import frc.robot.controls.XBoxControlBindings;
 import frc.robot.generated.TunerConstants;
-import frc.robot.subsystems.ClimbSubsystem;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.FeederSubsystem;
 import frc.robot.subsystems.IntakeSubsytem;
@@ -85,8 +83,6 @@ public class RobotContainer {
   @Logged
   private final IntakeSubsytem intakeSubsystem = new IntakeSubsytem();
   @Logged
-  private final ClimbSubsystem climbSubsystem = new ClimbSubsystem();
-  @Logged
   private final ShooterSubsystem shooterSubsystem = new ShooterSubsystem();
   private final LEDSubsystem ledSubsystem = new LEDSubsystem();
 
@@ -96,8 +92,7 @@ public class RobotContainer {
       spindexerSubsystem,
       feederSubsystem,
       intakeSubsystem,
-      ledSubsystem,
-      climbSubsystem);
+      ledSubsystem);
 
   /* Path follower */
   private final SendableChooser<Command> autoChooser;
@@ -197,16 +192,6 @@ public class RobotContainer {
 
     controlBindings.shuttle().ifPresent(trigger -> trigger.whileTrue(commandFactory.shuttleToCorner()));
 
-    // Climb controls
-    controlBindings.climbForward()
-        .ifPresent(
-            trigger -> trigger
-                .whileTrue(Commands.runEnd(climbSubsystem::forward, climbSubsystem::stop, climbSubsystem)));
-    controlBindings.climbReverse()
-        .ifPresent(
-            trigger -> trigger
-                .whileTrue(Commands.runEnd(climbSubsystem::reverse, climbSubsystem::stop, climbSubsystem)));
-
     // Idle while the robot is disabled. This ensures the configured
     // neutral mode is applied to the drive motors while disabled.
     final SwerveRequest idle = new SwerveRequest.Idle();
@@ -243,7 +228,6 @@ public class RobotContainer {
   }
 
   private void configurePathPlannerCommands() {
-    NamedCommands.registerCommand("ClimbToL1", new ClimbToL1Command(climbSubsystem));
     NamedCommands.registerCommand("Shoot", commandFactory.shootAtHub().finallyDo(shooterSubsystem::stow));
     NamedCommands.registerCommand(
         "Intake",

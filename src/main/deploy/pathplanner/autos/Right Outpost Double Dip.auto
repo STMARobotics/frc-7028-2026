@@ -21,7 +21,13 @@
                     {
                       "type": "path",
                       "data": {
-                        "pathName": "Right Double Dip 1"
+                        "pathName": "Right Outpost Double Dip 1"
+                      }
+                    },
+                    {
+                      "type": "path",
+                      "data": {
+                        "pathName": "Right Outpost Double Dip 2"
                       }
                     },
                     {
@@ -31,7 +37,7 @@
                           {
                             "type": "wait",
                             "data": {
-                              "waitTime": 4.0
+                              "waitTime": 3.5
                             }
                           },
                           {
@@ -46,7 +52,13 @@
                     {
                       "type": "path",
                       "data": {
-                        "pathName": "Right Double Dip 2"
+                        "pathName": "Right Outpost Double Dip 3"
+                      }
+                    },
+                    {
+                      "type": "path",
+                      "data": {
+                        "pathName": "Right Outpost Double Dip 4"
                       }
                     },
                     {

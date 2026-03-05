@@ -4,7 +4,9 @@
   "holonomicMode": true,
   "pathFolders": [
     "Left Double Dip",
-    "Right Double Dip"
+    "Right Outpost Double Dipper",
+    "Right Double Dip",
+    "Right Outpost Double Dip"
   ],
   "autoFolders": [],
   "defaultMaxVel": 5.0,

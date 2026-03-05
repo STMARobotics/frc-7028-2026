@@ -12,7 +12,7 @@
         "y": 2.771771523178808
       },
       "isLocked": false,
-      "linkedName": "Right Double Dip 3 End"
+      "linkedName": "Right Outpost Double Dip 3 End"
     },
     {
       "anchor": {
@@ -78,7 +78,7 @@
     "rotation": 180.0
   },
   "reversed": false,
-  "folder": "Right Double Dip",
+  "folder": "Right Outpost Double Dip",
   "idealStartingState": {
     "velocity": 0,
     "rotation": 90.0

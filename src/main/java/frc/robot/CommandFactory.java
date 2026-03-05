@@ -24,7 +24,6 @@ import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.commands.ShootAtTargetCommand;
-import frc.robot.subsystems.ClimbSubsystem;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.FeederSubsystem;
 import frc.robot.subsystems.IntakeSubsytem;
@@ -43,7 +42,6 @@ public class CommandFactory {
   private final FeederSubsystem feederSubsystem;
   private final IntakeSubsytem intakeSubsystem;
   private final LEDSubsystem ledSubsystem;
-  private final ClimbSubsystem climbSubsystem;
 
   /**
    * Constructor for Commandfactory, takes in all subsystems as parameters to use in command creation methods.
@@ -54,7 +52,6 @@ public class CommandFactory {
    * @param feederSubsystem feeder subsystem
    * @param intakeSubsystem intake subsystem
    * @param ledSubsystem led subsystem
-   * @param climbSubsystem climb subsystem
    */
   public CommandFactory(
       CommandSwerveDrivetrain drivetrainSubsystem,
@@ -62,15 +59,13 @@ public class CommandFactory {
       SpindexerSubsystem spindexerSubsystem,
       FeederSubsystem feederSubsystem,
       IntakeSubsytem intakeSubsystem,
-      LEDSubsystem ledSubsystem,
-      ClimbSubsystem climbSubsystem) {
+      LEDSubsystem ledSubsystem) {
     this.drivetrainSubsystem = drivetrainSubsystem;
     this.shooterSubsystem = shooterSubsystem;
     this.spindexerSubsystem = spindexerSubsystem;
     this.feederSubsystem = feederSubsystem;
     this.intakeSubsystem = intakeSubsystem;
     this.ledSubsystem = ledSubsystem;
-    this.climbSubsystem = climbSubsystem;
   }
 
   /**

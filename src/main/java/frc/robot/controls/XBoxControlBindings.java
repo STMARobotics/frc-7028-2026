@@ -91,16 +91,6 @@ public class XBoxControlBindings extends ControlBindings {
   }
 
   @Override
-  public Optional<Trigger> climbForward() {
-    return Optional.of(driverController.povUp());
-  }
-
-  @Override
-  public Optional<Trigger> climbReverse() {
-    return Optional.of(driverController.povDown());
-  }
-
-  @Override
   public Optional<Trigger> tuneShoot() {
     return Optional.of(driverController.y());
   }
