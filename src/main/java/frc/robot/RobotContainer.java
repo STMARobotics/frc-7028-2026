@@ -111,7 +111,7 @@ public class RobotContainer {
     configureAutoBuilder();
     configurePathPlannerCommands();
     autoChooser = AutoBuilder.buildAutoChooserWithOptionsModifier(
-        "Double Middle Auto",
+        "Left Double Dip",
           stream -> stream.filter(item -> !item.getRequirements().isEmpty()));
     SmartDashboard.putData("Auto Mode", autoChooser);
 
@@ -232,6 +232,7 @@ public class RobotContainer {
     NamedCommands.registerCommand(
         "Intake",
           new DeployIntakeCommand(intakeSubsystem).andThen(new IntakeCommand(intakeSubsystem)));
+    NamedCommands.registerCommand("RetractIntake", new RetractIntakeCommand(intakeSubsystem));
     NamedCommands.registerCommand("Shuttle", commandFactory.shuttleToCorner().finallyDo(shooterSubsystem::stow));
   }
 

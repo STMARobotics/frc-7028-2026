@@ -8,36 +8,36 @@
       },
       "prevControl": null,
       "nextControl": {
-        "x": 6.613466064617613,
-        "y": 0.7126626401546015
+        "x": 7.6754689518376615,
+        "y": 0.5690098325534063
       },
       "isLocked": false,
       "linkedName": "Start Right"
     },
     {
       "anchor": {
-        "x": 7.544006622516555,
-        "y": 1.704561258278145
+        "x": 8.487798013245033,
+        "y": 1.5956622516556287
       },
       "prevControl": {
-        "x": 7.460289491482056,
-        "y": 1.3168187566446803
+        "x": 8.621258112417257,
+        "y": 1.1931408830292423
       },
       "nextControl": {
-        "x": 7.681945364238411,
-        "y": 2.343435430463577
+        "x": 7.130190397350994,
+        "y": 5.690264900662253
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 7.750787119856888,
-        "y": 2.953269867549669
+        "x": 3.8922599337748345,
+        "y": 0.4558526490066208
       },
       "prevControl": {
-        "x": 7.63112582781457,
-        "y": 2.4450745033112584
+        "x": 9.591307947019867,
+        "y": 0.252574503311258
       },
       "nextControl": null,
       "isLocked": false,
@@ -46,13 +46,39 @@
   ],
   "rotationTargets": [
     {
-      "waypointRelativePos": 1.0,
-      "rotationDegrees": 90.0
+      "waypointRelativePos": 0.5,
+      "rotationDegrees": 115.0
     }
   ],
-  "constraintZones": [],
+  "constraintZones": [
+    {
+      "name": "Constraints Zone",
+      "minWaypointRelativePos": 0.9,
+      "maxWaypointRelativePos": 1.2692579505300392,
+      "constraints": {
+        "maxVelocity": 1.5,
+        "maxAcceleration": 3.0,
+        "maxAngularVelocity": 540.0,
+        "maxAngularAcceleration": 720.0,
+        "nominalVoltage": 12.0,
+        "unlimited": false
+      }
+    }
+  ],
   "pointTowardsZones": [],
-  "eventMarkers": [],
+  "eventMarkers": [
+    {
+      "name": "Shoot",
+      "waypointRelativePos": 1.9561837455830615,
+      "endWaypointRelativePos": null,
+      "command": {
+        "type": "named",
+        "data": {
+          "name": "Shoot"
+        }
+      }
+    }
+  ],
   "globalConstraints": {
     "maxVelocity": 5.0,
     "maxAcceleration": 3.0,
@@ -62,7 +88,7 @@
     "unlimited": false
   },
   "goalEndState": {
-    "velocity": 0.0,
+    "velocity": 0,
     "rotation": 90.0
   },
   "reversed": false,
