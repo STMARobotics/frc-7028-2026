@@ -154,8 +154,8 @@ public final class Constants {
     public static final Angle PITCH_MAGNETIC_OFFSET = Rotations.of(0.386230);
 
     // Actual limits to yaw motion
-    public static final Angle YAW_LIMIT_FORWARD = Rotations.of(0.259);
-    public static final Angle YAW_LIMIT_REVERSE = Rotations.of(-0.768);
+    public static final Angle YAW_LIMIT_FORWARD = Rotations.of(0.272461);
+    public static final Angle YAW_LIMIT_REVERSE = Rotations.of(-0.735596);
 
     // We're only going to use 1 rotation of the turret, so distribute the dead area to both sides equally
     public static final Angle YAW_RANGE_FORWARD = YAW_LIMIT_FORWARD
@@ -200,6 +200,7 @@ public final class Constants {
    * Constants for vision processing
    */
   public static class VisionConstants {
+    public static final int DEVICE_ID_MITOCANDRIA = 0;
     public static final String[] APRILTAG_CAMERA_NAMES = { "limelight-right" };
     public static final Transform3d[] ROBOT_TO_CAMERA_TRANSFORMS = new Transform3d[] {
         new Transform3d(
@@ -252,7 +253,7 @@ public final class Constants {
     public static final double DEPLOY_SENSOR_TO_MECHANISM_RATIO = 64.0 / 50.0;
 
     public static final Angle DEPLOY_REVERSE_LIMIT = Rotations.of(0.0);
-    public static final Angle DEPLOY_FORWARD_LIMIT = Rotations.of(0.161);
+    public static final Angle DEPLOY_FORWARD_LIMIT = Rotations.of(0.159);
     // Discontinuity point is the center of the unreachable region
     public static final Angle DEPLOY_DISCONTINUITY_POINT = DEPLOY_REVERSE_LIMIT.plus(DEPLOY_FORWARD_LIMIT)
         .div(2)
@@ -267,7 +268,7 @@ public final class Constants {
     public static final MotionMagicConfigs DEPLOY_MOTION_MAGIC_CONFIGS = new MotionMagicConfigs()
         .withMotionMagicAcceleration(10.0)
         .withMotionMagicCruiseVelocity(15.0);
-    public static final Angle DEPLOY_CANCODER_OFFSET = Rotations.of(-0.150146);
+    public static final Angle DEPLOY_CANCODER_OFFSET = Rotations.of(0.250977);
 
     public static final Angle DEPLOYED_POSITION = DEPLOY_REVERSE_LIMIT;
     public static final Angle RETRACTED_POSITION = DEPLOY_FORWARD_LIMIT.minus(Degrees.of(2.0));
@@ -434,10 +435,10 @@ public final class Constants {
                 SPINDEXER_FEED_VELOCITY,
                 FEEDER_FEED_VELOCITY));
       map.put(
-          5.429,
+          5.281,
             new ShooterSetpoints(
-                Degrees.of(13),
-                RotationsPerSecond.of(29.5),
+                Degrees.of(19),
+                RotationsPerSecond.of(31.25),
                 SPINDEXER_FEED_VELOCITY,
                 FEEDER_FEED_VELOCITY));
       map.put(

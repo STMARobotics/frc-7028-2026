@@ -49,6 +49,7 @@ import frc.robot.subsystems.FeederSubsystem;
 import frc.robot.subsystems.IntakeSubsytem;
 import frc.robot.subsystems.LEDSubsystem;
 import frc.robot.subsystems.LocalizationSubsystem;
+import frc.robot.subsystems.MitoCANdriaSubsytem;
 import frc.robot.subsystems.ShooterSubsystem;
 import frc.robot.subsystems.SpindexerSubsystem;
 
@@ -84,6 +85,8 @@ public class RobotContainer {
   private final IntakeSubsytem intakeSubsystem = new IntakeSubsytem();
   @Logged
   private final ShooterSubsystem shooterSubsystem = new ShooterSubsystem();
+  @Logged
+  private final MitoCANdriaSubsytem mitoCANdriaSubsytem = new MitoCANdriaSubsytem();
   private final LEDSubsystem ledSubsystem = new LEDSubsystem();
 
   private final CommandFactory commandFactory = new CommandFactory(

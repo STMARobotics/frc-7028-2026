@@ -73,6 +73,11 @@ public class JoystickControlBindings extends ControlBindings {
   }
 
   @Override
+  public Optional<Trigger> eject() {
+    return Optional.of(leftJoystick.povDown());
+  }
+
+  @Override
   public Optional<Trigger> manualShoot() {
     return Optional.of(rightJoystick.povUp());
   }
