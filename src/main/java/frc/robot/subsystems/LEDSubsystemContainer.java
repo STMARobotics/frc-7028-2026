@@ -16,6 +16,7 @@ import edu.wpi.first.wpilibj.AddressableLEDBufferView;
 import edu.wpi.first.wpilibj.LEDPattern;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.util.Color;
+import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import java.util.function.BooleanSupplier;
 
@@ -37,6 +38,12 @@ public class LEDSubsystemContainer {
 
   private final IntakeLEDSubsystem intakeLEDSubsystem = new IntakeLEDSubsystem();
   private final RobotLEDSubsystem robotLEDSubsystem = new RobotLEDSubsystem();
+
+  public interface LEDSubsystem extends Subsystem {
+    void off();
+
+    void runPatternOnAll(LEDPattern pattern);
+  }
 
   /**
    * Creates a new LEDSubsystemContainer
@@ -135,7 +142,7 @@ public class LEDSubsystemContainer {
     };
   }
 
-  public class IntakeLEDSubsystem extends SubsystemBase {
+  public class IntakeLEDSubsystem extends SubsystemBase implements LEDSubsystem {
 
     /**
      * Applies the pattern to the intake high LED strip. This will only happen once. If running an animation, this
@@ -207,9 +214,10 @@ public class LEDSubsystemContainer {
      * 
      * @param pattern Pattern to set on the intake LED strips
      */
-    public void runPatternOnIntake(LEDPattern pattern) {
-      pattern.applyTo(intakeHighBuffer);
-      pattern.applyTo(intakeLowBuffer);
+    @Override
+    public void runPatternOnAll(LEDPattern pattern) {
+      runPatternOnIntakeHigh(pattern);
+      runPatternOnIntakeLow(pattern);
     }
 
     /**
@@ -244,7 +252,7 @@ public class LEDSubsystemContainer {
     }
   }
 
-  public class RobotLEDSubsystem extends SubsystemBase {
+  public class RobotLEDSubsystem extends SubsystemBase implements LEDSubsystem {
 
     /**
      * Applies the pattern to the left LED strip. This will only happen once. If running an animation, this
@@ -264,6 +272,12 @@ public class LEDSubsystemContainer {
      */
     public void runPatternOnBack(LEDPattern pattern) {
       pattern.applyTo(backBuffer);
+    }
+
+    @Override
+    public void runPatternOnAll(LEDPattern pattern) {
+      runPatternOnLeft(pattern);
+      runPatternOnBack(pattern);
     }
 
     /**

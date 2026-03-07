@@ -18,8 +18,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.LEDPattern;
 import edu.wpi.first.wpilibj.RobotState;
 import edu.wpi.first.wpilibj2.command.Command;
-import frc.robot.subsystems.LEDSubsystemContainer.IntakeLEDSubsystem;
-import frc.robot.subsystems.LEDSubsystemContainer.RobotLEDSubsystem;
+import frc.robot.subsystems.LEDSubsystemContainer.LEDSubsystem;
 
 /**
  * The default command for controlling the LEDs
@@ -28,18 +27,16 @@ public class DefaultLEDCommand extends Command {
 
   private static final Time CANDY_CANE_SPEED = Seconds.of(0.5);
 
-  private final IntakeLEDSubsystem intakeLEDSubsystem;
-  private final RobotLEDSubsystem robotLEDSubsystem;
+  private final LEDSubsystem ledSubsystem;
 
   /**
    * Creates a new DefaultLEDCommand
    * 
    * @param ledSubsystem LED subsystem
    */
-  public DefaultLEDCommand(IntakeLEDSubsystem intakeLEDSubsystem, RobotLEDSubsystem robotLEDSubsystem) {
-    this.intakeLEDSubsystem = intakeLEDSubsystem;
-    this.robotLEDSubsystem = robotLEDSubsystem;
-    addRequirements(intakeLEDSubsystem, robotLEDSubsystem);
+  public DefaultLEDCommand(LEDSubsystem ledSubsystem) {
+    this.ledSubsystem = ledSubsystem;
+    addRequirements(ledSubsystem);
   }
 
   @Override
@@ -54,18 +51,12 @@ public class DefaultLEDCommand extends Command {
     } else {
       pattern = kOff;
     }
-    intakeLEDSubsystem.runPatternOnIntakeHigh(pattern);
-    intakeLEDSubsystem.runPatternOnIntakeLow(pattern);
-    robotLEDSubsystem.runPatternOnLeft(pattern);
-    robotLEDSubsystem.runPatternOnBack(pattern);
+    ledSubsystem.runPatternOnAll(pattern);
   }
 
   @Override
   public void end(boolean interrupted) {
-    intakeLEDSubsystem.offIntakeHigh();
-    intakeLEDSubsystem.offIntakeLow();
-    robotLEDSubsystem.offLeft();
-    robotLEDSubsystem.offBack();
+    ledSubsystem.off();
   }
 
   @Override

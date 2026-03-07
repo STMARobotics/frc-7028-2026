@@ -38,7 +38,7 @@ public class LEDBootAnimationCommand extends Command {
         intakeLedSubsystem.off();
         initialized = true;
       }
-      intakeLedSubsystem.runPatternOnIntake((reader, writer) -> {
+      intakeLedSubsystem.runPatternOnAll((reader, writer) -> {
         for (int index = 0; index < reader.getLength(); index++) {
           if (index <= blipIndex && index >= blipIndex - (BLIP_SIZE - 1)) {
             writer.setLED(index, Color.kOrange);

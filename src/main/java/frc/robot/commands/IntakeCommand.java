@@ -18,8 +18,9 @@ public class IntakeCommand extends Command {
   private final IntakeSubsytem intakeSubsytem;
   private final IntakeLEDSubsystem intakeLEDSubsystem;
 
-  private final LEDPattern pattern = LEDPattern.gradient(GradientType.kDiscontinuous, Color.kBlack, Color.kOrange)
+  private final LEDPattern patternLeft = LEDPattern.gradient(GradientType.kDiscontinuous, Color.kBlack, Color.kOrange)
       .scrollAtRelativeSpeed(Percent.per(Second).of(200));
+  private final LEDPattern patternRight = patternLeft.reversed();
 
   public IntakeCommand(IntakeSubsytem intakeSubsytem, IntakeLEDSubsystem intakeLEDSubsystem) {
     this.intakeSubsytem = intakeSubsytem;
@@ -35,18 +36,17 @@ public class IntakeCommand extends Command {
 
   @Override
   public void execute() {
-    intakeLEDSubsystem.runPatternOnIntakeHighLeft(pattern);
-    intakeLEDSubsystem.runPatternOnIntakeHighRight(pattern.reversed());
-    intakeLEDSubsystem.runPatternOnIntakeLowLeft(pattern);
-    intakeLEDSubsystem.runPatternOnIntakeLowRight(pattern.reversed());
+    intakeLEDSubsystem.runPatternOnIntakeHighLeft(patternLeft);
+    intakeLEDSubsystem.runPatternOnIntakeHighRight(patternRight);
+    intakeLEDSubsystem.runPatternOnIntakeLowLeft(patternLeft);
+    intakeLEDSubsystem.runPatternOnIntakeLowRight(patternRight);
   }
 
   @Override
   public void end(boolean interrupted) {
     intakeSubsytem.stopIntaking();
 
-    intakeLEDSubsystem.offIntakeHigh();
-    intakeLEDSubsystem.offIntakeLow();
+    intakeLEDSubsystem.off();
   }
 
 }

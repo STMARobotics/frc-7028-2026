@@ -132,9 +132,9 @@ public class RobotContainer {
     CommandScheduler.getInstance().schedule(bootAnimation);
 
     // Set up default commmands
-    ledSubsystem.getIntakeLEDSubsystem()
-        .setDefaultCommand(
-            new DefaultLEDCommand(ledSubsystem.getIntakeLEDSubsystem(), ledSubsystem.getRobotLEDSubsystem()));
+    ledSubsystem.getIntakeLEDSubsystem().setDefaultCommand(new DefaultLEDCommand(ledSubsystem.getIntakeLEDSubsystem()));
+    ledSubsystem.getRobotLEDSubsystem().setDefaultCommand(new DefaultLEDCommand(ledSubsystem.getRobotLEDSubsystem()));
+
     shooterSubsystem.setDefaultCommand(new DefaultShooterCommand(shooterSubsystem));
   }
 
@@ -159,8 +159,7 @@ public class RobotContainer {
 
     controlBindings.stopIntake().ifPresent(trigger -> trigger.onTrue(Commands.runOnce(() -> {
       intakeSubsystem.stop();
-      ledSubsystem.getIntakeLEDSubsystem().offIntakeHigh();
-      ledSubsystem.getIntakeLEDSubsystem().offIntakeLow();
+      ledSubsystem.getIntakeLEDSubsystem().off();
     }, intakeSubsystem, ledSubsystem.getIntakeLEDSubsystem())));
 
     controlBindings.eject().ifPresent(trigger -> trigger.whileTrue(Commands.run(() -> {
@@ -173,8 +172,7 @@ public class RobotContainer {
     }, intakeSubsystem, spindexerSubsystem, ledSubsystem.getIntakeLEDSubsystem()).finallyDo(() -> {
       intakeSubsystem.stop();
       spindexerSubsystem.stop();
-      ledSubsystem.getIntakeLEDSubsystem().offIntakeHigh();
-      ledSubsystem.getIntakeLEDSubsystem().offIntakeLow();
+      ledSubsystem.getIntakeLEDSubsystem().off();
     })));
 
     controlBindings.deployIntake().ifPresent(trigger -> trigger.onTrue(new DeployIntakeCommand(intakeSubsystem)));
