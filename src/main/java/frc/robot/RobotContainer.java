@@ -129,7 +129,9 @@ public class RobotContainer {
     CommandScheduler.getInstance().schedule(bootAnimation);
 
     // Set up default commmands
-    ledSubsystem.getIntakeLEDSubsystem().setDefaultCommand(new DefaultLEDCommand(ledSubsystem.getIntakeLEDSubsystem()));
+    ledSubsystem.getIntakeLEDSubsystem()
+        .setDefaultCommand(
+            new DefaultLEDCommand(ledSubsystem.getIntakeLEDSubsystem(), ledSubsystem.getRobotLEDSubsystem()));
     shooterSubsystem.setDefaultCommand(new DefaultShooterCommand(shooterSubsystem));
   }
 

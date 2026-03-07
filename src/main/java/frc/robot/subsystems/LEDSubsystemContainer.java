@@ -42,19 +42,19 @@ public class LEDSubsystemContainer {
     leds.setData(ledBuffer);
 
     // TODO set up the buffers in the right positions on the strip
-    intakeHighBuffer = new AddressableLEDBufferView(ledBuffer, 0, INTAKE_HIGH_LED_STRIP_LENGTH);
+    intakeHighBuffer = new AddressableLEDBufferView(ledBuffer, 0, INTAKE_HIGH_LED_STRIP_LENGTH - 1);
     intakeLowBuffer = new AddressableLEDBufferView(
         ledBuffer,
         INTAKE_HIGH_LED_STRIP_LENGTH,
-        INTAKE_HIGH_LED_STRIP_LENGTH + INTAKE_LOW_LED_STRIP_LENGTH);
+        INTAKE_HIGH_LED_STRIP_LENGTH + INTAKE_LOW_LED_STRIP_LENGTH - 1);
     leftBuffer = new AddressableLEDBufferView(
         ledBuffer,
         INTAKE_HIGH_LED_STRIP_LENGTH + INTAKE_LOW_LED_STRIP_LENGTH,
-        LEFT_LED_STRIP_LENGTH);
+        INTAKE_HIGH_LED_STRIP_LENGTH + INTAKE_LOW_LED_STRIP_LENGTH + LEFT_LED_STRIP_LENGTH - 1);
     backBuffer = new AddressableLEDBufferView(
         ledBuffer,
         INTAKE_HIGH_LED_STRIP_LENGTH + INTAKE_LOW_LED_STRIP_LENGTH + LEFT_LED_STRIP_LENGTH,
-        BACK_LED_STRIP_LENGTH);
+        TOTAL_LEDS - 1);
 
     leds.start();
     new LEDSuperSubsystem(); // TODO consider a better way to schedule this periodic update
