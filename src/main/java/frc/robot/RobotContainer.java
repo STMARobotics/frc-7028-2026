@@ -5,6 +5,8 @@
 package frc.robot;
 
 import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.Percent;
+import static edu.wpi.first.units.Units.Second;
 import static edu.wpi.first.wpilibj.DriverStation.Alliance.Blue;
 import static edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction.kForward;
 import static edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction.kReverse;
@@ -24,6 +26,7 @@ import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.LEDPattern;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -151,18 +154,27 @@ public class RobotContainer {
                 .whileTrue(Commands.run(localizationSubsystem::resetPoseFromAprilTags).ignoringDisable(true)));
 
     // Intake controls
-    controlBindings.runIntake().ifPresent(trigger -> trigger.onTrue(new IntakeCommand(intakeSubsystem)));
+    controlBindings.runIntake()
+        .ifPresent(trigger -> trigger.onTrue(new IntakeCommand(intakeSubsystem, ledSubsystem.getIntakeLEDSubsystem())));
 
     controlBindings.stopIntake().ifPresent(trigger -> trigger.onTrue(Commands.runOnce(() -> {
       intakeSubsystem.stop();
-    }, intakeSubsystem)));
+      ledSubsystem.getIntakeLEDSubsystem().offIntakeHigh();
+      ledSubsystem.getIntakeLEDSubsystem().offIntakeLow();
+    }, intakeSubsystem, ledSubsystem.getIntakeLEDSubsystem())));
 
     controlBindings.eject().ifPresent(trigger -> trigger.whileTrue(Commands.run(() -> {
       intakeSubsystem.reverseIntake();
       spindexerSubsystem.agitate();
-    }, intakeSubsystem, spindexerSubsystem).finallyDo(() -> {
+      ledSubsystem.getIntakeLEDSubsystem()
+          .runPatternOnIntakeHigh(LEDPattern.rainbow(255, 255).scrollAtRelativeSpeed(Percent.per(Second).of(200)));
+      ledSubsystem.getIntakeLEDSubsystem()
+          .runPatternOnIntakeLow(LEDPattern.rainbow(255, 255).scrollAtRelativeSpeed(Percent.per(Second).of(200)));
+    }, intakeSubsystem, spindexerSubsystem, ledSubsystem.getIntakeLEDSubsystem()).finallyDo(() -> {
       intakeSubsystem.stop();
       spindexerSubsystem.stop();
+      ledSubsystem.getIntakeLEDSubsystem().offIntakeHigh();
+      ledSubsystem.getIntakeLEDSubsystem().offIntakeLow();
     })));
 
     controlBindings.deployIntake().ifPresent(trigger -> trigger.onTrue(new DeployIntakeCommand(intakeSubsystem)));
@@ -237,7 +249,8 @@ public class RobotContainer {
     NamedCommands.registerCommand("Shoot", commandFactory.shootAtHub().finallyDo(shooterSubsystem::stow));
     NamedCommands.registerCommand(
         "Intake",
-          new DeployIntakeCommand(intakeSubsystem).andThen(new IntakeCommand(intakeSubsystem)));
+          new DeployIntakeCommand(intakeSubsystem)
+              .andThen(new IntakeCommand(intakeSubsystem, ledSubsystem.getIntakeLEDSubsystem())));
     NamedCommands.registerCommand("RetractIntake", new RetractIntakeCommand(intakeSubsystem));
     NamedCommands.registerCommand("Shuttle", commandFactory.shuttleToCorner().finallyDo(shooterSubsystem::stow));
   }

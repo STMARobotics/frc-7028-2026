@@ -1,7 +1,14 @@
 package frc.robot.commands;
 
+import static edu.wpi.first.units.Units.Percent;
+import static edu.wpi.first.units.Units.Second;
+
+import edu.wpi.first.wpilibj.LEDPattern;
+import edu.wpi.first.wpilibj.LEDPattern.GradientType;
+import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.IntakeSubsytem;
+import frc.robot.subsystems.LEDSubsystemContainer.IntakeLEDSubsystem;
 
 /**
  * Command to intake fuel from the floor. This has a prerequisite of the intake being deployed.
@@ -9,11 +16,16 @@ import frc.robot.subsystems.IntakeSubsytem;
 public class IntakeCommand extends Command {
 
   private final IntakeSubsytem intakeSubsytem;
+  private final IntakeLEDSubsystem intakeLEDSubsystem;
 
-  public IntakeCommand(IntakeSubsytem intakeSubsytem) {
+  private final LEDPattern pattern = LEDPattern.gradient(GradientType.kDiscontinuous, Color.kBlack, Color.kOrange)
+      .scrollAtRelativeSpeed(Percent.per(Second).of(200));
+
+  public IntakeCommand(IntakeSubsytem intakeSubsytem, IntakeLEDSubsystem intakeLEDSubsystem) {
     this.intakeSubsytem = intakeSubsytem;
+    this.intakeLEDSubsystem = intakeLEDSubsystem;
 
-    addRequirements(intakeSubsytem);
+    addRequirements(intakeSubsytem, intakeLEDSubsystem);
   }
 
   @Override
@@ -22,8 +34,19 @@ public class IntakeCommand extends Command {
   }
 
   @Override
+  public void execute() {
+    intakeLEDSubsystem.runPatternOnIntakeHighLeft(pattern);
+    intakeLEDSubsystem.runPatternOnIntakeHighRight(pattern.reversed());
+    intakeLEDSubsystem.runPatternOnIntakeLowLeft(pattern);
+    intakeLEDSubsystem.runPatternOnIntakeLowRight(pattern.reversed());
+  }
+
+  @Override
   public void end(boolean interrupted) {
     intakeSubsytem.stopIntaking();
+
+    intakeLEDSubsystem.offIntakeHigh();
+    intakeLEDSubsystem.offIntakeLow();
   }
 
 }

@@ -30,6 +30,10 @@ public class LEDSubsystemContainer {
   private final AddressableLEDBufferView intakeLowBuffer;
   private final AddressableLEDBufferView leftBuffer;
   private final AddressableLEDBufferView backBuffer;
+  private final AddressableLEDBufferView intakeHighLeftBuffer;
+  private final AddressableLEDBufferView intakeHighRightBuffer;
+  private final AddressableLEDBufferView intakeLowLeftBuffer;
+  private final AddressableLEDBufferView intakeLowRightBuffer;
 
   private final IntakeLEDSubsystem intakeLEDSubsystem = new IntakeLEDSubsystem();
   private final RobotLEDSubsystem robotLEDSubsystem = new RobotLEDSubsystem();
@@ -55,6 +59,17 @@ public class LEDSubsystemContainer {
         ledBuffer,
         INTAKE_HIGH_LED_STRIP_LENGTH + INTAKE_LOW_LED_STRIP_LENGTH + LEFT_LED_STRIP_LENGTH,
         TOTAL_LEDS - 1);
+
+    intakeHighLeftBuffer = new AddressableLEDBufferView(intakeHighBuffer, 0, (INTAKE_HIGH_LED_STRIP_LENGTH - 1) / 2);
+    intakeHighRightBuffer = new AddressableLEDBufferView(
+        intakeHighBuffer,
+        INTAKE_HIGH_LED_STRIP_LENGTH / 2,
+        INTAKE_HIGH_LED_STRIP_LENGTH - 1);
+    intakeLowLeftBuffer = new AddressableLEDBufferView(intakeLowBuffer, 0, (INTAKE_LOW_LED_STRIP_LENGTH - 1) / 2);
+    intakeLowRightBuffer = new AddressableLEDBufferView(
+        intakeLowBuffer,
+        INTAKE_LOW_LED_STRIP_LENGTH / 2,
+        INTAKE_LOW_LED_STRIP_LENGTH - 1);
 
     leds.start();
     new LEDSuperSubsystem(); // TODO consider a better way to schedule this periodic update
@@ -133,6 +148,28 @@ public class LEDSubsystemContainer {
     }
 
     /**
+     * Applies the pattern to the left side of the intake high LED strip. This will only happen once. If running an
+     * animation, this
+     * method must be called continuously to update the led states.
+     * 
+     * @param pattern Pattern to set on the left side of the intake high LED strip
+     */
+    public void runPatternOnIntakeHighLeft(LEDPattern pattern) {
+      pattern.applyTo(intakeHighLeftBuffer);
+    }
+
+    /**
+     * Applies the pattern to the right side of the intake high LED strip. This will only happen once. If running an
+     * animation, this
+     * method must be called continuously to update the led states.
+     * 
+     * @param pattern Pattern to set on the right side of the intake high LED strip
+     */
+    public void runPatternOnIntakeHighRight(LEDPattern pattern) {
+      pattern.applyTo(intakeHighRightBuffer);
+    }
+
+    /**
      * Applies the pattern to the intake low LED strip. This will only happen once. If running an animation, this
      * method must be called continuously to update the led states.
      * 
@@ -140,6 +177,28 @@ public class LEDSubsystemContainer {
      */
     public void runPatternOnIntakeLow(LEDPattern pattern) {
       pattern.applyTo(intakeLowBuffer);
+    }
+
+    /**
+     * Applies the pattern to the left side of the intake low LED strip. This will only happen once. If running an
+     * animation, this
+     * method must be called continuously to update the led states.
+     * 
+     * @param pattern Pattern to set on the left side of the intake low LED strip
+     */
+    public void runPatternOnIntakeLowLeft(LEDPattern pattern) {
+      pattern.applyTo(intakeLowLeftBuffer);
+    }
+
+    /**
+     * Applies the pattern to the right side of the intake low LED strip. This will only happen once. If running an
+     * animation, this
+     * method must be called continuously to update the led states.
+     * 
+     * @param pattern Pattern to set on the right side of the intake low LED strip
+     */
+    public void runPatternOnIntakeLowRight(LEDPattern pattern) {
+      pattern.applyTo(intakeLowRightBuffer);
     }
 
     /**
