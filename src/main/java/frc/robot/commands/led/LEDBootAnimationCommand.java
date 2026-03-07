@@ -1,31 +1,30 @@
 package frc.robot.commands.led;
 
-import edu.wpi.first.wpilibj.LEDPattern;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj2.command.Command;
-import frc.robot.subsystems.LEDSubsystem;
+import frc.robot.subsystems.LEDSubsystemContainer.IntakeLEDSubsystem;
 
 /** Command to run the boot animation on the LED strips */
 public class LEDBootAnimationCommand extends Command {
 
   private static final int BLIP_SIZE = 5;
-  private final LEDSubsystem ledSubsystem;
+  private final IntakeLEDSubsystem intakeLedSubsystem;
   private final Timer timer = new Timer();
 
   private int blipIndex = -1;
   private boolean done = false;
   private boolean initialized = false;
 
-  public LEDBootAnimationCommand(LEDSubsystem ledSubsystem) {
-    this.ledSubsystem = ledSubsystem;
+  public LEDBootAnimationCommand(IntakeLEDSubsystem intakeLedSubsystem) {
+    this.intakeLedSubsystem = intakeLedSubsystem;
 
-    addRequirements(ledSubsystem);
+    addRequirements(intakeLedSubsystem);
   }
 
   @Override
   public void initialize() {
-    ledSubsystem.runPattern(LEDPattern.kOff);
+    intakeLedSubsystem.off();
     blipIndex = -1;
     timer.start();
     done = false;
@@ -36,10 +35,10 @@ public class LEDBootAnimationCommand extends Command {
   public void execute() {
     if (timer.advanceIfElapsed(0.04) || !initialized) {
       if (!initialized) {
-        ledSubsystem.runPattern(LEDPattern.kOff);
+        intakeLedSubsystem.off();
         initialized = true;
       }
-      ledSubsystem.runPattern((reader, writer) -> {
+      intakeLedSubsystem.runPatternOnIntake((reader, writer) -> {
         for (int index = 0; index < reader.getLength(); index++) {
           if (index <= blipIndex && index >= blipIndex - (BLIP_SIZE - 1)) {
             writer.setLED(index, Color.kOrange);
@@ -50,7 +49,7 @@ public class LEDBootAnimationCommand extends Command {
       });
 
       blipIndex++;
-      done = blipIndex - (BLIP_SIZE + 1) >= ledSubsystem.getStripLength();
+      done = blipIndex - (BLIP_SIZE + 1) >= intakeLedSubsystem.getIntakeStripLength();
     }
   }
 
@@ -66,6 +65,6 @@ public class LEDBootAnimationCommand extends Command {
 
   @Override
   public void end(boolean interrupted) {
-    ledSubsystem.runPattern(LEDPattern.kOff);
+    intakeLedSubsystem.off();
   }
 }

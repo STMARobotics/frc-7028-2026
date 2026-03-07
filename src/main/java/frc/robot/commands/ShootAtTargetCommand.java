@@ -23,7 +23,8 @@ import edu.wpi.first.wpilibj.LEDPattern;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.FeederSubsystem;
-import frc.robot.subsystems.LEDSubsystem;
+import frc.robot.subsystems.LEDSubsystemContainer;
+import frc.robot.subsystems.LEDSubsystemContainer.RobotLEDSubsystem;
 import frc.robot.subsystems.ShooterSubsystem;
 import frc.robot.subsystems.ShooterSubsystem.ShooterSetpoints;
 import frc.robot.subsystems.SpindexerSubsystem;
@@ -43,7 +44,7 @@ public class ShootAtTargetCommand extends Command {
   private final ShooterSubsystem shooterSubsystem;
   private final FeederSubsystem feederSubsystem;
   private final SpindexerSubsystem spindexerSubsystem;
-  private final LEDSubsystem ledSubsystem;
+  private final RobotLEDSubsystem robotLedSubsystem;
   private final Supplier<Pose2d> robotPoseSupplier;
   private final Supplier<ChassisSpeeds> robotSpeedSupplier;
   private final Function<Translation2d, Translation2d> targetSelector;
@@ -60,7 +61,7 @@ public class ShootAtTargetCommand extends Command {
    * @param shooterSubsystem shooter subsystem
    * @param feederSubsystem feeder subsystem
    * @param spindexerSubsystem spindexer subsystem
-   * @param ledSubsystem led subsystem
+   * @param robotLedSubsystem led subsystem
    * @param robotPoseSupplier robot pose supplier
    * @param robotSpeedSupplier robot speed supplier
    * @param targetSelector function that takes the shooter's translation and returns the target translation to shoot at
@@ -70,7 +71,7 @@ public class ShootAtTargetCommand extends Command {
       ShooterSubsystem shooterSubsystem,
       FeederSubsystem feederSubsystem,
       SpindexerSubsystem spindexerSubsystem,
-      LEDSubsystem ledSubsystem,
+      RobotLEDSubsystem robotLedSubsystem,
       Supplier<Pose2d> robotPoseSupplier,
       Supplier<ChassisSpeeds> robotSpeedSupplier,
       Function<Translation2d, Translation2d> targetSelector,
@@ -78,19 +79,19 @@ public class ShootAtTargetCommand extends Command {
     this.shooterSubsystem = shooterSubsystem;
     this.feederSubsystem = feederSubsystem;
     this.spindexerSubsystem = spindexerSubsystem;
-    this.ledSubsystem = ledSubsystem;
+    this.robotLedSubsystem = robotLedSubsystem;
     this.robotPoseSupplier = robotPoseSupplier;
     this.robotSpeedSupplier = robotSpeedSupplier;
     this.targetSelector = targetSelector;
     this.lookupTable = lookupTable;
 
-    addRequirements(shooterSubsystem, feederSubsystem, spindexerSubsystem, ledSubsystem);
+    addRequirements(shooterSubsystem, feederSubsystem, spindexerSubsystem, robotLedSubsystem);
   }
 
   @Override
   public void initialize() {
     // Reset states
-    ledSubsystem.off();
+    robotLedSubsystem.off();
     isShooting = false;
   }
 
@@ -118,7 +119,8 @@ public class ShootAtTargetCommand extends Command {
       shooterSubsystem.setFlywheelSpeed(lookupTable.get(actualTargetDistance).targetFlywheelSpeed());
       spindexerSubsystem.stop();
       feederSubsystem.stop();
-      ledSubsystem.runPattern(LEDPattern.solid(kRed).blink(Seconds.of(0.1)));
+      robotLedSubsystem.runPatternOnBack(LEDPattern.solid(kRed).blink(Seconds.of(0.1)));
+      robotLedSubsystem.runPatternOnLeft(LEDPattern.solid(kRed).blink(Seconds.of(0.1)));
       return;
     }
 
@@ -212,12 +214,16 @@ public class ShootAtTargetCommand extends Command {
       // All conditions met. Continuously feeding until the command is interrupted
       spindexerSubsystem.runSpindexer(shootingSettings.spindexerVelocity());
       feederSubsystem.runFeeder(shootingSettings.feederVelocity());
-      ledSubsystem.runPattern(LEDPattern.solid(kGreen));
+      robotLedSubsystem.runPatternOnBack(LEDPattern.solid(kGreen));
+      robotLedSubsystem.runPatternOnLeft(LEDPattern.solid(kGreen));
+
       isShooting = true;
     } else {
       // Not ready. Don't feed and display readiness using segmented LED lights.
-      ledSubsystem
-          .runPattern(LEDSubsystem.ledSegments(kBlue, () -> isFlywheelReady, () -> isPitchReady, () -> isYawReady));
+      robotLedSubsystem.runPatternOnLeft(
+          LEDSubsystemContainer.ledSegments(kBlue, () -> isFlywheelReady, () -> isPitchReady, () -> isYawReady));
+      robotLedSubsystem.runPatternOnBack(
+          LEDSubsystemContainer.ledSegments(kBlue, () -> isFlywheelReady, () -> isPitchReady, () -> isYawReady));
       spindexerSubsystem.stop();
       feederSubsystem.stop();
     }
@@ -228,6 +234,7 @@ public class ShootAtTargetCommand extends Command {
     shooterSubsystem.stopAll();
     feederSubsystem.stop();
     spindexerSubsystem.stop();
-    ledSubsystem.off();
+    robotLedSubsystem.offBack();
+    robotLedSubsystem.offLeft();
   }
 }

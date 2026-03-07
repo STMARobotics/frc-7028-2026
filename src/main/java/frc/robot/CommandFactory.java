@@ -27,7 +27,8 @@ import frc.robot.commands.ShootAtTargetCommand;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.FeederSubsystem;
 import frc.robot.subsystems.IntakeSubsytem;
-import frc.robot.subsystems.LEDSubsystem;
+import frc.robot.subsystems.LEDSubsystemContainer.IntakeLEDSubsystem;
+import frc.robot.subsystems.LEDSubsystemContainer.RobotLEDSubsystem;
 import frc.robot.subsystems.ShooterSubsystem;
 import frc.robot.subsystems.SpindexerSubsystem;
 import java.util.function.Supplier;
@@ -41,7 +42,8 @@ public class CommandFactory {
   private final SpindexerSubsystem spindexerSubsystem;
   private final FeederSubsystem feederSubsystem;
   private final IntakeSubsytem intakeSubsystem;
-  private final LEDSubsystem ledSubsystem;
+  private final IntakeLEDSubsystem intakeLEDSubsystem;
+  private final RobotLEDSubsystem robotLEDSubsystem;
 
   /**
    * Constructor for Commandfactory, takes in all subsystems as parameters to use in command creation methods.
@@ -59,13 +61,15 @@ public class CommandFactory {
       SpindexerSubsystem spindexerSubsystem,
       FeederSubsystem feederSubsystem,
       IntakeSubsytem intakeSubsystem,
-      LEDSubsystem ledSubsystem) {
+      IntakeLEDSubsystem intakeLEDSubsystem,
+      RobotLEDSubsystem robotLEDSubsystem) {
     this.drivetrainSubsystem = drivetrainSubsystem;
     this.shooterSubsystem = shooterSubsystem;
     this.spindexerSubsystem = spindexerSubsystem;
     this.feederSubsystem = feederSubsystem;
     this.intakeSubsystem = intakeSubsystem;
-    this.ledSubsystem = ledSubsystem;
+    this.intakeLEDSubsystem = intakeLEDSubsystem;
+    this.robotLEDSubsystem = robotLEDSubsystem;
   }
 
   /**
@@ -78,7 +82,7 @@ public class CommandFactory {
         shooterSubsystem,
         feederSubsystem,
         spindexerSubsystem,
-        ledSubsystem,
+        robotLEDSubsystem,
         () -> drivetrainSubsystem.getState().Pose,
         drivetrainSubsystem::getCurrentFieldChassisSpeeds,
         t -> DriverStation.getAlliance().orElse(Blue) == Blue ? TARGET_BLUE : TARGET_RED,
@@ -95,7 +99,7 @@ public class CommandFactory {
         shooterSubsystem,
         feederSubsystem,
         spindexerSubsystem,
-        ledSubsystem,
+        robotLEDSubsystem,
         () -> drivetrainSubsystem.getState().Pose,
         drivetrainSubsystem::getCurrentFieldChassisSpeeds,
         shooterTranslation -> {

@@ -11,14 +11,14 @@ import static edu.wpi.first.wpilibj.util.Color.kBlue;
 import static edu.wpi.first.wpilibj.util.Color.kDarkRed;
 import static edu.wpi.first.wpilibj.util.Color.kIndianRed;
 import static edu.wpi.first.wpilibj.util.Color.kOrange;
-import static frc.robot.subsystems.LEDSubsystem.candyCane;
+import static frc.robot.subsystems.LEDSubsystemContainer.candyCane;
 
 import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.LEDPattern;
 import edu.wpi.first.wpilibj.RobotState;
 import edu.wpi.first.wpilibj2.command.Command;
-import frc.robot.subsystems.LEDSubsystem;
+import frc.robot.subsystems.LEDSubsystemContainer.IntakeLEDSubsystem;
 
 /**
  * The default command for controlling the LEDs
@@ -27,17 +27,16 @@ public class DefaultLEDCommand extends Command {
 
   private static final Time CANDY_CANE_SPEED = Seconds.of(0.5);
 
-  private final LEDSubsystem ledSubsystem;
+  private final IntakeLEDSubsystem intakeLEDSubsystem;
 
   /**
    * Creates a new DefaultLEDCommand
    * 
    * @param ledSubsystem LED subsystem
    */
-  public DefaultLEDCommand(LEDSubsystem ledSubsystem) {
-    this.ledSubsystem = ledSubsystem;
-
-    addRequirements(ledSubsystem);
+  public DefaultLEDCommand(IntakeLEDSubsystem intakeLEDSubsystem) {
+    this.intakeLEDSubsystem = intakeLEDSubsystem;
+    addRequirements(intakeLEDSubsystem);
   }
 
   @Override
@@ -52,12 +51,14 @@ public class DefaultLEDCommand extends Command {
     } else {
       pattern = kOff;
     }
-    ledSubsystem.runPattern(pattern);
+    intakeLEDSubsystem.runPatternOnIntakeHigh(pattern);
+    intakeLEDSubsystem.runPatternOnIntakeLow(pattern);
   }
 
   @Override
   public void end(boolean interrupted) {
-    ledSubsystem.off();
+    intakeLEDSubsystem.offIntakeHigh();
+    intakeLEDSubsystem.offIntakeLow();
   }
 
   @Override

@@ -47,7 +47,7 @@ import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.FeederSubsystem;
 import frc.robot.subsystems.IntakeSubsytem;
-import frc.robot.subsystems.LEDSubsystem;
+import frc.robot.subsystems.LEDSubsystemContainer;
 import frc.robot.subsystems.LocalizationSubsystem;
 import frc.robot.subsystems.MitoCANdriaSubsytem;
 import frc.robot.subsystems.ShooterSubsystem;
@@ -87,7 +87,7 @@ public class RobotContainer {
   private final ShooterSubsystem shooterSubsystem = new ShooterSubsystem();
   @Logged
   private final MitoCANdriaSubsytem mitoCANdriaSubsytem = new MitoCANdriaSubsytem();
-  private final LEDSubsystem ledSubsystem = new LEDSubsystem();
+  private final LEDSubsystemContainer ledSubsystem = new LEDSubsystemContainer();
 
   private final CommandFactory commandFactory = new CommandFactory(
       drivetrain,
@@ -95,7 +95,8 @@ public class RobotContainer {
       spindexerSubsystem,
       feederSubsystem,
       intakeSubsystem,
-      ledSubsystem);
+      ledSubsystem.getIntakeLEDSubsystem(),
+      ledSubsystem.getRobotLEDSubsystem());
 
   /* Path follower */
   private final SendableChooser<Command> autoChooser;
@@ -124,11 +125,11 @@ public class RobotContainer {
     CommandScheduler.getInstance().schedule(FollowPathCommand.warmupCommand());
 
     // Run the boot animation
-    var bootAnimation = new LEDBootAnimationCommand(ledSubsystem);
+    var bootAnimation = new LEDBootAnimationCommand(ledSubsystem.getIntakeLEDSubsystem());
     CommandScheduler.getInstance().schedule(bootAnimation);
 
     // Set up default commmands
-    ledSubsystem.setDefaultCommand(new DefaultLEDCommand(ledSubsystem));
+    ledSubsystem.getIntakeLEDSubsystem().setDefaultCommand(new DefaultLEDCommand(ledSubsystem.getIntakeLEDSubsystem()));
     shooterSubsystem.setDefaultCommand(new DefaultShooterCommand(shooterSubsystem));
   }
 
