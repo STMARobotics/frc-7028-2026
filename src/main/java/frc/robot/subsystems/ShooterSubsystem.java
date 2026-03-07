@@ -315,7 +315,14 @@ public class ShooterSubsystem extends SubsystemBase {
     // turret range is more like [-0.75, 0.25].
     double targetRotations = MathUtil
         .inputModulus(targetYaw.in(Rotations), YAW_RANGE_REVERSE.in(Rotations), YAW_RANGE_FORWARD.in(Rotations));
-    yawMotor.setControl(yawPositionRequest.withPosition(targetRotations));
+    Angle currentYaw = getYaw();
+    double ffVolts = 0.0;
+    if (currentYaw.gt(Rotations.of(-0.195))) {
+      ffVolts = 0.5;
+    } else if (currentYaw.lt(Rotations.of(-0.468))) {
+      ffVolts = -1.0375;
+    }
+    yawMotor.setControl(yawPositionRequest.withPosition(targetRotations).withFeedForward(Volts.of(ffVolts)));
   }
 
   /**
@@ -500,9 +507,9 @@ public class ShooterSubsystem extends SubsystemBase {
    * @return fuel pitch angle
    */
   public static Angle getFuelPitch(Angle shooterPitch) {
-    // The hood moving up (positive) lowers the exit angle, so the angle has to be inverted.
+    // The hood moving up (positive) lowers the exit angle, so the angle has to be subtracted.
     // Turret 0 shoots fuel at FUEL_EXIT_ANGLE_OFFSET
-    return shooterPitch.unaryMinus().plus(FUEL_EXIT_ANGLE_OFFSET);
+    return FUEL_EXIT_ANGLE_OFFSET.minus(shooterPitch);
   }
 
   /**
