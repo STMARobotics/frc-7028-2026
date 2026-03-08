@@ -90,7 +90,7 @@ public final class Constants {
     /** Max angular velocity the driver can request */
     public static final AngularVelocity MAX_TELEOP_ANGULAR_VELOCITY = RotationsPerSecond.of(1.75);
     /** Multiplier for shooting in teleop to reduce driver speed while shooting */
-    public static final double SHOOT_VELOCITY_MULTIPLIER = 0.3;
+    public static final double SHOOT_VELOCITY_MULTIPLIER = 0.325;
     /** Blue reset pose is the blue corner, bumpers against the walls, facing downfield. */
     public static final Pose3d RESET_POSE_BLUE = new Pose3d(
         new Translation3d(ROBOT_LENGTH.in(Meters) / 2.0, ROBOT_WIDTH.in(Meters) / 2.0, 0.0),
@@ -143,19 +143,19 @@ public final class Constants {
     // there is no load. A tradeoff is that this will increase the time it takes to adjust the flywheel speed downward.
     public static final Current FLYWHEEL_PEAK_TORQUE_CURRENT_REVERSE = Amps.of(15);
     public static final Current FLYWHEEL_STATOR_CURRENT_LIMIT = Amps.of(170);
-    public static final Current FLYWHEEL_SUPPLY_CURRENT_LIMIT = Amps.of(80);
+    public static final Current FLYWHEEL_SUPPLY_CURRENT_LIMIT = Amps.of(40);
 
     public static final double YAW_ROTOR_TO_SENSOR_RATIO = (34.0 / 8.0) * (44.0 / 20.0) * (52.0 / 18.0);
     public static final double YAW_SENSOR_TO_MECHANISM_RATIO = (18.0 / 52.0) * (20.0 / 44.0) * (170.0 / 34.0);
     public static final double PITCH_ROTOR_TO_SENSOR_RATIO = (40.0 / 10.0) * (40.0 / 18.0);
     public static final double PITCH_SENSOR_TO_MECHANISM_RATIO = 375.0 / 32.0;
 
-    public static final Angle YAW_MAGNETIC_OFFSET = Rotations.of(0.258545);
+    public static final Angle YAW_MAGNETIC_OFFSET = Rotations.of(0.428711);
     public static final Angle PITCH_MAGNETIC_OFFSET = Rotations.of(0.386230);
 
     // Actual limits to yaw motion
-    public static final Angle YAW_LIMIT_FORWARD = Rotations.of(0.272461);
-    public static final Angle YAW_LIMIT_REVERSE = Rotations.of(-0.735596);
+    public static final Angle YAW_LIMIT_FORWARD = Rotations.of(0.282959);
+    public static final Angle YAW_LIMIT_REVERSE = Rotations.of(-0.743164);
 
     // We're only going to use 1 rotation of the turret, so distribute the dead area to both sides equally
     public static final Angle YAW_RANGE_FORWARD = YAW_LIMIT_FORWARD
@@ -237,13 +237,13 @@ public final class Constants {
     public static final int DEVICE_ID_DEPLOY_CANCODER = 10;
 
     // Roller constants
-    public static final Current ROLLER_PEAK_TORQUE_CURRENT_FORWARD = Amps.of(80);
+    public static final Current ROLLER_PEAK_TORQUE_CURRENT_FORWARD = Amps.of(100);
     public static final Current ROLLER_PEAK_TORQUE_CURRENT_REVERSE = ROLLER_PEAK_TORQUE_CURRENT_FORWARD.unaryMinus();
-    public static final Current ROLLER_STATOR_CURRENT_LIMIT = Amps.of(100);
+    public static final Current ROLLER_STATOR_CURRENT_LIMIT = Amps.of(120);
     public static final Current ROLLER_SUPPLY_CURRENT_LIMIT = Amps.of(60);
     public static final SlotConfigs ROLLER_SLOT_CONFIGS = new SlotConfigs().withKP(12).withKS(5.1);
 
-    public static final AngularVelocity ROLLER_INTAKE_VELOCITY = RotationsPerSecond.of(100.0);
+    public static final AngularVelocity ROLLER_INTAKE_VELOCITY = RotationsPerSecond.of(80.0);
     public static final AngularVelocity ROLLER_EJECT_VELOCITY = RotationsPerSecond.of(-30.0);
 
     // Deploy constants
@@ -253,7 +253,7 @@ public final class Constants {
     public static final double DEPLOY_SENSOR_TO_MECHANISM_RATIO = 64.0 / 50.0;
 
     public static final Angle DEPLOY_REVERSE_LIMIT = Rotations.of(0.0);
-    public static final Angle DEPLOY_FORWARD_LIMIT = Rotations.of(0.159);
+    public static final Angle DEPLOY_FORWARD_LIMIT = Rotations.of(0.152);
     // Discontinuity point is the center of the unreachable region
     public static final Angle DEPLOY_DISCONTINUITY_POINT = DEPLOY_REVERSE_LIMIT.plus(DEPLOY_FORWARD_LIMIT)
         .div(2)
@@ -268,7 +268,7 @@ public final class Constants {
     public static final MotionMagicConfigs DEPLOY_MOTION_MAGIC_CONFIGS = new MotionMagicConfigs()
         .withMotionMagicAcceleration(10.0)
         .withMotionMagicCruiseVelocity(15.0);
-    public static final Angle DEPLOY_CANCODER_OFFSET = Rotations.of(0.250977);
+    public static final Angle DEPLOY_CANCODER_OFFSET = Rotations.of(-0.255615);
 
     public static final Angle DEPLOYED_POSITION = DEPLOY_REVERSE_LIMIT;
     public static final Angle RETRACTED_POSITION = DEPLOY_FORWARD_LIMIT.minus(Degrees.of(2.0));
@@ -345,8 +345,8 @@ public final class Constants {
 
     public static final int INTAKE_HIGH_LED_STRIP_LENGTH = 39;
     public static final int INTAKE_LOW_LED_STRIP_LENGTH = 35;
-    public static final int LEFT_LED_STRIP_LENGTH = 26;
-    public static final int BACK_LED_STRIP_LENGTH = 17;
+    public static final int LEFT_LED_STRIP_LENGTH = 23;
+    public static final int BACK_LED_STRIP_LENGTH = 38;
 
     public static final int TOTAL_LEDS = INTAKE_HIGH_LED_STRIP_LENGTH + INTAKE_LOW_LED_STRIP_LENGTH
         + LEFT_LED_STRIP_LENGTH + BACK_LED_STRIP_LENGTH;
@@ -369,89 +369,26 @@ public final class Constants {
     private static InterpolatingTreeMap<Double, ShooterSubsystem.ShooterSetpoints> createShooterInterpolator() {
       var map = new InterpolatingTreeMap<>(InverseInterpolator.forDouble(), ShooterSetpoints::interpolate);
       map.put(
-          1.548,
+          1.216,
             new ShooterSetpoints(
                 Degrees.zero(),
-                RotationsPerSecond.of(20),
-                SPINDEXER_FEED_VELOCITY,
-                FEEDER_FEED_VELOCITY));
+                RotationsPerSecond.of(21.25),
+                RotationsPerSecond.of(20.0),
+                RotationsPerSecond.of(75)));
       map.put(
-          1.918,
+          4.733,
             new ShooterSetpoints(
-                Degrees.of(4),
-                RotationsPerSecond.of(21),
-                SPINDEXER_FEED_VELOCITY,
-                FEEDER_FEED_VELOCITY));
+                Degrees.of(12.24),
+                RotationsPerSecond.of(29.125),
+                RotationsPerSecond.of(20.0),
+                RotationsPerSecond.of(75)));
       map.put(
-          1.918,
-            new ShooterSetpoints(
-                Degrees.of(7),
-                RotationsPerSecond.of(21),
-                SPINDEXER_FEED_VELOCITY,
-                FEEDER_FEED_VELOCITY));
-      map.put(
-          2.422,
-            new ShooterSetpoints(
-                Degrees.of(11),
-                RotationsPerSecond.of(22),
-                SPINDEXER_FEED_VELOCITY,
-                FEEDER_FEED_VELOCITY));
-      map.put(
-          2.807,
-            new ShooterSetpoints(
-                Degrees.of(13),
-                RotationsPerSecond.of(23),
-                SPINDEXER_FEED_VELOCITY,
-                FEEDER_FEED_VELOCITY));
-      map.put(
-          3.283,
-            new ShooterSetpoints(
-                Degrees.of(13),
-                RotationsPerSecond.of(25),
-                SPINDEXER_FEED_VELOCITY,
-                FEEDER_FEED_VELOCITY));
-      map.put(
-          3.571,
-            new ShooterSetpoints(
-                Degrees.of(13),
-                RotationsPerSecond.of(25.65),
-                SPINDEXER_FEED_VELOCITY,
-                FEEDER_FEED_VELOCITY));
-      map.put(
-          3.944,
-            new ShooterSetpoints(
-                Degrees.of(13),
-                RotationsPerSecond.of(26.65),
-                SPINDEXER_FEED_VELOCITY,
-                FEEDER_FEED_VELOCITY));
-      map.put(
-          4.503,
-            new ShooterSetpoints(
-                Degrees.of(13),
-                RotationsPerSecond.of(27.4),
-                SPINDEXER_FEED_VELOCITY,
-                FEEDER_FEED_VELOCITY));
-      map.put(
-          4.945,
-            new ShooterSetpoints(
-                Degrees.of(13),
-                RotationsPerSecond.of(28.4),
-                SPINDEXER_FEED_VELOCITY,
-                FEEDER_FEED_VELOCITY));
-      map.put(
-          5.281,
+          6.636,
             new ShooterSetpoints(
                 Degrees.of(19),
-                RotationsPerSecond.of(31.25),
-                SPINDEXER_FEED_VELOCITY,
-                FEEDER_FEED_VELOCITY));
-      map.put(
-          6.755,
-            new ShooterSetpoints(
-                Degrees.of(19),
-                RotationsPerSecond.of(34),
-                SPINDEXER_FEED_VELOCITY,
-                FEEDER_FEED_VELOCITY));
+                RotationsPerSecond.of(32.3),
+                RotationsPerSecond.of(15.0),
+                RotationsPerSecond.of(75)));
       return map;
     }
 
@@ -480,7 +417,7 @@ public final class Constants {
     public static final InterpolatingTreeMap<Double, ShooterSubsystem.ShooterSetpoints> SHUTTLE_SETPOINTS_BY_DISTANCE_METERS = createShuttleInterpolator();
 
     /** A constant multipied by the flywheel's velocity to estimate the fuel's exit velocity */
-    public static final double FLYWHEEL_TO_FUEL_VELOCITY_MULTIPLIER = 0.3;
+    public static final double FLYWHEEL_TO_FUEL_VELOCITY_MULTIPLIER = 0.29;
 
     /** Translation of the hub on the blue side */
     public static final Translation2d TARGET_BLUE = new Translation2d(Inches.of(182.143595), Inches.of(158.84375));
