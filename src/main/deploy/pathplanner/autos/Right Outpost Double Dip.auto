@@ -11,7 +11,7 @@
               {
                 "type": "path",
                 "data": {
-                  "pathName": "Left Double Dip 1"
+                  "pathName": "Right Outpost Double Dip 1"
                 }
               },
               {
@@ -62,7 +62,7 @@
               {
                 "type": "path",
                 "data": {
-                  "pathName": "Left Double Dip 2"
+                  "pathName": "Right Outpost Double Dip 2"
                 }
               },
               {
@@ -79,9 +79,22 @@
           "data": {
             "commands": [
               {
-                "type": "named",
+                "type": "sequential",
                 "data": {
-                  "name": "AgitateIntake"
+                  "commands": [
+                    {
+                      "type": "wait",
+                      "data": {
+                        "waitTime": 2.0
+                      }
+                    },
+                    {
+                      "type": "named",
+                      "data": {
+                        "name": "AgitateIntake"
+                      }
+                    }
+                  ]
                 }
               },
               {

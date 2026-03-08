@@ -1,7 +1,12 @@
 package frc.robot;
 
 import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.Percent;
+import static edu.wpi.first.units.Units.Second;
 import static edu.wpi.first.wpilibj.DriverStation.Alliance.Blue;
+import static edu.wpi.first.wpilibj.LEDPattern.GradientType.kContinuous;
+import static edu.wpi.first.wpilibj.util.Color.kBlack;
+import static edu.wpi.first.wpilibj.util.Color.kGreen;
 import static frc.robot.Constants.FieldConstants.FIELD_WIDTH;
 import static frc.robot.Constants.ShootingConstants.HUB_SETPOINTS_BY_DISTANCE_METERS;
 import static frc.robot.Constants.ShootingConstants.SHUTTLE_BLUE_HIGH;
@@ -22,7 +27,11 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.LEDPattern;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
+import frc.robot.commands.DeployIntakeCommand;
+import frc.robot.commands.RetractIntakeCommand;
 import frc.robot.commands.ShootAtTargetCommand;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.FeederSubsystem;
@@ -117,6 +126,19 @@ public class CommandFactory {
           return adjustedTarget;
         },
         SHUTTLE_SETPOINTS_BY_DISTANCE_METERS);
+  }
+
+  /**
+   * Creates a command that retracts and deploys the intake repeatedly to agitate the fuel.
+   * 
+   * @return a new command to agitate the intake
+   */
+  public Command agitateIntakeCommand() {
+    return new RetractIntakeCommand(intakeSubsystem).andThen(new DeployIntakeCommand(intakeSubsystem))
+        .alongWith(Commands.run(intakeSubsystem::runIntake))
+        .alongWith(
+            intakeLEDSubsystem.runPatternOnAllCommand(
+                LEDPattern.gradient(kContinuous, kGreen, kBlack).scrollAtRelativeSpeed(Percent.per(Second).of(200))));
   }
 
   /**

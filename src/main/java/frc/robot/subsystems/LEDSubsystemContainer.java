@@ -16,6 +16,7 @@ import edu.wpi.first.wpilibj.AddressableLEDBufferView;
 import edu.wpi.first.wpilibj.LEDPattern;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.util.Color;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import java.util.function.BooleanSupplier;
@@ -43,6 +44,10 @@ public class LEDSubsystemContainer {
     void off();
 
     void runPatternOnAll(LEDPattern pattern);
+
+    default Command runPatternOnAllCommand(LEDPattern pattern) {
+      return run(() -> runPatternOnAll(pattern)).finallyDo(this::off);
+    }
   }
 
   /**
