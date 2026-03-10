@@ -134,7 +134,8 @@ public class CommandFactory {
    * @return a new command to agitate the intake
    */
   public Command agitateIntakeCommand() {
-    return new RetractIntakeCommand(intakeSubsystem).andThen(new DeployIntakeCommand(intakeSubsystem))
+    return new RetractIntakeCommand(intakeSubsystem).until(intakeSubsystem::isRetracted)
+        .andThen(new DeployIntakeCommand(intakeSubsystem))
         .alongWith(Commands.run(intakeSubsystem::runIntake))
         .alongWith(
             intakeLEDSubsystem.runPatternOnAllCommand(
