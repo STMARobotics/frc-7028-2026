@@ -145,17 +145,17 @@ public final class Constants {
     public static final Current FLYWHEEL_STATOR_CURRENT_LIMIT = Amps.of(170);
     public static final Current FLYWHEEL_SUPPLY_CURRENT_LIMIT = Amps.of(40);
 
-    public static final double YAW_ROTOR_TO_SENSOR_RATIO = (34.0 / 8.0) * (44.0 / 20.0) * (52.0 / 18.0);
+    public static final double YAW_ROTOR_TO_SENSOR_RATIO = (34.0 / 12.0) * (44.0 / 20.0) * (52.0 / 18.0);
     public static final double YAW_SENSOR_TO_MECHANISM_RATIO = (18.0 / 52.0) * (20.0 / 44.0) * (170.0 / 34.0);
     public static final double PITCH_ROTOR_TO_SENSOR_RATIO = (40.0 / 10.0) * (40.0 / 18.0);
     public static final double PITCH_SENSOR_TO_MECHANISM_RATIO = 375.0 / 32.0;
 
-    public static final Angle YAW_MAGNETIC_OFFSET = Rotations.of(0.428711);
-    public static final Angle PITCH_MAGNETIC_OFFSET = Rotations.of(0.386230);
+    public static final Angle YAW_MAGNETIC_OFFSET = Rotations.of(0.025635);
+    public static final Angle PITCH_MAGNETIC_OFFSET = Rotations.of(0.385742);
 
     // Actual limits to yaw motion
-    public static final Angle YAW_LIMIT_FORWARD = Rotations.of(0.282959);
-    public static final Angle YAW_LIMIT_REVERSE = Rotations.of(-0.743164);
+    public static final Angle YAW_LIMIT_FORWARD = Rotations.of(0.267344);
+    public static final Angle YAW_LIMIT_REVERSE = Rotations.of(-0.748037);
 
     // We're only going to use 1 rotation of the turret, so distribute the dead area to both sides equally
     public static final Angle YAW_RANGE_FORWARD = YAW_LIMIT_FORWARD
