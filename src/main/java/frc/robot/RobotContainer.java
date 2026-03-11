@@ -245,6 +245,7 @@ public class RobotContainer {
 
   private void configurePathPlannerCommands() {
     NamedCommands.registerCommand("Shoot", commandFactory.shootAtHub().finallyDo(shooterSubsystem::stow));
+    NamedCommands.registerCommand("AgitateIntake", commandFactory.agitateIntakeCommand());
     NamedCommands.registerCommand(
         "Intake",
           new DeployIntakeCommand(intakeSubsystem)

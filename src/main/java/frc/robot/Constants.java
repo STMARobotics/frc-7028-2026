@@ -201,11 +201,18 @@ public final class Constants {
    */
   public static class VisionConstants {
     public static final int DEVICE_ID_MITOCANDRIA = 0;
-    public static final String[] APRILTAG_CAMERA_NAMES = { "limelight-right" };
+    public static final String[] APRILTAG_CAMERA_NAMES = { "limelight-right" };// , "limelight-left", "limelight-back"
+                                                                               // };
     public static final Transform3d[] ROBOT_TO_CAMERA_TRANSFORMS = new Transform3d[] {
         new Transform3d(
             new Translation3d(-0.241813, 0.349273, 0.203479),
             new Rotation3d(0.0, degreesToRadians(28), -Math.PI / 2.0)) };
+    // new Transform3d(
+    // new Translation3d(Inches.of(-15.062), Inches.of(-8.718), Inches.of(11.96)),
+    // new Rotation3d(Math.PI, degreesToRadians(28), Math.PI / 2.0)),
+    // new Transform3d(
+    // new Translation3d(Inches.of(-10.050), Inches.of(-11.04), Inches.of(12.015)),
+    // new Rotation3d(Math.PI, degreesToRadians(28), Math.PI)) };
 
     public static final int LIMELIGHT_BLUE_PIPELINE = 0;
     public static final int LIMELIGHT_RED_PIPELINE = 1;
@@ -373,21 +380,21 @@ public final class Constants {
             new ShooterSetpoints(
                 Degrees.zero(),
                 RotationsPerSecond.of(21.25),
-                RotationsPerSecond.of(20.0),
+                RotationsPerSecond.of(20.0 * 4.0),
                 RotationsPerSecond.of(75)));
       map.put(
           4.733,
             new ShooterSetpoints(
                 Degrees.of(12.24),
                 RotationsPerSecond.of(29.125),
-                RotationsPerSecond.of(20.0),
+                RotationsPerSecond.of(20.0 * 4.0),
                 RotationsPerSecond.of(75)));
       map.put(
           6.636,
             new ShooterSetpoints(
                 Degrees.of(19),
                 RotationsPerSecond.of(32.3),
-                RotationsPerSecond.of(15.0),
+                RotationsPerSecond.of(15.0 * 4.0),
                 RotationsPerSecond.of(75)));
       return map;
     }
@@ -428,9 +435,9 @@ public final class Constants {
     /** Translations for shuttling on the blue side, with Z > 1/2 of the field */
     public static final Translation2d SHUTTLE_BLUE_HIGH = new Translation2d(
         Inches.of(2.0),
-        FIELD_WIDTH.minus(Inches.of(30)));
+        FIELD_WIDTH.minus(Inches.of(42)));
     /** Translations for shuttling on the blue side, with Z < 1/2 of the field */
-    public static final Translation2d SHUTTLE_BLUE_LOW = new Translation2d(Inches.of(2.0), Inches.of(30));
+    public static final Translation2d SHUTTLE_BLUE_LOW = new Translation2d(Inches.of(2.0), Inches.of(42));
 
     /** Translations for shuttling on the red side, with Z > 1/2 of the field */
     public static final Translation2d SHUTTLE_RED_HIGH = FlippingUtil.flipFieldPosition(SHUTTLE_BLUE_LOW);
