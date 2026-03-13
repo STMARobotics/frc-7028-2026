@@ -27,13 +27,13 @@ public class JoystickControlBindings extends ControlBindings {
   @Override
   public Supplier<LinearVelocity> translationX() {
     return () -> translationX
-        .mut_replace(MAX_TELEOP_VELOCITY.in(MetersPerSecond) * -squareAxis(leftJoystick.getY()), MetersPerSecond);
+        .mut_replace(MAX_TELEOP_VELOCITY.in(MetersPerSecond) * (-squareAxis(leftJoystick.getY() * 0.70)), MetersPerSecond);
   }
 
   @Override
   public Supplier<LinearVelocity> translationY() {
     return () -> translationY
-        .mut_replace(MAX_TELEOP_VELOCITY.in(MetersPerSecond) * -squareAxis(leftJoystick.getX()), MetersPerSecond);
+        .mut_replace(MAX_TELEOP_VELOCITY.in(MetersPerSecond) * (-squareAxis(leftJoystick.getX() * 0.70)), MetersPerSecond);
   }
 
   @Override
@@ -101,4 +101,5 @@ public class JoystickControlBindings extends ControlBindings {
   public Optional<Trigger> resetFieldPositionFromAprilTags() {
     return Optional.of(leftJoystick.button(16));
   }
+
 }
