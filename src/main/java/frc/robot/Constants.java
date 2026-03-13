@@ -201,8 +201,8 @@ public final class Constants {
    */
   public static class VisionConstants {
     public static final int DEVICE_ID_MITOCANDRIA = 0;
-    public static final String[] APRILTAG_CAMERA_NAMES = { "limelight-left", };// "limelight-right", left,
-                                                                               // "limelight-back"
+    public static final String[] APRILTAG_CAMERA_NAMES = {};// "limelight-right", "limelight-left",
+                                                            // "limelight-back"
     // };
     public static final Transform3d[] ROBOT_TO_CAMERA_TRANSFORMS = new Transform3d[] {
         // new Transform3d(
@@ -288,10 +288,10 @@ public final class Constants {
     public static final int DEVICE_ID_SPINDEXER_MOTOR = 15;
     public static final String HOPPER_CAMERA_NAME = "HopperCam";
 
-    public static final Current SPINDEXER_PEAK_TORQUE_CURRENT_FORWARD = Amps.of(150);
+    public static final Current SPINDEXER_PEAK_TORQUE_CURRENT_FORWARD = Amps.of(80);
     public static final Current SPINDEXER_PEAK_TORQUE_CURRENT_REVERSE = SPINDEXER_PEAK_TORQUE_CURRENT_FORWARD
         .unaryMinus();
-    public static final Current SPINDEXER_STATOR_CURRENT_LIMIT = Amps.of(160);
+    public static final Current SPINDEXER_STATOR_CURRENT_LIMIT = Amps.of(80);
     public static final Current SPINDEXER_SUPPLY_CURRENT_LIMIT = Amps.of(50);
 
     public static final SlotConfigs SPINDEXER_SLOT_CONFIGS = new SlotConfigs().withKP(5.0).withKV(0.0).withKS(50.0);
