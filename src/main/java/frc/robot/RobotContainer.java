@@ -207,7 +207,8 @@ public class RobotContainer {
                           .times(SHOOT_VELOCITY_MULTIPLIER))));
 
     controlBindings.shuttle().ifPresent(trigger -> trigger.whileTrue(commandFactory.shuttleToCorner()));
-    controlBindings.switchIntakeMode().ifPresent(trigger -> trigger.onTrue(intakeSubsystem.runOnce(intakeSubsystem::switchMode)));
+    controlBindings.switchIntakeMode()
+        .ifPresent(trigger -> trigger.onTrue(intakeSubsystem.runOnce(intakeSubsystem::switchMode)));
 
     // Idle while the robot is disabled. This ensures the configured
     // neutral mode is applied to the drive motors while disabled.

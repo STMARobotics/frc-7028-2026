@@ -89,7 +89,7 @@ public class IntakeSubsytem extends SubsystemBase {
   private final StatusSignal<AngularVelocity> deployVelocitySignal = deployMotor.getVelocity(false);
   private final StatusSignal<Temperature> deployTempSignal = deployMotor.getDeviceTemp(false);
   private final StatusSignal<Boolean> deployTempFaultSignal = deployMotor.getFault_DeviceTemp(false);
-  
+
   private enum IntakeState {
     CURRENT,
     VOLTAGE
@@ -270,7 +270,6 @@ public class IntakeSubsytem extends SubsystemBase {
       reverseIntakeVoltage();
     }
   }
-
 
   /**
    * Deploys the intake
