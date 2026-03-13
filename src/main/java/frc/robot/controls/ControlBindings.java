@@ -144,5 +144,5 @@ public abstract class ControlBindings {
   public Optional<Trigger> shuttle() {
     return Optional.empty();
   }
-  
+
 }

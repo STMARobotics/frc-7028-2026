@@ -117,7 +117,6 @@ public class IntakeSubsytem extends SubsystemBase {
    * Creates a new substyem for the intake
    */
   public IntakeSubsytem() {
-
     // Configure the roller motor
     var rollerConfig = new TalonFXConfiguration();
     rollerConfig.withMotorOutput(
@@ -230,7 +229,6 @@ public class IntakeSubsytem extends SubsystemBase {
    */
   public void reverseIntake() {
     rollerMotor.setControl(rollerControl.withVelocity(ROLLER_EJECT_VELOCITY));
-
   }
 
   /**
