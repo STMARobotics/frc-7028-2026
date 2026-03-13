@@ -12,6 +12,7 @@ import static frc.robot.Constants.VisionConstants.APRILTAG_CAMERA_NAMES;
 import static frc.robot.Constants.VisionConstants.APRILTAG_STD_DEVS;
 import static frc.robot.Constants.VisionConstants.LIMELIGHT_BLUE_PIPELINE;
 import static frc.robot.Constants.VisionConstants.LIMELIGHT_RED_PIPELINE;
+import static frc.robot.Constants.VisionConstants.QUESTNAV_APRILTAG_ERROR_THRESHOLD;
 import static frc.robot.Constants.VisionConstants.ROBOT_TO_CAMERA_TRANSFORMS;
 import static frc.robot.Constants.VisionConstants.TAG_DISTANCE_THRESHOLD;
 
@@ -238,9 +239,28 @@ public class LocalizationSubsystem extends SubsystemBase {
       if (frame.isTracking()) {
         questRobotPose = frame.questPose3d().transformBy(ROBOT_TO_QUEST.inverse());
 
+        double bestVisionEstimateDistance = (bestVisionEstimate != null)
+            ? questRobotPose.toPose2d()
+                .getTranslation()
+                .getDistance(bestVisionEstimate.pose.toPose2d().getTranslation())
+            : 0;
+
+        if (bestVisionEstimateDistance > QUESTNAV_APRILTAG_ERROR_THRESHOLD.in(Meters)) {
+          // QuestNav disagrees with AprilTag vision - increment fault counter
+          if (questNavFaultCounter < QUESTNAV_FAILURE_THRESHOLD) {
+            questNavFaultCounter += Math.pow(bestVisionEstimateDistance, 2);
+          }
+        } else if (bestVisionEstimate != null) {
+          // QuestNav agrees with AprilTag vision - decrement fault counter to allow recovery
+          questNavFaultCounter = Math.max(questNavFaultCounter - 1.0, 0.0);
+        }
+
         // Only use QuestNav measurements when fault counter is below threshold and pose is valid
-        visionMeasurementConsumer
-            .addVisionMeasurement(questRobotPose.toPose2d(), frame.dataTimestamp(), QUESTNAV_STD_DEVS);
+        if (questNavFaultCounter < QUESTNAV_FAILURE_THRESHOLD
+            && isValidFieldTranslation(questRobotPose.getTranslation())) {
+          visionMeasurementConsumer
+              .addVisionMeasurement(questRobotPose.toPose2d(), frame.dataTimestamp(), QUESTNAV_STD_DEVS);
+        }
         break; // Found the most recent tracking frame, exit loop
       }
     }
