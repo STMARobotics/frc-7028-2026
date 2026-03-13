@@ -136,7 +136,7 @@ public class CommandFactory {
   public Command agitateIntakeCommand() {
     return new RetractIntakeCommand(intakeSubsystem).until(intakeSubsystem::isRetracted)
         .andThen(new DeployIntakeCommand(intakeSubsystem))
-        .alongWith(Commands.run(intakeSubsystem::runIntakeCurrent))
+        .alongWith(Commands.run(intakeSubsystem::runIntake))
         .alongWith(
             intakeLEDSubsystem.runPatternOnAllCommand(
                 LEDPattern.gradient(kContinuous, kGreen, kBlack).scrollAtRelativeSpeed(Percent.per(Second).of(200))));

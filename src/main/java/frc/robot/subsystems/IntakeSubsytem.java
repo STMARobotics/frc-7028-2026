@@ -50,7 +50,6 @@ import com.ctre.phoenix6.configs.TorqueCurrentConfigs;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.TorqueCurrentFOC;
 import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
-import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -78,8 +77,7 @@ public class IntakeSubsytem extends SubsystemBase {
 
   // Motor request objects
   private final MotionMagicVoltage deployControl = new MotionMagicVoltage(0.0).withEnableFOC(true);
-  private final VelocityTorqueCurrentFOC currentRollerControl = new VelocityTorqueCurrentFOC(0.0);
-  private final VelocityVoltage voltageRollerControl = new VelocityVoltage(0);
+  private final VelocityTorqueCurrentFOC rollerControl = new VelocityTorqueCurrentFOC(0.0);
 
   private final TorqueCurrentFOC rollerSysIdControl = new TorqueCurrentFOC(0.0);
   private final VoltageOut deploySysIdControl = new VoltageOut(0.0).withEnableFOC(true);
@@ -224,33 +222,18 @@ public class IntakeSubsytem extends SubsystemBase {
   }
 
   /**
-   * Runs the intake rollers to intake fuel with current
+   * Runs the intake rollers to intake fuel
    */
-  public void runIntakeCurrent() {
-    rollerMotor.setControl(currentRollerControl.withVelocity(ROLLER_INTAKE_VELOCITY).withSlot(0));
+  public void runIntake() {
+    rollerMotor.setControl(rollerControl.withVelocity(ROLLER_INTAKE_VELOCITY).withSlot(0));
   }
 
   /**
-   * Reverses the intake rollers to eject fuel with current
+   * Reverses the intake rollers to eject fuel
    */
-  public void reverseIntakeCurrent() {
-    rollerMotor.setControl(currentRollerControl.withVelocity(ROLLER_EJECT_VELOCITY).withSlot(0));
+  public void reverseIntake() {
+    rollerMotor.setControl(rollerControl.withVelocity(ROLLER_EJECT_VELOCITY).withSlot(0));
 
-  }
-
-  /**
-   * Runs the intake rollers to intake fuel with voltage
-   */
-  public void runIntakeVoltage() {
-    rollerMotor.setControl(voltageRollerControl.withVelocity(ROLLER_INTAKE_VELOCITY).withSlot(1));
-
-  }
-
-  /**
-   * Reverses the intake rollers to eject fuel with voltage
-   */
-  public void reverseIntakeVoltage() {
-    rollerMotor.setControl(voltageRollerControl.withVelocity(ROLLER_EJECT_VELOCITY).withSlot(1));
   }
 
   /**

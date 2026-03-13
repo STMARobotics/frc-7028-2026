@@ -35,9 +35,9 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import frc.robot.Constants.OdometryConstants;
 import frc.robot.Constants.QuestNavConstants;
-import frc.robot.commands.CurrentIntakeCommand;
 import frc.robot.commands.DefaultShooterCommand;
 import frc.robot.commands.DeployIntakeCommand;
+import frc.robot.commands.IntakeCommand;
 import frc.robot.commands.RetractIntakeCommand;
 import frc.robot.commands.ShootCommand;
 import frc.robot.commands.TuneShootingCommand;
@@ -155,8 +155,7 @@ public class RobotContainer {
 
     // Intake controls
     controlBindings.runIntake()
-        .ifPresent(
-            trigger -> trigger.onTrue(new CurrentIntakeCommand(intakeSubsystem, ledSubsystem.getIntakeLEDSubsystem())));
+        .ifPresent(trigger -> trigger.onTrue(new IntakeCommand(intakeSubsystem, ledSubsystem.getIntakeLEDSubsystem())));
 
     controlBindings.stopIntake().ifPresent(trigger -> trigger.onTrue(Commands.runOnce(() -> {
       intakeSubsystem.stop();
@@ -164,7 +163,7 @@ public class RobotContainer {
     }, intakeSubsystem, ledSubsystem.getIntakeLEDSubsystem())));
 
     controlBindings.eject().ifPresent(trigger -> trigger.whileTrue(Commands.run(() -> {
-      intakeSubsystem.reverseIntakeVoltage();
+      intakeSubsystem.reverseIntake();
       spindexerSubsystem.agitate();
       ledSubsystem.getIntakeLEDSubsystem()
           .runPatternOnIntakeHigh(LEDPattern.rainbow(255, 255).scrollAtRelativeSpeed(Percent.per(Second).of(200)));
@@ -208,9 +207,6 @@ public class RobotContainer {
                           .times(SHOOT_VELOCITY_MULTIPLIER))));
 
     controlBindings.shuttle().ifPresent(trigger -> trigger.whileTrue(commandFactory.shuttleToCorner()));
-    controlBindings.runIntakeCurrent()
-        .ifPresent(
-            trigger -> trigger.onTrue(new CurrentIntakeCommand(intakeSubsystem, ledSubsystem.getIntakeLEDSubsystem())));
 
     // Idle while the robot is disabled. This ensures the configured
     // neutral mode is applied to the drive motors while disabled.
@@ -253,7 +249,7 @@ public class RobotContainer {
     NamedCommands.registerCommand(
         "Intake",
           new DeployIntakeCommand(intakeSubsystem)
-              .andThen(new CurrentIntakeCommand(intakeSubsystem, ledSubsystem.getIntakeLEDSubsystem())));
+              .andThen(new IntakeCommand(intakeSubsystem, ledSubsystem.getIntakeLEDSubsystem())));
     NamedCommands.registerCommand("RetractIntake", new RetractIntakeCommand(intakeSubsystem));
     NamedCommands.registerCommand("Shuttle", commandFactory.shuttleToCorner().finallyDo(shooterSubsystem::stow));
   }
