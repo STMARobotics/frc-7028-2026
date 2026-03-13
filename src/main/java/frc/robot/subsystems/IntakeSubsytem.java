@@ -25,13 +25,14 @@ import static frc.robot.Constants.IntakeConstants.DEVICE_ID_DEPLOY_CANCODER;
 import static frc.robot.Constants.IntakeConstants.DEVICE_ID_DEPLOY_MOTOR;
 import static frc.robot.Constants.IntakeConstants.DEVICE_ID_ROLLER_MOTOR;
 import static frc.robot.Constants.IntakeConstants.RETRACTED_POSITION;
+import static frc.robot.Constants.IntakeConstants.ROLLER_CURRENT_SLOT_CONFIGS;
 import static frc.robot.Constants.IntakeConstants.ROLLER_EJECT_VELOCITY;
 import static frc.robot.Constants.IntakeConstants.ROLLER_INTAKE_VELOCITY;
 import static frc.robot.Constants.IntakeConstants.ROLLER_PEAK_TORQUE_CURRENT_FORWARD;
 import static frc.robot.Constants.IntakeConstants.ROLLER_PEAK_TORQUE_CURRENT_REVERSE;
-import static frc.robot.Constants.IntakeConstants.ROLLER_SLOT_CONFIGS;
 import static frc.robot.Constants.IntakeConstants.ROLLER_STATOR_CURRENT_LIMIT;
 import static frc.robot.Constants.IntakeConstants.ROLLER_SUPPLY_CURRENT_LIMIT;
+import static frc.robot.Constants.IntakeConstants.ROLLER_VOLTAGE_SLOT_CONFIGS;
 
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.SignalLogger;
@@ -42,6 +43,7 @@ import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.MagnetSensorConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
+import com.ctre.phoenix6.configs.Slot1Configs;
 import com.ctre.phoenix6.configs.SoftwareLimitSwitchConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.configs.TorqueCurrentConfigs;
@@ -90,13 +92,6 @@ public class IntakeSubsytem extends SubsystemBase {
   private final StatusSignal<Temperature> deployTempSignal = deployMotor.getDeviceTemp(false);
   private final StatusSignal<Boolean> deployTempFaultSignal = deployMotor.getFault_DeviceTemp(false);
 
-  private enum IntakeState {
-    CURRENT,
-    VOLTAGE
-  }
-
-  private IntakeState intakeState = IntakeState.CURRENT;
-
   // SysId routines
   // NOTE: the output type is amps, NOT volts (even though it says volts)
   // https://www.chiefdelphi.com/t/sysid-with-ctre-swerve-characterization/452631/8
@@ -131,7 +126,8 @@ public class IntakeSubsytem extends SubsystemBase {
     var rollerConfig = new TalonFXConfiguration();
     rollerConfig.withMotorOutput(
         new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast).withInverted(InvertedValue.Clockwise_Positive))
-        .withSlot0(Slot0Configs.from(ROLLER_SLOT_CONFIGS))
+        .withSlot0(Slot0Configs.from(ROLLER_VOLTAGE_SLOT_CONFIGS))
+        .withSlot1(Slot1Configs.from(ROLLER_CURRENT_SLOT_CONFIGS))
         .withTorqueCurrent(
             new TorqueCurrentConfigs().withPeakForwardTorqueCurrent(ROLLER_PEAK_TORQUE_CURRENT_FORWARD)
                 .withPeakReverseTorqueCurrent(ROLLER_PEAK_TORQUE_CURRENT_REVERSE))
@@ -230,45 +226,31 @@ public class IntakeSubsytem extends SubsystemBase {
   /**
    * Runs the intake rollers to intake fuel with current
    */
-  private void runIntakeCurrent() {
-    rollerMotor.setControl(currentRollerControl.withVelocity(ROLLER_INTAKE_VELOCITY));
+  public void runIntakeCurrent() {
+    rollerMotor.setControl(currentRollerControl.withVelocity(ROLLER_INTAKE_VELOCITY).withSlot(0));
   }
 
   /**
    * Reverses the intake rollers to eject fuel with current
    */
-  private void reverseIntakeCurrent() {
-    rollerMotor.setControl(currentRollerControl.withVelocity(ROLLER_EJECT_VELOCITY));
+  public void reverseIntakeCurrent() {
+    rollerMotor.setControl(currentRollerControl.withVelocity(ROLLER_EJECT_VELOCITY).withSlot(0));
+
   }
 
   /**
    * Runs the intake rollers to intake fuel with voltage
    */
-  private void runIntakeVoltage() {
-    rollerMotor.setControl(voltageRollerControl.withVelocity(ROLLER_INTAKE_VELOCITY));
+  public void runIntakeVoltage() {
+    rollerMotor.setControl(voltageRollerControl.withVelocity(ROLLER_INTAKE_VELOCITY).withSlot(1));
+
   }
 
   /**
    * Reverses the intake rollers to eject fuel with voltage
    */
-  private void reverseIntakeVoltage() {
-    rollerMotor.setControl(voltageRollerControl.withVelocity(ROLLER_EJECT_VELOCITY));
-  }
-
-  public void runIntake() {
-    if (intakeState == IntakeState.CURRENT) {
-      runIntakeCurrent();
-    } else {
-      runIntakeVoltage();
-    }
-  }
-
-  public void reverseIntake() {
-    if (intakeState == IntakeState.CURRENT) {
-      reverseIntakeCurrent();
-    } else {
-      reverseIntakeVoltage();
-    }
+  public void reverseIntakeVoltage() {
+    rollerMotor.setControl(voltageRollerControl.withVelocity(ROLLER_EJECT_VELOCITY).withSlot(1));
   }
 
   /**
@@ -356,13 +338,5 @@ public class IntakeSubsytem extends SubsystemBase {
   @Logged(name = "Deploy Motor Temp Fault")
   public boolean isDeployMotorDeviceTempFault() {
     return deployTempFaultSignal.refresh().getValue();
-  }
-
-  public void switchMode() {
-    if (intakeState == IntakeState.CURRENT) {
-      intakeState = IntakeState.VOLTAGE;
-    } else {
-      intakeState = IntakeState.CURRENT;
-    }
   }
 }

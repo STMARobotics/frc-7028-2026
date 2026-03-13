@@ -248,7 +248,8 @@ public final class Constants {
     public static final Current ROLLER_PEAK_TORQUE_CURRENT_REVERSE = ROLLER_PEAK_TORQUE_CURRENT_FORWARD.unaryMinus();
     public static final Current ROLLER_STATOR_CURRENT_LIMIT = Amps.of(120);
     public static final Current ROLLER_SUPPLY_CURRENT_LIMIT = Amps.of(60);
-    public static final SlotConfigs ROLLER_SLOT_CONFIGS = new SlotConfigs().withKP(12).withKS(5.1);
+    public static final SlotConfigs ROLLER_CURRENT_SLOT_CONFIGS = new SlotConfigs().withKP(12).withKS(5.1);
+    public static final SlotConfigs ROLLER_VOLTAGE_SLOT_CONFIGS = new SlotConfigs().withKP(13).withKV(2);
 
     public static final AngularVelocity ROLLER_INTAKE_VELOCITY = RotationsPerSecond.of(80.0);
     public static final AngularVelocity ROLLER_EJECT_VELOCITY = RotationsPerSecond.of(-30.0);

@@ -13,7 +13,7 @@ import frc.robot.subsystems.LEDSubsystemContainer.IntakeLEDSubsystem;
 /**
  * Command to intake fuel from the floor. This has a prerequisite of the intake being deployed.
  */
-public class IntakeCommand extends Command {
+public class CurrentIntakeCommand extends Command {
 
   private final IntakeSubsytem intakeSubsytem;
   private final IntakeLEDSubsystem intakeLEDSubsystem;
@@ -22,7 +22,7 @@ public class IntakeCommand extends Command {
       .scrollAtRelativeSpeed(Percent.per(Second).of(200));
   private final LEDPattern patternRight = patternLeft.reversed();
 
-  public IntakeCommand(IntakeSubsytem intakeSubsytem, IntakeLEDSubsystem intakeLEDSubsystem) {
+  public CurrentIntakeCommand(IntakeSubsytem intakeSubsytem, IntakeLEDSubsystem intakeLEDSubsystem) {
     this.intakeSubsytem = intakeSubsytem;
     this.intakeLEDSubsystem = intakeLEDSubsystem;
 
@@ -31,7 +31,7 @@ public class IntakeCommand extends Command {
 
   @Override
   public void initialize() {
-    intakeSubsytem.runIntake();
+    intakeSubsytem.runIntakeCurrent();
   }
 
   @Override

@@ -103,7 +103,7 @@ public class JoystickControlBindings extends ControlBindings {
   }
 
   @Override
-  public Optional<Trigger> switchIntakeMode() {
+  public Optional<Trigger> runIntakeCurrent() {
     return Optional.of(leftJoystick.button(10));
   }
 

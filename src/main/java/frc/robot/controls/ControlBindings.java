@@ -145,7 +145,7 @@ public abstract class ControlBindings {
     return Optional.empty();
   }
 
-  public Optional<Trigger> switchIntakeMode() {
+  public Optional<Trigger> runIntakeCurrent() {
     return Optional.empty();
   }
 
