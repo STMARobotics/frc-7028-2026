@@ -201,8 +201,8 @@ public final class Constants {
    */
   public static class VisionConstants {
     public static final int DEVICE_ID_MITOCANDRIA = 0;
-    public static final String[] APRILTAG_CAMERA_NAMES = { "limelight-right" };// , "limelight-left", "limelight-back"
-                                                                               // };
+    public static final String[] APRILTAG_CAMERA_NAMES = {};// "limelight-right", "limelight-left", "limelight-back"
+                                                            // };
     public static final Transform3d[] ROBOT_TO_CAMERA_TRANSFORMS = new Transform3d[] {
         new Transform3d(
             new Translation3d(-0.241813, 0.349273, 0.203479),
