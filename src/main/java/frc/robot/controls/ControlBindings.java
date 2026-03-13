@@ -144,9 +144,4 @@ public abstract class ControlBindings {
   public Optional<Trigger> shuttle() {
     return Optional.empty();
   }
-
-  public Optional<Trigger> runIntakeCurrent() {
-    return Optional.empty();
-  }
-
 }
