@@ -48,6 +48,7 @@ import com.ctre.phoenix6.configs.TorqueCurrentConfigs;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.TorqueCurrentFOC;
 import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
+import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -75,7 +76,8 @@ public class IntakeSubsytem extends SubsystemBase {
 
   // Motor request objects
   private final MotionMagicVoltage deployControl = new MotionMagicVoltage(0.0).withEnableFOC(true);
-  private final VelocityTorqueCurrentFOC rollerControl = new VelocityTorqueCurrentFOC(0.0);
+  private final VelocityTorqueCurrentFOC currentRollerControl = new VelocityTorqueCurrentFOC(0.0);
+  private final VelocityVoltage voltageRollerControl = new VelocityVoltage(0);
 
   private final TorqueCurrentFOC rollerSysIdControl = new TorqueCurrentFOC(0.0);
   private final VoltageOut deploySysIdControl = new VoltageOut(0.0).withEnableFOC(true);
@@ -87,6 +89,13 @@ public class IntakeSubsytem extends SubsystemBase {
   private final StatusSignal<AngularVelocity> deployVelocitySignal = deployMotor.getVelocity(false);
   private final StatusSignal<Temperature> deployTempSignal = deployMotor.getDeviceTemp(false);
   private final StatusSignal<Boolean> deployTempFaultSignal = deployMotor.getFault_DeviceTemp(false);
+  
+  private enum IntakeState {
+    CURRENT,
+    VOLTAGE
+  }
+
+  private IntakeState intakeState = IntakeState.CURRENT;
 
   // SysId routines
   // NOTE: the output type is amps, NOT volts (even though it says volts)
@@ -117,6 +126,7 @@ public class IntakeSubsytem extends SubsystemBase {
    * Creates a new substyem for the intake
    */
   public IntakeSubsytem() {
+
     // Configure the roller motor
     var rollerConfig = new TalonFXConfiguration();
     rollerConfig.withMotorOutput(
@@ -218,18 +228,49 @@ public class IntakeSubsytem extends SubsystemBase {
   }
 
   /**
-   * Runs the intake rollers to intake fuel
+   * Runs the intake rollers to intake fuel with current
    */
-  public void runIntake() {
-    rollerMotor.setControl(rollerControl.withVelocity(ROLLER_INTAKE_VELOCITY));
+  private void runIntakeCurrent() {
+    rollerMotor.setControl(currentRollerControl.withVelocity(ROLLER_INTAKE_VELOCITY));
   }
 
   /**
-   * Reverses the intake rollers to eject fuel
+   * Reverses the intake rollers to eject fuel with current
    */
-  public void reverseIntake() {
-    rollerMotor.setControl(rollerControl.withVelocity(ROLLER_EJECT_VELOCITY));
+  private void reverseIntakeCurrent() {
+    rollerMotor.setControl(currentRollerControl.withVelocity(ROLLER_EJECT_VELOCITY));
   }
+
+  /**
+   * Runs the intake rollers to intake fuel with voltage
+   */
+  private void runIntakeVoltage() {
+    rollerMotor.setControl(voltageRollerControl.withVelocity(ROLLER_INTAKE_VELOCITY));
+  }
+
+  /**
+   * Reverses the intake rollers to eject fuel with voltage
+   */
+  private void reverseIntakeVoltage() {
+    rollerMotor.setControl(voltageRollerControl.withVelocity(ROLLER_EJECT_VELOCITY));
+  }
+
+  public void runIntake() {
+    if (intakeState == IntakeState.CURRENT) {
+      runIntakeCurrent();
+    } else {
+      runIntakeVoltage();
+    }
+  }
+
+  public void reverseIntake() {
+    if (intakeState == IntakeState.CURRENT) {
+      reverseIntakeCurrent();
+    } else {
+      reverseIntakeVoltage();
+    }
+  }
+
 
   /**
    * Deploys the intake
@@ -316,5 +357,13 @@ public class IntakeSubsytem extends SubsystemBase {
   @Logged(name = "Deploy Motor Temp Fault")
   public boolean isDeployMotorDeviceTempFault() {
     return deployTempFaultSignal.refresh().getValue();
+  }
+
+  public void switchMode() {
+    if (intakeState == IntakeState.CURRENT) {
+      intakeState = IntakeState.VOLTAGE;
+    } else {
+      intakeState = IntakeState.CURRENT;
+    }
   }
 }

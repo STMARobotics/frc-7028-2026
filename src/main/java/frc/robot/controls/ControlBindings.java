@@ -145,4 +145,8 @@ public abstract class ControlBindings {
     return Optional.empty();
   }
 
+  public Optional<Trigger> switchIntakeMode() {
+    return Optional.empty();
+  }
+
 }
