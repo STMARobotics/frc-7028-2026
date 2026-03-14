@@ -198,13 +198,10 @@ public class LocalizationSubsystem extends SubsystemBase {
           && robotAngularVelocitySupplier.get().lt(ANGULAR_VELOCITY_THRESHOLD)) {
 
         double adjustedXYDeviation = APRILTAG_STD_DEVS + (0.01 * Math.pow(poseEstimate.avgTagDist, 2));
-        if (questNavFaultCounter > QUESTNAV_FAILURE_THRESHOLD) {
-          // QuestNav is considered unhealthy, fall back to LimeLight measurements
-          Matrix<N3, N1> adjustedDeviations = VecBuilder
-              .fill(adjustedXYDeviation, adjustedXYDeviation, Double.MAX_VALUE);
-          visionMeasurementConsumer
-              .addVisionMeasurement(poseEstimate.pose.toPose2d(), poseEstimate.timestampSeconds, adjustedDeviations);
-        }
+        // QuestNav is considered unhealthy, fall back to LimeLight measurements
+        Matrix<N3, N1> adjustedDeviations = VecBuilder.fill(adjustedXYDeviation, adjustedXYDeviation, Double.MAX_VALUE);
+        visionMeasurementConsumer
+            .addVisionMeasurement(poseEstimate.pose.toPose2d(), poseEstimate.timestampSeconds, adjustedDeviations);
 
         // Track the best estimate for QuestNav comparison
         if (bestDeviation > adjustedXYDeviation) {
