@@ -1,11 +1,11 @@
 package frc.robot.commands;
 
+import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Meters;
 import static frc.robot.Constants.ShootingConstants.HUB_SETPOINTS_BY_DISTANCE_METERS;
 
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj2.command.Command;
-import frc.robot.Constants.ShooterConstants;
 import frc.robot.subsystems.FeederSubsystem;
 import frc.robot.subsystems.ShooterSubsystem;
 import frc.robot.subsystems.ShooterSubsystem.ShooterSetpoints;
@@ -53,7 +53,7 @@ public class ShootCommand extends Command {
     /*
      * sets the Yaw, Pitch, and Angle
      */
-    shooterSubsystem.setYawAngle(ShooterConstants.YAW_HOME_ANGLE);
+    shooterSubsystem.setYawAngle(Degrees.of(180));
     shooterSubsystem.setPitchAngle(setpoints.targetPitch());
     shooterSubsystem.setFlywheelSpeed(setpoints.targetFlywheelSpeed());
     /*
