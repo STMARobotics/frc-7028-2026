@@ -14,6 +14,7 @@ import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 
@@ -24,6 +25,7 @@ public class Robot extends TimedRobot {
 
   @Logged
   private final RobotContainer m_robotContainer;
+  private final Timer logTimer = new Timer();
 
   /* log and replay timestamp and joystick data */
   private final HootAutoReplay m_timeAndJoystickReplay = new HootAutoReplay().withTimestampReplay()
@@ -31,11 +33,13 @@ public class Robot extends TimedRobot {
 
   public Robot() {
     m_robotContainer = new RobotContainer();
+    logTimer.start();
 
     SignalLogger.start(); // CTRE logger
     DataLogManager.start(); // WPILib logger
     DriverStation.startDataLog(DataLogManager.getLog()); // Record both DS control and joystick data
     Epilogue.bind(this);
+
   }
 
   @Override
@@ -49,6 +53,10 @@ public class Robot extends TimedRobot {
   public void robotPeriodic() {
     m_timeAndJoystickReplay.update();
     CommandScheduler.getInstance().run();
+
+    if (logTimer.advanceIfElapsed(1)) {
+      DataLogManager.getLog().resume();
+    }
   }
 
   @Override
@@ -89,7 +97,7 @@ public class Robot extends TimedRobot {
 
   @Override
   public void teleopPeriodic() {
-    DataLogManager.getLog().resume();
+
   }
 
   @Override
