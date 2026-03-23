@@ -88,7 +88,9 @@ public final class Constants {
     /** Max velocity the driver can request */
     public static final LinearVelocity MAX_TELEOP_VELOCITY = TunerConstants.kSpeedAt12Volts.times(0.7);
     /** Max angular velocity the driver can request */
+    public static final LinearVelocity MAX_DEMO_TELOP_VELOCITY = MAX_TELEOP_VELOCITY.times(0.25);
     public static final AngularVelocity MAX_TELEOP_ANGULAR_VELOCITY = RotationsPerSecond.of(1.75);
+    public static final AngularVelocity MAX_DEMO_TELEOP_ANGULAR_VELOCITY = MAX_TELEOP_ANGULAR_VELOCITY.times(0.25);
     /** Multiplier for shooting in teleop to reduce driver speed while shooting */
     public static final double SHOOT_VELOCITY_MULTIPLIER = 0.325;
     /** Blue reset pose is the blue corner, bumpers against the walls, facing downfield. */

@@ -127,6 +127,10 @@ public abstract class ControlBindings {
     return Optional.empty();
   }
 
+  public Optional<Trigger> demoShoot() {
+    return Optional.empty();
+  }
+
   /**
    * Trigger to run the shooting tuning command
    * 
