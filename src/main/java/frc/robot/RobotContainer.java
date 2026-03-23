@@ -36,6 +36,7 @@ import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import frc.robot.Constants.OdometryConstants;
 import frc.robot.Constants.QuestNavConstants;
 import frc.robot.commands.DefaultShooterCommand;
+import frc.robot.commands.DemoShootCommand;
 import frc.robot.commands.DeployIntakeCommand;
 import frc.robot.commands.IntakeCommand;
 import frc.robot.commands.RetractIntakeCommand;
@@ -46,6 +47,7 @@ import frc.robot.commands.led.LEDBootAnimationCommand;
 import frc.robot.controls.ControlBindings;
 import frc.robot.controls.JoystickControlBindings;
 import frc.robot.controls.XBoxControlBindings;
+import frc.robot.controls.XBoxDemoControlBindings;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.FeederSubsystem;
@@ -58,6 +60,7 @@ import frc.robot.subsystems.SpindexerSubsystem;
 
 @Logged(strategy = Logged.Strategy.OPT_IN)
 public class RobotContainer {
+  public static final boolean demoMode = true;
   private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
   /** Swerve request to apply during robot-centric path following */
   private final SwerveRequest.ApplyRobotSpeeds ppRobotSpeedsRequest = new SwerveRequest.ApplyRobotSpeeds();
@@ -108,7 +111,9 @@ public class RobotContainer {
 
   public RobotContainer() {
     // Configure control binding scheme
-    if (DriverStation.getJoystickIsXbox(0) || Robot.isSimulation()) {
+    if (demoMode) {
+      controlBindings = new XBoxDemoControlBindings();
+    } else if (DriverStation.getJoystickIsXbox(0) || Robot.isSimulation()) {
       controlBindings = new XBoxControlBindings();
     } else {
       controlBindings = new JoystickControlBindings();
@@ -205,6 +210,9 @@ public class RobotContainer {
                           .get()
                           .times(SHOOT_VELOCITY_MULTIPLIER)
                           .times(SHOOT_VELOCITY_MULTIPLIER))));
+    controlBindings.demoShoot()
+        .ifPresent(
+            trigger -> trigger.whileTrue(new DemoShootCommand(spindexerSubsystem, feederSubsystem, shooterSubsystem)));
 
     controlBindings.shuttle().ifPresent(trigger -> trigger.whileTrue(commandFactory.shuttleToCorner()));
 
